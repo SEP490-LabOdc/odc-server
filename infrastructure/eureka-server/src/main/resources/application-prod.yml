@@ -1,0 +1,25 @@
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:eureka-server}
+    prefer-ip-address: false
+    non-secure-port: 8761
+    metadata-map:
+      zone: ${EUREKA_ZONE:zone1}
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL:http://eureka-server:8761/eureka/}
+    registry-fetch-interval-seconds: 30
+    instance-info-replication-interval-seconds: 30
+  server:
+    enable-self-preservation: true
+    eviction-interval-timer-in-ms: 60000
+    renewal-percent-threshold: 0.85
+
+logging:
+  level:
+    root: WARN
+    com.odc: INFO
+    com.netflix.eureka: WARN
