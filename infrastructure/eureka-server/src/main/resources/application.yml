@@ -23,8 +23,6 @@ eureka:
     response-cache-update-interval-ms: 30000
     response-cache-auto-expiration-in-seconds: 180
 
-
-
 # Management endpoints
 management:
   endpoints:
