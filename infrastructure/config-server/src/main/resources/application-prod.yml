@@ -1,0 +1,32 @@
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${CONFIG_REPO_URI:https://github.com/your-org/odc-config-repo.git}
+          username: ${GIT_USERNAME}
+          password: ${GIT_PASSWORD}
+          clone-on-start: true
+          force-pull: true
+          default-label: main
+          search-paths: '{application}'
+          timeout: 10
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL:http://eureka-server:8761/eureka/}
+  instance:
+    hostname: ${CONFIG_SERVER_HOSTNAME:config-server}
+    prefer-ip-address: false
+
+security:
+  user:
+    name: ${CONFIG_SERVER_USERNAME}
+    password: ${CONFIG_SERVER_PASSWORD}
+
+logging:
+  level:
+    root: WARN
+    com.odc: INFO
+    org.springframework.cloud.config: INFO
