@@ -43,6 +43,4 @@ Parent POM cho LabOdc Platform microservices architecture.
 
 All dependency versions are managed in the parent POM properties section.
 Update versions centrally to maintain consistency across all modules.
-```
 
----

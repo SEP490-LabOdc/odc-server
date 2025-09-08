@@ -66,22 +66,22 @@
 
     <!-- MODULES -->
     <modules>
-        <!-- Shared Libraries -->
-        <module>../shared/odc-common</module>
-        
-        <!-- Infrastructure Services -->
-        <module>../infrastructure/eureka-server</module>
-        <module>../infrastructure/config-server</module>
-        <module>../infrastructure/api-gateway</module>
-        
-        <!-- Core Business Services -->
-        <module>../domain-services/user-service</module>
-        <module>../domain-services/business-service</module>
-        <module>../domain-services/talent-pool-service</module>
-        <module>../domain-services/project-service</module>
-        <module>../domain-services/contract-service</module>
-        <module>../domain-services/analytics-service</module>
-        <module>../domain-services/notification-service</module>
+    <!-- Shared Libraries -->
+    <module>../shared/odc-common</module>
+
+    <!-- Infrastructure Services -->
+<!--    <module>../infrastructure/eureka-server</module>-->
+<!--    <module>../infrastructure/config-server</module>-->
+<!--    <module>../infrastructure/api-gateway</module>-->
+
+    <!-- Core Business Services -->
+<!--    <module>../domain-services/user-service</module>-->
+<!--    <module>../domain-services/business-service</module>-->
+<!--    <module>../domain-services/talent-pool-service</module>-->
+<!--    <module>../domain-services/project-service</module>-->
+<!--    <module>../domain-services/contract-service</module>-->
+<!--    <module>../domain-services/analytics-service</module>-->
+<!--    <module>../domain-services/notification-service</module>-->
     </modules>
 
     <!-- DEPENDENCY MANAGEMENT -->
@@ -262,13 +262,13 @@
             </dependency>
             
             <!-- Testing -->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.testcontainers</groupId>-->
+<!--                <artifactId>testcontainers-bom</artifactId>-->
+<!--                <version>${testcontainers.version}</version>-->
+<!--                <type>pom</type>-->
+<!--                <scope>import</scope>-->
+<!--            </dependency>-->
             
             <!-- Utilities -->
             <dependency>
