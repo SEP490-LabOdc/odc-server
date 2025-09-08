@@ -26,3 +26,4 @@ replay_pid*
 shared/odc-common/target
 odc-parent/target
 infrastructure/eureka-server/target
+infrastructure/config-server/target
