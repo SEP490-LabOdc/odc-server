@@ -24,3 +24,5 @@ hs_err_pid*
 replay_pid*
 .idea
 shared/odc-common/target
+odc-parent/target
+infrastructure/eureka-server/target

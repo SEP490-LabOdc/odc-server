@@ -5,6 +5,13 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
     <!-- PROJECT INFORMATION -->
     <groupId>com.odc</groupId>
     <artifactId>odc-parent</artifactId>
@@ -26,7 +33,7 @@
 
         <!-- Spring Boot & Cloud Versions -->
         <spring-boot.version>3.2.0</spring-boot.version>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <spring-cloud.version>2023.0.2</spring-cloud.version>
         <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
 
         <!-- Database Versions -->
@@ -70,7 +77,7 @@
     <module>../shared/odc-common</module>
 
     <!-- Infrastructure Services -->
-<!--    <module>../infrastructure/eureka-server</module>-->
+    <module>../infrastructure/eureka-server</module>
 <!--    <module>../infrastructure/config-server</module>-->
 <!--    <module>../infrastructure/api-gateway</module>-->
 
@@ -302,6 +309,7 @@
     <build>
         <pluginManagement>
             <plugins>
+
                 <!-- Spring Boot Maven Plugin -->
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
@@ -453,13 +461,25 @@
             <name>Maven Central</name>
             <url>https://repo1.maven.org/maven2</url>
         </repository>
-        
+
         <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
             <url>https://repo.spring.io/milestone</url>
             <snapshots>
                 <enabled>false</enabled>
+            </snapshots>
+        </repository>
+
+        <repository>
+            <id>spring-snapshots</id>
+            <name>Spring Snapshots</name>
+            <url>https://repo.spring.io/snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>
