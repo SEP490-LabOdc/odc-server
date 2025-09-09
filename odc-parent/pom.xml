@@ -79,7 +79,7 @@
     <!-- Infrastructure Services -->
     <module>../infrastructure/eureka-server</module>
     <module>../infrastructure/config-server</module>
-<!--    <module>../infrastructure/api-gateway</module>-->
+    <module>../infrastructure/api-gateway</module>
 
     <!-- Core Business Services -->
 <!--    <module>../domain-services/user-service</module>-->
