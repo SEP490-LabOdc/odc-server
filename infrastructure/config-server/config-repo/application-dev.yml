@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/odc_dev
-    username: odc_user
-    password: odc_password
+    username: admin
+    password: 12345
 
   jpa:
     hibernate:
