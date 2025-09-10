@@ -82,7 +82,7 @@
     <module>../infrastructure/api-gateway</module>
 
     <!-- Core Business Services -->
-<!--    <module>../domain-services/user-service</module>-->
+    <module>../domain-services/user-service</module>
 <!--    <module>../domain-services/business-service</module>-->
 <!--    <module>../domain-services/talent-pool-service</module>-->
 <!--    <module>../domain-services/project-service</module>-->
