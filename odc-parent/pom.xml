@@ -42,6 +42,7 @@
         <redis.version>4.4.6</redis.version>
         <mongodb.version>4.11.1</mongodb.version>
         <elasticsearch.version>8.11.0</elasticsearch.version>
+        <hibernate-types-60.version>2.21.1</hibernate-types-60.version>
 
         <!-- Message Queue -->
         <kafka.version>3.6.0</kafka.version>
@@ -303,6 +304,12 @@
                 <groupId>com.labodc</groupId>
                 <artifactId>odc-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.vladmihalcea</groupId>
+                <artifactId>hibernate-types-60</artifactId>
+                <version>${hibernate-types-60.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
