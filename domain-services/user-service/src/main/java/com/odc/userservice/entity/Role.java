@@ -4,6 +4,7 @@ import com.odc.common.entity.BaseEntity;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,7 @@ import lombok.*;
 import org.hibernate.annotations.Type;
 
 import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "roles")
@@ -32,5 +34,8 @@ public class Role extends BaseEntity {
 
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String, Object> permissions;
+    private Map<String, Set<String>> permissions;
+
+    @OneToMany(mappedBy = "role")
+    private Set<User> users;
 }
