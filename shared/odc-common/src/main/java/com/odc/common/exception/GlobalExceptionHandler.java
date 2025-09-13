@@ -119,6 +119,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUnauthenticatedException(
+            UnauthenticatedException ex, WebRequest request) {
+        log.warn("Unauthenticated: {}", ex.getMessage(), ex);
+        ApiResponse<Object> response = ApiResponse.error(
+                ex.getMessage(),
+                ex.getErrorCode()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // 401
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUnauthorizedException(
+            UnauthorizedException ex, WebRequest request) {
+        log.warn("Unauthorized: {}", ex.getMessage(), ex);
+        ApiResponse<Object> response = ApiResponse.error(
+                ex.getMessage(),
+                ex.getErrorCode()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response); // 403
+    }
+
+
     private String generateRequestId() {
         return UUID.randomUUID().toString().substring(0, 8);
     }
