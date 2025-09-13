@@ -74,8 +74,8 @@ management:
 
 # JWT Configuration
 jwt:
-  secret: user-service-jwt-secret-key
-  expiration: 86400000
+  secret: ${JWT_SECRET:f0d3a3c4b1d75e6b8d6b249f6a72b20f66e559e35004f2445cf90cbe2952b8b2}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:7} # 7 days
 
 # Logging
 logging:
