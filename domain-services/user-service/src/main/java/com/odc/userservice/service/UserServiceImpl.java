@@ -7,6 +7,7 @@ import com.odc.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -20,6 +21,7 @@ public class UserServiceImpl implements UserService {
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
                 .message("Get user successfully!")
+                .timestamp(LocalDateTime.now())
                 .data(userRepository.findById(id)
                         .map(u -> GetUserResponse.builder()
                                 .id(u.getId())

@@ -16,7 +16,7 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private String errorCode;
-    private LocalDateTime timestamp;
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
