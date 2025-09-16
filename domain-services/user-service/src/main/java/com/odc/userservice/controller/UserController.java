@@ -1,5 +1,7 @@
 package com.odc.userservice.controller;
 
+import com.odc.common.dto.ApiResponse;
+import com.odc.userservice.dto.response.GetUserResponse;
 import com.odc.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +20,9 @@ public class UserController {
 
     private final UserService userService;
 
-    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.principal")
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<GetUserResponse>> getUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 }

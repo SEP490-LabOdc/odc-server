@@ -1,8 +1,12 @@
 package com.odc.userservice.controller;
 
+import com.odc.common.dto.ApiResponse;
 import com.odc.userservice.dto.request.RefreshTokenRequest;
 import com.odc.userservice.dto.request.UserLoginRequest;
 import com.odc.userservice.dto.request.UserRegisterRequest;
+import com.odc.userservice.dto.response.RefreshTokenResponse;
+import com.odc.userservice.dto.response.UserLoginResponse;
+import com.odc.userservice.dto.response.UserRegisterResponse;
 import com.odc.userservice.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -19,17 +23,17 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRegisterRequest request) {
+    public ResponseEntity<ApiResponse<UserRegisterResponse>> register(@Valid @RequestBody UserRegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody UserLoginRequest request) {
+    public ResponseEntity<ApiResponse<UserLoginResponse>> login(@Valid @RequestBody UserLoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request));
     }
 }

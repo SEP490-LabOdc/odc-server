@@ -56,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
                 .emailVerified(false)
                 .phoneVerified(false)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(roleRepository.findByName(Role.ADMIN.toString()).orElse(null))
+                .role(roleRepository.findByName(Role.USER.toString()).orElse(null))
                 .build();
 
         userRepository.save(user);

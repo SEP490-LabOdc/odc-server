@@ -1,12 +1,14 @@
 package com.odc.userservice.security;
 
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.common.util.JwtUtil;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,10 +23,11 @@ import java.util.UUID;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -42,9 +45,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .orElseThrow(() -> new ResourceNotFoundException("Not found userId!"));
 
             // Set authentication context
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null,
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(UUID.fromString(userId), null,
                     AuthorityUtils.createAuthorityList(user.getRole().getName().toUpperCase()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else {
+            // 2. Nếu không có X-User-ID thì check Authorization Bearer token
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                String email = jwtUtil.extractUsername(token);
+
+                if (jwtUtil.validateToken(token, email)) {
+
+                    User user = userRepository.findByEmail(email)
+                            .orElseThrow(() -> new ResourceNotFoundException("Not found user!"));
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    user.getId(),
+                                    null,
+                                    AuthorityUtils.createAuthorityList(user.getRole().getName().toUpperCase())
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -54,6 +79,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         // Skip filter for auth endpoints and actuator
-        return path.startsWith("/api/v1/auth/") || path.startsWith("/actuator/");
+        return path.startsWith("/api/v1/auth/") ||
+                path.startsWith("/actuator/");
     }
 }

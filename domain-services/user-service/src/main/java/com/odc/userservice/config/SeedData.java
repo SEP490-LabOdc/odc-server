@@ -19,7 +19,8 @@ public class SeedData implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        seedRole("Admin", "Administrator role with full access", createPermissionsForAdmin());
+        seedRole(com.odc.common.constant.Role.ADMIN.toString(), "Administrator role with full access", createPermissionsForAdmin());
+        seedRole(com.odc.common.constant.Role.USER.toString(), "Standard user role with limited access", createPermissionsForUser());
     }
 
     /**
@@ -43,6 +44,12 @@ public class SeedData implements CommandLineRunner {
     private Map<String, Set<String>> createPermissionsForAdmin() {
         Map<String, Set<String>> permissions = new HashMap<>();
         permissions.put("users", Set.of("create", "read", "update", "delete"));
+        return permissions;
+    }
+
+    private Map<String, Set<String>> createPermissionsForUser() {
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("users", Set.of("read", "update"));
         return permissions;
     }
 }
