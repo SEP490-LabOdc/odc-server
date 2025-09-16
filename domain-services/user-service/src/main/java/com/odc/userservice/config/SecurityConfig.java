@@ -2,10 +2,7 @@ package com.odc.userservice.config;
 
 import com.odc.common.exception.CustomAccessDeniedHandler;
 import com.odc.common.exception.CustomAuthenticationEntryPoint;
-import com.odc.common.exception.UnauthenticatedException;
-import com.odc.common.exception.UnauthorizedException;
 import com.odc.userservice.security.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
