@@ -3,16 +3,12 @@ package com.odc.apigateway.security;
 import com.odc.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -35,28 +31,14 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
 
         if (username != null && jwtUtil.validateToken(authToken, username)) {
             // Extract roles from JWT claims (if available)
-            List<String> roles = extractRolesFromToken(authToken);
-            List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
+            String role = jwtUtil.extractClaim(authToken, claims -> claims.get("role", String.class));
 
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    new UsernamePasswordAuthenticationToken(username, null, AuthorityUtils.createAuthorityList(role.toUpperCase()));
 
             return Mono.just(auth);
         }
 
         return Mono.empty();
-    }
-
-    private List<String> extractRolesFromToken(String token) {
-        try {
-            // Extract roles from JWT claims
-            // This is a simplified implementation
-            return List.of("ROLE_USER");
-        } catch (Exception e) {
-            log.warn("Could not extract roles from token: {}", e.getMessage());
-            return List.of("ROLE_USER");
-        }
     }
 }

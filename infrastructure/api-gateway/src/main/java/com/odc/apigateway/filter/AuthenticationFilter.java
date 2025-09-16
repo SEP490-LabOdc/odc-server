@@ -1,7 +1,6 @@
 package com.odc.apigateway.filter;
 
 import com.odc.common.util.JwtUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -72,7 +71,8 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 "/api/v1/auth/login",
                 "/api/v1/auth/register",
                 "/api/v1/auth/refresh",
-                "/actuator"
+                "/actuator",
+                "/v3/api-docs/merged"
         );
 
         return publicEndpoints.stream()

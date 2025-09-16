@@ -32,8 +32,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/swagger/**").permitAll()
+                        .requestMatchers("/user-service/v3/api-docs/**").permitAll()
+                        .requestMatchers("/user-service/swagger/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf.disable())

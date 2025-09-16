@@ -150,7 +150,7 @@ management:
 
 # JWT Configuration
 jwt:
-  secret: api-gateway-jwt-secret-key
+  secret: ${JWT_SECRET:f0d3a3c4b1d75e6b8d6b249f6a72b20f66e559e35004f2445cf90cbe2952b8b2}
   expiration: 86400000
 
 # Logging
@@ -165,3 +165,11 @@ logging:
   file:
     name: logs/api-gateway.log
 
+# Documentation
+springdoc:
+  swagger-ui:
+    path: /swagger/index.html
+    url: /v3/api-docs/merged
+
+# Custom properties
+api-gateway-url: ${API-GATEWAY-URL:http://localhost:8080}
