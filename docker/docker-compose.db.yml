@@ -1,0 +1,31 @@
+services:
+  postgres_service:
+    image: postgres:15
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - labOdc-network
+
+  redis: 
+    image: redis:6.2.18
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    networks:
+      - labOdc-network
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgresql_data:
+  redis_data:
+
+networks:
+  labOdc-network:
+    driver: bridge
