@@ -31,17 +31,18 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<List<GetUserResponse>>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<GetUserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.ok(userService.createUser(request));
     }
 
-    // ✅ Update profile (user tự update)
     @PreAuthorize("hasAuthority('USER') and #id == authentication.principal")
     @PutMapping("/{id}/profile")
     public ResponseEntity<ApiResponse<GetUserResponse>> updateProfile(
@@ -50,7 +51,6 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfile(id, request));
     }
 
-    // ✅ Update password (endpoint riêng)
     @PreAuthorize("hasAuthority('USER') and #id == authentication.principal")
     @PutMapping("/{id}/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
@@ -59,7 +59,6 @@ public class UserController {
         return ResponseEntity.ok(userService.updatePassword(id, request));
     }
 
-    // ✅ Update role (chỉ admin)
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/{id}/role")
     public ResponseEntity<ApiResponse<GetUserResponse>> updateRole(
@@ -68,7 +67,6 @@ public class UserController {
         return ResponseEntity.ok(userService.updateRole(id, request));
     }
 
-    // ✅ Update status (chỉ admin)
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<GetUserResponse>> updateStatus(
@@ -81,5 +79,4 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.deleteUser(id));
     }
-
 }
