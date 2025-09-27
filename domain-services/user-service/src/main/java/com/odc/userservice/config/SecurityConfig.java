@@ -28,6 +28,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/users/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/user-service/v3/api-docs/**").permitAll()
                         .requestMatchers("/user-service/swagger/**").permitAll()
