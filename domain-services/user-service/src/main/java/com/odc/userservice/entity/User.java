@@ -19,39 +19,29 @@ import java.time.LocalDateTime;
 @Builder
 public class User extends BaseEntity {
 
-    @Column(unique = true, nullable = false)
-    @Email
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
-
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
-    @Column(length = 30)
-    private String phone;
-
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
     public Gender gender;
-
     @Column(name = "birth_date")
     public LocalDate birthDate;
-
+    @Column(name = "last_login_at")
+    public LocalDateTime lastLoginAt;
+    @Column(name = "failed_login_attempts")
+    public Integer failedLoginAttempts;
+    @Column(name = "avatar_url")
+    public String avatarUrl;
+    @Column(unique = true, nullable = false)
+    @Email
+    private String email;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+    @Column(length = 30)
+    private String phone;
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
     private Status status;
-
-    @Column(name = "last_login_at")
-    public LocalDateTime lastLoginAt;
-
-    @Column(name = "failed_login_attempts")
-    public Integer failedLoginAttempts;
-
-    @Column(name = "avatar_url")
-    public String avatarUrl;
-
     @Column
     private String address;
 

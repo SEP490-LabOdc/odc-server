@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
                         .orElseThrow(() -> new ResourceNotFoundException("Not found user")))
                 .build();
     }
-    
+
     @Override
     public ApiResponse<List<GetUserResponse>> getAllUsers() {
         List<GetUserResponse> users = userRepository.findAll()
@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
                 .data(users)
                 .build();
     }
-    
+
     @Override
     public ApiResponse<GetUserResponse> createUser(CreateUserRequest request) {
         try {
@@ -121,7 +121,7 @@ public class UserServiceImpl implements UserService {
             // Log error for debugging
             System.err.println("Error creating user: " + e.getMessage());
             e.printStackTrace();
-            
+
             return ApiResponse.<GetUserResponse>builder()
                     .success(false)
                     .message("Failed to create user: " + e.getMessage())
@@ -150,7 +150,7 @@ public class UserServiceImpl implements UserService {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            
+
             // Update only allowed fields
             user.setFullName(request.getFullName());
             user.setPhone(request.getPhone());
@@ -158,9 +158,9 @@ public class UserServiceImpl implements UserService {
             user.setBirthDate(request.getBirthDate());
             user.setAddress(request.getAddress());
             user.setAvatarUrl(request.getAvatarUrl());
-            
+
             userRepository.save(user);
-            
+
             return ApiResponse.<GetUserResponse>builder()
                     .success(true)
                     .message("Profile updated successfully!")
@@ -182,7 +182,7 @@ public class UserServiceImpl implements UserService {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            
+
             // Verify current password
             if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
                 return ApiResponse.<Void>builder()
@@ -191,11 +191,11 @@ public class UserServiceImpl implements UserService {
                         .timestamp(LocalDateTime.now())
                         .build();
             }
-            
+
             // Update password
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
             userRepository.save(user);
-            
+
             return ApiResponse.<Void>builder()
                     .success(true)
                     .message("Password updated successfully!")
@@ -216,13 +216,13 @@ public class UserServiceImpl implements UserService {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            
+
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
-            
+
             user.setRole(role);
             userRepository.save(user);
-            
+
             return ApiResponse.<GetUserResponse>builder()
                     .success(true)
                     .message("Role updated successfully!")
@@ -244,10 +244,10 @@ public class UserServiceImpl implements UserService {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            
+
             user.setStatus(status);
             userRepository.save(user);
-            
+
             return ApiResponse.<GetUserResponse>builder()
                     .success(true)
                     .message("Status updated successfully!")

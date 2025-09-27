@@ -22,21 +22,22 @@ public class SeedData implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("Starting to seed roles...");
-        
+
         seedRole(com.odc.common.constant.Role.ADMIN.toString(), "Administrator role with full access", createPermissionsForAdmin());
         seedRole(com.odc.common.constant.Role.USER.toString(), "Standard user role with limited access", createPermissionsForUser());
-        
+
         log.info("Role seeding completed!");
     }
 
     /**
      * Seed role method
+     *
      * @param name
      * @param description
      * @param permissionsMap
      */
     private void seedRole(String name, String description, Map<String, Set<String>> permissionsMap) {
-        if(!roleRepository.existsByName(name)) {
+        if (!roleRepository.existsByName(name)) {
             log.info("Creating role: {}", name);
             Role role = new Role();
 

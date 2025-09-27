@@ -29,18 +29,18 @@ public class UserController {
     public ResponseEntity<ApiResponse<GetUserResponse>> getUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
-    
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<GetUserResponse>>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
-    
+
     @PostMapping
     public ResponseEntity<ApiResponse<GetUserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.ok(userService.createUser(request));
     }
-    
+
     // ✅ Update profile (user tự update)
     @PreAuthorize("hasAuthority('USER') and #id == authentication.principal")
     @PutMapping("/{id}/profile")
