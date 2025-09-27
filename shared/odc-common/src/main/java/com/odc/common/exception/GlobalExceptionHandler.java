@@ -152,7 +152,7 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response); // 403
     }
-    
+
     private String generateRequestId() {
         return UUID.randomUUID().toString().substring(0, 8);
     }

@@ -36,12 +36,13 @@ public class SecurityConfig {
                         // Public endpoints
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/api/v1/auth/**").permitAll()
+                        .pathMatchers("/api/v1/users").permitAll()  // Allow GET all users without auth
                         .pathMatchers("/v3/api-docs/**").permitAll()
                         .pathMatchers("/swagger/**").permitAll()
                         .pathMatchers("/user-service/v3/api-docs/**").permitAll()
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Protected endpoints
-                        .pathMatchers("/api/v1/users/**").authenticated()
+                        .pathMatchers("/api/v1/users/**").authenticated()  // Other user endpoints still need auth
                         .pathMatchers("/api/v1/businesses/**").authenticated()
                         .pathMatchers("/api/v1/talents/**").authenticated()
                         .anyExchange().authenticated()
