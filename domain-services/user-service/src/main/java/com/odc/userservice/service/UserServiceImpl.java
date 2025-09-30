@@ -85,7 +85,7 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
 
-        Role role = roleRepository.findByName("User")
+        Role role = roleRepository.findByName(com.odc.common.constant.Role.USER.toString())
                 .orElseThrow(() -> new ResourceNotFoundException("Default USER role not found. Please ensure USER role exists in database."));
 
         User user = User.builder()
@@ -183,7 +183,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Role role = roleRepository.findById(request.getRoleId())
+        Role role = roleRepository.findByName(request.getRoleName())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         user.setRole(role);
