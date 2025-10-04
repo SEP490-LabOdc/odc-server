@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "companies")
@@ -46,7 +47,7 @@ public class Company extends BaseEntity {
     private String status; // e.g., "ACTIVE", "INACTIVE", "PENDING_APPROVAL"
 
     @Column(name = "user_id", nullable = false)
-    private Long userId; // The ID of the user who owns/created this company
+    private UUID userId; // The ID of the user who owns/created this company
 
     @Column(name = "domain", unique = true)
     private String domain;
