@@ -6,6 +6,7 @@ import com.odc.notificationservice.dto.response.GetDeviceTokenResponse;
 import com.odc.notificationservice.service.DeviceTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class DeviceTokenController {
     private final DeviceTokenService deviceTokenService;
 
     @GetMapping("/{userId}")
+    @PreAuthorize("#userId == principal or hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<List<GetDeviceTokenResponse>>> getDeviceTokens(@PathVariable UUID userId) {
         return ResponseEntity.ok(deviceTokenService.getDeviceTokensByUserId(userId));
     }

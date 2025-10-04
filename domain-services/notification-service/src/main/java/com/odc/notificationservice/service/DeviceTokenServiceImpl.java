@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +49,7 @@ public class DeviceTokenServiceImpl implements DeviceTokenService {
     @Override
     public ApiResponse<Void> deleteDeviceToken(String token) {
         DeviceToken deviceToken = deviceTokenRepository.findByToken(token)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm tấy device token."));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy device token."));
 
         deviceTokenRepository.delete(deviceToken);
 
