@@ -98,9 +98,9 @@ public class AuthServiceImpl implements AuthService {
                 UserLoginResponse
                         .builder()
                         .accessToken(jwtUtil.generateToken(user.getEmail(),
-                                Map.of("role", user.getRole().getName())))
+                                Map.of("role", user.getRole().getName(),
+                                        "userId", user.getId())))
                         .refreshToken(refreshToken)
-                        .userId(user.getId())
                         .build());
     }
 
