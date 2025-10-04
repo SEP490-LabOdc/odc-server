@@ -8,8 +8,8 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>user-service</artifactId>
-    <name>ODC User Service</name>
+    <artifactId>company-service</artifactId>
+    <name>ODC Company Service</name>
     <description>Company Service for ODC System with Company Management</description>
 
     <dependencies>
