@@ -15,9 +15,9 @@ public class SecurityConfig {
     public SecurityFilterChain springSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/ws/**",
-                                "/api/v1/test",
-                                "/notification-service/swagger/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/notification-service/v3/api-docs/**").permitAll()
+                        .requestMatchers("/notification-service/swagger/**").permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable);
