@@ -26,9 +26,9 @@ public class CompanyRegisterRequest {
     private String description;
     private String website;
     private String domain;
-    private String fileUrl;
 
     @NotNull(message = "User ID không được để trống")
     private UUID userId;
+
 
 }
