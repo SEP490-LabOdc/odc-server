@@ -8,9 +8,12 @@ import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.repository.CompanyRepository;
+import com.odc.userservice.dto.response.GetUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final WebClient.Builder webClientBuilder;
 
     @Override
     @Transactional
@@ -43,34 +47,57 @@ public class CompanyServiceImpl implements CompanyService {
                 .description(request.getDescription())
                 .website(request.getWebsite())
                 .domain(request.getDomain())
+                .fileUrl(request.getFileUrl())
                 .userId(request.getUserId())
                 .status("PENDING") // Có thể dùng Enum Status.PENDING.name()
                 .build();
-
-        // 3. Lưu vào database
         Company savedCompany = companyRepository.save(company);
 
-        // 4. Ánh xạ từ Entity sang Response DTO
-        CompanyResponse responseData = CompanyResponse.builder()
-                .id(savedCompany.getId())
-                .name(savedCompany.getName())
-                .email(savedCompany.getEmail())
-                .phone(savedCompany.getPhone())
-                .taxCode(savedCompany.getTaxCode())
-                .address(savedCompany.getAddress())
-                .website(savedCompany.getWebsite())
-                .status(savedCompany.getStatus())
-                .domain(savedCompany.getDomain())
-                .userId(savedCompany.getUserId())
-                .createdAt(savedCompany.getCreatedAt())
-                .build();
-
-        // 5. Trả về trong cấu trúc ApiResponse chuẩn
+        GetUserResponse user = null;
+        try{
+            user = webClientBuilder.build()
+                    .get()
+                    .uri("http://user-service/api/v1/users/{id}", savedCompany.getUserId())
+                    .retrieve()
+                    .bodyToMono(GetUserResponse.class)
+                    .block();
+        }catch (Exception e){
+            System.err.println("Lỗi khi gọi User Service: " + e.getMessage());
+        }
+        CompanyResponse responseData = mapToEnrichedResponse(savedCompany, user);
         return ApiResponse.<CompanyResponse>builder()
                 .success(true)
                 .message("Đăng ký công ty thành công!")
                 .timestamp(LocalDateTime.now())
                 .data(responseData)
+                .build();
+    }
+
+    // --- Private Helper Method để tổng hợp dữ liệu ---
+    private CompanyResponse mapToEnrichedResponse(Company company, GetUserResponse user) {
+        CompanyResponse.UserInfor userInfo = null;
+        if (user != null) {
+            userInfo = CompanyResponse.UserInfor.builder()
+                    .id(user.getId())
+                    .fullName(user.getFullName())
+                    .email(user.getEmail())
+                    .phone(user.getPhone())
+                    .build();
+        }
+
+        return CompanyResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .taxCode(company.getTaxCode())
+                .address(company.getAddress())
+                .website(company.getWebsite())
+                .status(company.getStatus())
+                .domain(company.getDomain())
+                .fileUrl(company.getFileUrl())
+                .createdAt(company.getCreatedAt())
+                .user(userInfo)
                 .build();
     }
 
@@ -166,7 +193,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .website(company.getWebsite())
                 .status(company.getStatus())
                 .domain(company.getDomain())
-                .userId(company.getUserId())
+                .fileUrl(company.getFileUrl())
                 .createdAt(company.getCreatedAt())
                 .build();
     }

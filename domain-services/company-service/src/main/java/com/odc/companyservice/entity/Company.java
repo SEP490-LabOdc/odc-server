@@ -52,6 +52,9 @@ public class Company extends BaseEntity {
     @Column(name = "domain", unique = true)
     private String domain;
 
+    @Column(name = "file_url")
+    private String fileUrl; // URL to the document file
+
     // If you want to establish a relationship with CompanyDocument
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CompanyDocument> documents;

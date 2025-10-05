@@ -17,6 +17,17 @@ public class CompanyResponse {
     private String website;
     private String status;
     private String domain;
-    private UUID userId;
+    private String fileUrl;
     private LocalDateTime createdAt;
+
+    private UserInfor user;
+
+    @Data
+    @Builder
+    public static class UserInfor {
+        private UUID id;
+        private String fullName;
+        private String email;
+        private String phone;
+    }
 }
