@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +43,9 @@ public class Notification extends BaseEntity {
 
     @Column(name = "deep_link")
     private String deepLink;
+
+    @Column(name = "sent_at")
+    private Instant sentAt;
 
     @OneToMany(mappedBy = "notification")
     private Set<NotificationRecipient> recipients;
