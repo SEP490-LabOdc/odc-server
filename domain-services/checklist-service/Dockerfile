@@ -23,6 +23,6 @@ WORKDIR /app
 
 COPY --from=builder /app/checklist-service/target/checklist-service-1.0.0.jar checklist-service.jar
 
-EXPOSE 8081
+EXPOSE 8083
 
 ENTRYPOINT ["java", "-jar", "/app/checklist-service.jar"]
