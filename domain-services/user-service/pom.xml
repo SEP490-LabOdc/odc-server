@@ -6,6 +6,7 @@
         <groupId>com.odc</groupId>
         <artifactId>odc-parent</artifactId>
         <version>1.0.0</version>
+        <relativePath/>
     </parent>
 
     <artifactId>user-service</artifactId>
