@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { padding: 20px; border: 1px solid #ddd; max-width: 600px; margin: auto; text-align: center; }
+        .header { font-size: 24px; font-weight: bold; color: #007bff; }
+        .content p { font-size: 16px; }
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #28a745;
+            letter-spacing: 5px;
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px dashed #28a745;
+            display: inline-block;
+        }
+        .footer { margin-top: 20px; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">Mã xác thực OTP của bạn</div>
+    <div class="content">
+        <p>Vui lòng sử dụng mã dưới đây để hoàn tất quá trình xác thực.</p>
+        <p>Mã này sẽ hết hạn sau 5 phút.</p>
+        <div class="otp-code" th:text="${otpCode}">123456</div>
+    </div>
+    <div class="footer">
+        &copy; 2025 LabOdc. Nếu bạn không yêu cầu mã này, hãy bỏ qua email.
+    </div>
+</div>
+</body>
+</html>
