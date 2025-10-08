@@ -16,12 +16,11 @@ COPY infrastructure/eureka-server/ ./eureka-server/
 WORKDIR /app/eureka-server
 RUN mvn package -DskipTests
 
-
 FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
 
-COPY --from=builder /app/eureka/target/eureka-server-1.0.0.jar eureka-server.jar
+COPY --from=builder /app/eureka-server/target/eureka-server-1.0.0.jar eureka-server.jar
 
 EXPOSE 8761
 
