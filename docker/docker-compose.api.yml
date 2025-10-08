@@ -1,0 +1,53 @@
+services:
+  eureka-server:
+    image: 21anhn/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    env_file:
+      - .env
+    networks:
+      - labOdc-network
+
+  user-service:
+    image: 21anhn/user-service:latest
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    networks:
+      - labOdc-network
+    depends_on:
+      - eureka-server
+
+  notification-service:
+    image: 21anhn/notification-service:latest
+    container_name: notification-service
+    ports:
+      - "8085:8085"
+    env_file:
+      - .env
+    networks:
+      - labOdc-network
+    depends_on:
+      - eureka-server
+
+  api-gateway:
+    image: 21anhn/api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    env_file::
+      - .env
+    networks:
+      - labOdc-network
+    depends_on:
+      - eureka-server
+      - user-service
+      - notification-service
+
+networks:
+  labOdc-network:
+    driver: bridge
+
