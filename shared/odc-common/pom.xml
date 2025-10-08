@@ -9,7 +9,7 @@
         <groupId>com.odc</groupId>
         <artifactId>odc-parent</artifactId>
         <version>1.0.0</version>
-        <relativePath>../../odc-parent/pom.xml</relativePath>
+        <relativePath/>
     </parent>
 
     <artifactId>odc-common</artifactId>

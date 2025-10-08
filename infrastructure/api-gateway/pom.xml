@@ -6,7 +6,7 @@
         <groupId>com.odc</groupId>
         <artifactId>odc-parent</artifactId>
         <version>1.0.0</version>
-        <relativePath>../../odc-parent/pom.xml</relativePath> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>com.odc</groupId>
     <artifactId>api-gateway</artifactId>
