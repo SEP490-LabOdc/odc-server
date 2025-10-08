@@ -74,6 +74,22 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Company Service
+        - id: company-service
+          uri: lb://company-service
+          predicates:
+            - Path=/api/v1/companies/**
+          filters:
+            - StripPrefix=0
+
+        # Checklist Service
+        - id: checklist-template-service
+          uri: lb://checklist-service
+          predicates:
+            - Path=/api/v1/checklist-templates/**
+          filters:
+            - StripPrefix=0
+
       # Global Filters
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
