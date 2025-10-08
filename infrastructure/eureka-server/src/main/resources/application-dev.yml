@@ -1,20 +1,20 @@
 server:
-  port: 8761
+  port: ${SERVER_PORT:8761}
 
 spring:
   security:
     user:
-      name: eureka
-      password: eureka123
+      name: ${EUREKA_USER:eureka}
+      password: ${EUREKA_PASSWORD:eureka123}
 
 eureka:
   instance:
-    hostname: localhost
+    hostname: ${EUREKA_HOSTNAME:localhost}
   client:
     service-url:
-      defaultZone: http://eureka:eureka123@localhost:8761/eureka/
+      defaultZone: http://${EUREKA_USER:eureka}:${EUREKA_PASSWORD:eureka123}@${EUREKA_HOSTNAME:localhost}:${server.port:8761}/eureka/
   server:
-    enable-self-preservation: false
+    enable-self-preservation: ${ENABLE_SELF_PRESERVATION:false}
     eviction-interval-timer-in-ms: 5000
 
 logging:

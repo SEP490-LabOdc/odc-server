@@ -1,11 +1,28 @@
-# Please use `mvn clean install` on your local machine to build the JAR file.
-# Then use this Dockerfile to build the Docker image.
-#
-# Example:
-#   $ mvn clean install
-#   $ docker build -t your-image-name .
+FROM maven:3.9.6-eclipse-temurin-17-focal AS builder
+
+WORKDIR /app
+
+COPY odc-parent/ ./odc-parent/
+WORKDIR /app/odc-parent
+RUN mvn install -N
+WORKDIR /app
+
+COPY shared/odc-common/ ./odc-common/
+WORKDIR /app/odc-common
+RUN mvn install -DskipTests
+WORKDIR /app
+
+COPY infrastructure/eureka-server/ ./eureka-server/
+WORKDIR /app/eureka-server
+RUN mvn package -DskipTests
+
 
 FROM eclipse-temurin:17-jre-focal
-COPY target/eureka-server-1.0.0.jar eureka-server.jar
+
+WORKDIR /app
+
+COPY --from=builder /app/eureka/target/eureka-server-1.0.0.jar eureka-server.jar
+
 EXPOSE 8761
-ENTRYPOINT ["java","-jar","/eureka-server.jar"]
+
+ENTRYPOINT ["java", "-jar", "/app/eureka-server.jar"]
