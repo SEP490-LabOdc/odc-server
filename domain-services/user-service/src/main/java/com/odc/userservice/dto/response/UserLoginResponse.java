@@ -11,5 +11,4 @@ import java.util.UUID;
 @Setter
 public class UserLoginResponse {
     private String accessToken, refreshToken;
-    private UUID userId;
 }

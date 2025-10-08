@@ -8,9 +8,9 @@ spring:
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
-    username: admin
-    password: 12345
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:user_db}
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:12345}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -22,7 +22,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: false
     properties:
       hibernate:
@@ -37,13 +37,13 @@ spring:
   # Redis Configuration
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
 
   # Kafka Configuration
   kafka:
     bootstrap-servers:
-      - ${KAFKA_BROKER_1_URL:localhost:9092}
+      - ${KAFKA_BROKER_URL:localhost:9092}
     consumer:
       group-id: user-service-consumer-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -52,7 +52,7 @@ spring:
         spring:
           json:
             trusted:
-              packages: '*'
+              packages: "*"
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -61,7 +61,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka:eureka123@localhost:8761/eureka/
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka:eureka123@localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
   instance:
@@ -89,11 +89,6 @@ management:
       export:
         enabled: true
 
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET:f0d3a3c4b1d75e6b8d6b249f6a72b20f66e559e35004f2445cf90cbe2952b8b2}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:7} # 7 days
-
 # Logging
 logging:
   level:
@@ -111,3 +106,6 @@ springdoc:
     path: /user-service/v3/api-docs
   swagger-ui:
     path: /user-service/swagger/index.html
+
+# Custom properties
+refresh-expiration: ${JWT_REFRESH_EXPIRATION:7} # 7 days

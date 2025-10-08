@@ -84,12 +84,12 @@
 
     <!-- Core Business Services -->
     <module>../domain-services/user-service</module>
-<!--    <module>../domain-services/business-service</module>-->
-<!--    <module>../domain-services/talent-pool-service</module>-->
+    <module>../domain-services/company-service</module>
+    <module>../domain-services/checklist-service</module>
 <!--    <module>../domain-services/project-service</module>-->
 <!--    <module>../domain-services/contract-service</module>-->
 <!--    <module>../domain-services/analytics-service</module>-->
-<!--    <module>../domain-services/notification-service</module>-->
+    <module>../domain-services/notification-service</module>
     </modules>
 
     <!-- DEPENDENCY MANAGEMENT -->

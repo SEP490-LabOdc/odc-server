@@ -1,49 +1,25 @@
 server:
-  port: 8761
+  port: ${SERVER_PORT:8761}
 
 spring:
-  application:
-    name: eureka-server
+  security:
+    user:
+      name: ${EUREKA_USER:eureka}
+      password: ${EUREKA_PASSWORD:eureka123}
 
 eureka:
   instance:
-    hostname: localhost
-    prefer-ip-address: true
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
+    hostname: ${EUREKA_HOSTNAME:localhost}
   client:
-    register-with-eureka: false
-    fetch-registry: false
     service-url:
-      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+      defaultZone: http://${EUREKA_USER:eureka}:${EUREKA_PASSWORD:eureka123}@${EUREKA_HOSTNAME:localhost}:${server.port:8761}/eureka/
   server:
-    enable-self-preservation: true
-    eviction-interval-timer-in-ms: 60000
-    renewal-percent-threshold: 0.85
-    response-cache-update-interval-ms: 30000
-    response-cache-auto-expiration-in-seconds: 180
+    enable-self-preservation: ${ENABLE_SELF_PRESERVATION:false}
+    eviction-interval-timer-in-ms: 5000
 
-# Management endpoints
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: always
-  info:
-    env:
-      enabled: true
-
-# Logging
 logging:
   level:
-    com.netflix.eureka: INFO
-    com.netflix.discovery: INFO
-    org.springframework.cloud: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/eureka-server.log
+    root: INFO
+    com.odc: DEBUG
+    com.netflix.eureka: DEBUG
+    com.netflix.discovery: DEBUG

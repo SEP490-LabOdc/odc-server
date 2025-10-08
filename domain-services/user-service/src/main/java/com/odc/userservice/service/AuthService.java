@@ -10,6 +10,8 @@ import com.odc.userservice.dto.response.UserRegisterResponse;
 
 public interface AuthService {
     ApiResponse<UserRegisterResponse> register(UserRegisterRequest request);
+
     ApiResponse<UserLoginResponse> login(UserLoginRequest request);
+
     ApiResponse<RefreshTokenResponse> refreshToken(RefreshTokenRequest request);
 }

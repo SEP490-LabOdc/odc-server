@@ -1,0 +1,22 @@
+services:
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8088:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro"
+      - "./traefik/letsencrypt:/letsencrypt"
+    networks:
+      - labOdc-network
+
+networks:
+  labOdc-network:

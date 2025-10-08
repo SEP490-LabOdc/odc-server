@@ -24,11 +24,6 @@ spring:
     time-zone: Asia/Ho_Chi_Minh
     date-format: yyyy-MM-dd HH:mm:ss
 
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET:f0d3a3c4b1d75e6b8d6b249f6a72b20f66e559e35004f2445cf90cbe2952b8b2}
-  expiration: ${JWT_EXPIRATION:15} # 15 minutes in milliseconds
-
 # Logging Configuration
 logging:
   level:
@@ -67,8 +62,13 @@ app:
   # Security settings
   security:
     cors:
-#      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+      #      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
       allowed-methods: GET,POST,PUT,DELETE,OPTIONS
       allowed-headers: "*"
       allow-credentials: true
       max-age: 3600
+
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET:2326a4d228021d40f8e67817543d00cee23879d297929b33c3c844b65ea63b13be033701e03db49517e3321393dbdfef}
+    expiration: ${JWT_EXPIRATION:15} # 15 minutes in milliseconds
