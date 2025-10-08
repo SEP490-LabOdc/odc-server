@@ -1,0 +1,34 @@
+DOMAIN_NAME: labodc.id.vn
+
+http:
+  routers:
+    dashboard:
+      rule: "Host(`traefik.${DOMAIN_NAME}`)"
+      entryPoints:
+        - websecure
+      service: api@internal
+      tls:
+        certResolver: myresolver
+      middlewares:
+        - auth
+
+    api-gateway:
+      rule: "Host(`api.${DOMAIN_NAME}`)"
+      entryPoints:
+        - websecure
+      service: api-gateway-service
+      tls:
+        certResolver: myresolver
+
+  services:
+    api-gateway-service:
+      loadBalancer:
+        servers:
+          - url: "http://api-gateway:8080"
+
+  middlewares:
+    auth:
+      basicAuth:
+        users:
+          # docker run --rm httpd:2.4 htpasswd -nb your-user your-password
+          - "admin:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/" # password is "admin"
