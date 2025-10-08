@@ -1,6 +1,7 @@
 package com.odc.companyservice.entity;
 
 import com.odc.common.entity.BaseEntity;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -46,7 +47,7 @@ public class Company extends BaseEntity {
     @Column(name = "status")
     private String status; // e.g., "ACTIVE", "INACTIVE", "PENDING_APPROVAL"
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = true)
     private UUID userId; // The ID of the user who owns/created this company
 
     @Column(name = "domain", unique = true)

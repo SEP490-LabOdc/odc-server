@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class UpdateCompanyRequest{
+public class UpdateCompanyRequest {
 
     @NotBlank(message = "Tên công ty không được để trống")
     private String name;

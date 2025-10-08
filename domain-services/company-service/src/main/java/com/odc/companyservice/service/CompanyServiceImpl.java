@@ -1,16 +1,17 @@
 package com.odc.companyservice.service;
 
+import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
-import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -40,11 +41,11 @@ public class CompanyServiceImpl implements CompanyService {
                 .phone(request.getPhone())
                 .taxCode(request.getTaxCode())
                 .address(request.getAddress())
-                .description(request.getDescription())
-                .website(request.getWebsite())
-                .domain(request.getDomain())
-                .userId(request.getUserId())
-                .status("PENDING") // Có thể dùng Enum Status.PENDING.name()
+                .description("")
+                .website("")
+                .domain("")
+                .logo("")
+                .status(Status.PENDING.toString())
                 .build();
 
         // 3. Lưu vào database

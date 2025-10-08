@@ -10,8 +10,12 @@ import java.util.UUID;
 
 public interface CompanyService {
     ApiResponse<CompanyResponse> registerCompany(CompanyRegisterRequest request);
+
     ApiResponse<CompanyResponse> updateCompany(UUID id, UpdateCompanyRequest request);
+
     ApiResponse<List<CompanyResponse>> getAllCompanies();
+
     ApiResponse<CompanyResponse> getCompanyById(UUID id);
+
     ApiResponse<Void> deleteCompany(UUID id);
 }

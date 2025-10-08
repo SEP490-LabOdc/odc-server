@@ -3,12 +3,15 @@ package com.odc.companyservice.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.DefaultValue;
 import lombok.Getter;
 
 import java.util.UUID;
 
 @Getter
 public class CompanyRegisterRequest {
+
+    // Company information
     @NotBlank(message = "Tên công ty không được để trống")
     private String name;
 
@@ -22,13 +25,20 @@ public class CompanyRegisterRequest {
     @NotBlank(message = "Mã số thuế không được để trống")
     private String taxCode;
 
+    @NotBlank(message = "Địa chỉ công ty không được để trống")
     private String address;
-    private String description;
-    private String website;
-    private String domain;
 
-    @NotNull(message = "User ID không được để trống")
-    private UUID userId;
+    @DefaultValue("")
+    private String businessLicenseLink;
 
+    // Contact person
+    @NotBlank(message = "Tên của người liên lạc không được để trống")
+    private String contactPersonName;
 
+    @NotBlank(message = "Số điện thoại của người liên lạc không được để trống")
+    private String contactPersonPhone;
+
+    @NotBlank(message = "Email của người liên lạc không được để trống")
+    @Email(message = "Email không đúng định dạng")
+    private String contactPersonEmail;
 }
