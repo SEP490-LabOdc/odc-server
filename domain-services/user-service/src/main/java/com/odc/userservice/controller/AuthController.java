@@ -37,6 +37,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request));
     }
+
     @PostMapping("/google")
     public ResponseEntity<ApiResponse<UserLoginResponse>> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
         return ResponseEntity.ok(authService.loginWithGoogle(request));

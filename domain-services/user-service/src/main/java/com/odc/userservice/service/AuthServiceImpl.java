@@ -160,8 +160,7 @@ public class AuthServiceImpl implements AuthService {
             GoogleIdToken idToken = verifier.verify(idTokenString);
             return idToken != null ? idToken.getPayload() : null;
         } catch (GeneralSecurityException | IOException e) {
-            // Log the exception
-            return null;
+            throw new RuntimeException("Xác minh Google token thất bại.");
         }
     }
 
@@ -206,6 +205,4 @@ public class AuthServiceImpl implements AuthService {
                         .refreshToken(refreshToken)
                         .build());
     }
-
-
 }
