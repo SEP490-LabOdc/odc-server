@@ -13,11 +13,18 @@ import java.util.UUID;
 
 public interface UserService {
     ApiResponse<GetUserResponse> getUserById(UUID id);
+
     ApiResponse<List<GetUserResponse>> getAllUsers();
+
     ApiResponse<GetUserResponse> createUser(CreateUserRequest request);
+
     ApiResponse<GetUserResponse> updateProfile(UUID userId, UpdateUserRequest request);
+
     ApiResponse<Void> updatePassword(UUID userId, UpdatePasswordRequest request);
+
     ApiResponse<GetUserResponse> updateRole(UUID userId, UpdateRoleRequest request);
+
     ApiResponse<GetUserResponse> updateStatus(UUID userId, Status status);
+
     ApiResponse<Void> deleteUser(UUID userId);
 }

@@ -1,6 +1,7 @@
 package com.odc.userservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.userservice.dto.request.GoogleLoginRequest;
 import com.odc.userservice.dto.request.RefreshTokenRequest;
 import com.odc.userservice.dto.request.UserLoginRequest;
 import com.odc.userservice.dto.request.UserRegisterRequest;
@@ -35,5 +36,10 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<UserLoginResponse>> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request));
     }
 }

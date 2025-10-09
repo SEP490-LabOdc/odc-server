@@ -57,6 +57,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+
 # Eureka Configuration
 eureka:
   client:
@@ -107,5 +108,10 @@ springdoc:
   swagger-ui:
     path: /user-service/swagger/index.html
 
+
 # Custom properties
 refresh-expiration: ${JWT_REFRESH_EXPIRATION:7} # 7 days
+
+google:
+  client-id: "${GOOGLE_CLIENT_ID:}"
+  client-secret: "${GOOGLE_CLIENT_SECRET:}"
