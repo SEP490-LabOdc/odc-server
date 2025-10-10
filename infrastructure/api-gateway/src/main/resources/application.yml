@@ -97,6 +97,14 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Email Service
+        - id: email-service
+          uri: lb://email-service
+          predicates:
+            - Path=/api/v1/otp/**
+          filters:
+            - StripPrefix=0
+
       # Global Filters
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin

@@ -30,6 +30,17 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
+    public void sendOtpRequest(String request) {
+        String otp = generateAndCacheOtp(request);
+        emailService.sendEmailWithHtmlTemplate(
+                request,
+                "[LabOdc] Mã OTP xác nhận email",
+                EmailTemplateConstant.SEND_OTP_TEMPLATE,
+                Map.of("otpCode", otp)
+        );
+    }
+
+    @Override
     public void confirmOtpRequest(ConfirmOtpRequest request) {
         clearCache(request.getEmail(), request.getOtp());
     }

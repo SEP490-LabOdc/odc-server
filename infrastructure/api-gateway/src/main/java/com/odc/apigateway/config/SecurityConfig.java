@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/api/v1/auth/**").permitAll()
                         .pathMatchers("/api/v1/companies/register").permitAll()
+                        .pathMatchers("/api/v1/otp/**").permitAll()
                         .pathMatchers("/api/v1/users").permitAll()  // Allow GET all users without auth
                         .pathMatchers("/v3/api-docs/**").permitAll()
                         .pathMatchers("/swagger/**").permitAll()

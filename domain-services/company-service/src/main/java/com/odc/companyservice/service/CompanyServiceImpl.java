@@ -7,6 +7,7 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
+import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
+    private final CompanyProducer companyProducer;
 
     @Override
     @Transactional
@@ -55,6 +57,8 @@ public class CompanyServiceImpl implements CompanyService {
 
         // 4. Ánh xạ từ Entity sang Response DTO
         CompanyResponse responseData = mapToResponse(savedCompany);
+
+        companyProducer.sendEmailEvent(request.getEmail());
 
         // 5. Trả về trong cấu trúc ApiResponse chuẩn
         return ApiResponse.<CompanyResponse>builder()
