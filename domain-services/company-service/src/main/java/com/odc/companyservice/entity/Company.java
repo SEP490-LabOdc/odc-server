@@ -53,6 +53,15 @@ public class Company extends BaseEntity {
     @Column(name = "domain", unique = true)
     private String domain;
 
+    @Column(name = "contact_person_name", nullable = false)
+    private String contactPersonName;
+
+    @Column(name = "contact_person_email", nullable = false)
+    private String contactPersonEmail;
+
+    @Column(name = "contact_person_phone", nullable = false)
+    private String contactPersonPhone;
+
     // If you want to establish a relationship with CompanyDocument
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CompanyDocument> documents;

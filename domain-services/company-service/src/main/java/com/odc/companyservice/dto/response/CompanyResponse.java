@@ -18,6 +18,8 @@ public class CompanyResponse {
     private String website;
     private String status;
     private String domain;
-    private UUID userId;
+    private String contactPersonName;
+    private String contactPersonEmail;
+    private String contactPersonPhone;
     private LocalDateTime createdAt;
 }

@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
-
     private final CompanyRepository companyRepository;
 
     @Override
@@ -45,6 +44,9 @@ public class CompanyServiceImpl implements CompanyService {
                 .website("")
                 .domain("")
                 .logo("")
+                .contactPersonEmail(request.getContactPersonEmail())
+                .contactPersonName(request.getContactPersonName())
+                .contactPersonPhone(request.getContactPersonPhone())
                 .status(Status.PENDING.toString())
                 .build();
 
@@ -52,19 +54,7 @@ public class CompanyServiceImpl implements CompanyService {
         Company savedCompany = companyRepository.save(company);
 
         // 4. Ánh xạ từ Entity sang Response DTO
-        CompanyResponse responseData = CompanyResponse.builder()
-                .id(savedCompany.getId())
-                .name(savedCompany.getName())
-                .email(savedCompany.getEmail())
-                .phone(savedCompany.getPhone())
-                .taxCode(savedCompany.getTaxCode())
-                .address(savedCompany.getAddress())
-                .website(savedCompany.getWebsite())
-                .status(savedCompany.getStatus())
-                .domain(savedCompany.getDomain())
-                .userId(savedCompany.getUserId())
-                .createdAt(savedCompany.getCreatedAt())
-                .build();
+        CompanyResponse responseData = mapToResponse(savedCompany);
 
         // 5. Trả về trong cấu trúc ApiResponse chuẩn
         return ApiResponse.<CompanyResponse>builder()

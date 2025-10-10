@@ -74,6 +74,13 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: notification-service-ws
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/device-tokens/**
+          filters:
+            - StripPrefix=0
+
         # Company Service
         - id: company-service
           uri: lb://company-service
