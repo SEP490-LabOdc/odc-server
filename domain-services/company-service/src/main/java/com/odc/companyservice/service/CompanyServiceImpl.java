@@ -161,7 +161,9 @@ public class CompanyServiceImpl implements CompanyService {
                 .website(company.getWebsite())
                 .status(company.getStatus())
                 .domain(company.getDomain())
-                .userId(company.getUserId())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
                 .createdAt(company.getCreatedAt())
                 .build();
     }

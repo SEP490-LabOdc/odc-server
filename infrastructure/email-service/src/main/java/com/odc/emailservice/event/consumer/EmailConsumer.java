@@ -4,6 +4,7 @@ import com.odc.emailservice.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EmailConsumer {
     private final OtpService otpService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = "email.otp.company_verification", groupId = "email-service-group")
     public void consumeEmail(String email) {
