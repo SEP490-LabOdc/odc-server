@@ -5,7 +5,8 @@ public enum Status {
     INACTIVE("Inactive"),
     PENDING("Pending"),
     COMPLETED("Completed"),
-    CANCELED("Cancelled");
+    CANCELED("Cancelled"),
+    REVIEWING("Reviewing"),;
 
     private final String displayName;
 

@@ -1,6 +1,7 @@
 package com.odc.userservice.service;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.userservice.dto.request.GoogleLoginRequest;
 import com.odc.userservice.dto.request.RefreshTokenRequest;
 import com.odc.userservice.dto.request.UserLoginRequest;
 import com.odc.userservice.dto.request.UserRegisterRequest;
@@ -14,4 +15,6 @@ public interface AuthService {
     ApiResponse<UserLoginResponse> login(UserLoginRequest request);
 
     ApiResponse<RefreshTokenResponse> refreshToken(RefreshTokenRequest request);
+
+    ApiResponse<UserLoginResponse> loginWithGoogle(GoogleLoginRequest request);
 }

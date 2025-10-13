@@ -7,6 +7,7 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
+import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
-
     private final CompanyRepository companyRepository;
+    private final CompanyProducer companyProducer;
 
     @Override
     @Transactional
@@ -45,6 +46,9 @@ public class CompanyServiceImpl implements CompanyService {
                 .website("")
                 .domain("")
                 .logo("")
+                .contactPersonEmail(request.getContactPersonEmail())
+                .contactPersonName(request.getContactPersonName())
+                .contactPersonPhone(request.getContactPersonPhone())
                 .status(Status.PENDING.toString())
                 .build();
 
@@ -52,19 +56,9 @@ public class CompanyServiceImpl implements CompanyService {
         Company savedCompany = companyRepository.save(company);
 
         // 4. Ánh xạ từ Entity sang Response DTO
-        CompanyResponse responseData = CompanyResponse.builder()
-                .id(savedCompany.getId())
-                .name(savedCompany.getName())
-                .email(savedCompany.getEmail())
-                .phone(savedCompany.getPhone())
-                .taxCode(savedCompany.getTaxCode())
-                .address(savedCompany.getAddress())
-                .website(savedCompany.getWebsite())
-                .status(savedCompany.getStatus())
-                .domain(savedCompany.getDomain())
-                .userId(savedCompany.getUserId())
-                .createdAt(savedCompany.getCreatedAt())
-                .build();
+        CompanyResponse responseData = mapToResponse(savedCompany);
+
+        companyProducer.sendEmailEvent(request.getEmail());
 
         // 5. Trả về trong cấu trúc ApiResponse chuẩn
         return ApiResponse.<CompanyResponse>builder()
@@ -167,7 +161,9 @@ public class CompanyServiceImpl implements CompanyService {
                 .website(company.getWebsite())
                 .status(company.getStatus())
                 .domain(company.getDomain())
-                .userId(company.getUserId())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
                 .createdAt(company.getCreatedAt())
                 .build();
     }

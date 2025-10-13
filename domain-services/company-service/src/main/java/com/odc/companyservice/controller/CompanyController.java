@@ -3,9 +3,9 @@ package com.odc.companyservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
+import com.odc.companyservice.dto.request.UpdateRegisterStatusRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.service.CompanyService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,11 +21,9 @@ public class CompanyController {
 
     private final CompanyService companyService;
 
-    @SecurityRequirements({})
     @PostMapping("/register")
-    public ResponseEntity<CompanyResponse> registerCompany(@Valid @RequestBody CompanyRegisterRequest request) {
-        CompanyResponse responseDTO = companyService.registerCompany(request).getData();
-        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
+    public ResponseEntity<ApiResponse<CompanyResponse>> registerCompany(@Valid @RequestBody CompanyRegisterRequest request) {
+        return new ResponseEntity<>(companyService.registerCompany(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -36,6 +34,12 @@ public class CompanyController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@PathVariable UUID id, @Valid @RequestBody UpdateRegisterStatusRequest request) {
+        companyService.updateRegisterCompanyStatus(id, request.getStatus());
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đăng ký thành công.", null));
+    }
+    
     @GetMapping
     public ResponseEntity<ApiResponse<java.util.List<CompanyResponse>>> getAllCompanies() {
         ApiResponse<java.util.List<CompanyResponse>> response = companyService.getAllCompanies();
