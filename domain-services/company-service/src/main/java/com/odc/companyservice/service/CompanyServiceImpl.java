@@ -9,6 +9,7 @@ import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
+import com.odc.notification.v1.SendOtpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +59,10 @@ public class CompanyServiceImpl implements CompanyService {
         // 4. Ánh xạ từ Entity sang Response DTO
         CompanyResponse responseData = mapToResponse(savedCompany);
 
-        companyProducer.sendEmailEvent(request.getEmail());
+        companyProducer.sendOtpEmailEvent(SendOtpRequest
+                .newBuilder()
+                .setEmail(company.getEmail())
+                .build());
 
         // 5. Trả về trong cấu trúc ApiResponse chuẩn
         return ApiResponse.<CompanyResponse>builder()
@@ -147,6 +151,15 @@ public class CompanyServiceImpl implements CompanyService {
                 .timestamp(LocalDateTime.now())
                 .data(null)
                 .build();
+    }
+
+    @Override
+    public void updateRegisterCompanyStatus(UUID id, Status status) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        company.setStatus(status.toString());
+        companyRepository.save(company);
     }
 
     // --- Private Helper Method để tránh lặp code ---

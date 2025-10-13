@@ -45,17 +45,12 @@ spring:
     bootstrap-servers:
       - ${KAFKA_BROKER_URL:localhost:9092}
     consumer:
-      group-id: user-service-consumer-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: company-service-consumer-group
       properties:
         spring:
           json:
             trusted:
               packages: "*"
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 # Eureka Configuration
 eureka:
