@@ -9,7 +9,8 @@ import org.springframework.context.annotation.ComponentScan;
         basePackages = {
                 "com.odc.common.exception",
                 "com.odc.common.util",
-                "com.odc.emailservice"
+                "com.odc.emailservice",
+                "com.odc.commonlib"
         }
 )
 public class EmailServiceApplication {
