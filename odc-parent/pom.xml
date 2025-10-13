@@ -312,6 +312,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.labodc</groupId>
+                <artifactId>odc-common-lib</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.vladmihalcea</groupId>
                 <artifactId>hibernate-types-60</artifactId>
                 <version>${hibernate-types-60.version}</version>
