@@ -3,11 +3,14 @@ package com.odc.commonlib.event;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.config.MethodKafkaListenerEndpoint;
+import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
+import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
@@ -23,7 +26,7 @@ public class EventConsumerConfig {
 
     public EventConsumerConfig(ApplicationContext applicationContext,
                                ConcurrentKafkaListenerContainerFactory<String, byte[]> kafkaListenerContainerFactory,
-                               KafkaListenerEndpointRegistry endpointRegistry) {
+                               @Qualifier("kafkaListenerEndpointRegistry") KafkaListenerEndpointRegistry endpointRegistry) {
         this.applicationContext = applicationContext;
         this.kafkaListenerContainerFactory = kafkaListenerContainerFactory;
         this.endpointRegistry = endpointRegistry;
@@ -49,8 +52,13 @@ public class EventConsumerConfig {
         endpoint.setTopics(topic);
         endpoint.setBean(handler);
         endpoint.setMethod(handleMethod);
+        endpoint.setMessageHandlerMethodFactory(messageHandlerMethodFactory());
 
         endpointRegistry.registerListenerContainer(endpoint, kafkaListenerContainerFactory, true);
         logger.info("Successfully registered Kafka consumer for topic '{}' with handler '{}'", topic, beanName);
+    }
+
+    private MessageHandlerMethodFactory messageHandlerMethodFactory() {
+        return new DefaultMessageHandlerMethodFactory();
     }
 }
