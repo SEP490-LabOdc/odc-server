@@ -15,14 +15,8 @@ jobs:
         service:
           - { name: "user-service", path: "domain-services/user-service" }
           - { name: "company-service", path: "domain-services/company-service" }
-          - {
-              name: "notification-service",
-              path: "domain-services/notification-service",
-            }
-          - {
-              name: "checklist-service",
-              path: "domain-services/checklist-service",
-            }
+          - { name: "notification-service", path: "domain-services/notification-service" }
+          - { name: "checklist-service", path: "domain-services/checklist-service" }
           - { name: "email-service", path: "infrastructure/email-service" }
           - { name: "api-gateway", path: "infrastructure/api-gateway" }
           - { name: "eureka-server", path: "infrastructure/eureka-server" }
@@ -32,9 +26,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Sửa lỗi: Ghi trực tiếp nội dung JSON từ secret vào file
       - name: Create Firebase service account file
-        if: matrix.service.name == 'notification-service' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON != ''
+        if: matrix.service.name == 'notification-service'
         run: |
+          echo "Creating Firebase service account file from secret..."
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}" > domain-services/notification-service/src/main/resources/firebase-service-account.json
 
       - name: Set up Docker Buildx
