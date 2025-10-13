@@ -20,13 +20,12 @@ jobs:
           - { name: "email-service", path: "infrastructure/email-service" }
           - { name: "api-gateway", path: "infrastructure/api-gateway" }
           - { name: "eureka-server", path: "infrastructure/eureka-server" }
-          - { name: "file-service", path: "infrastructure/file-service" }
+         # - { name: "file-service", path: "infrastructure/file-service" }
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Sửa lỗi: Ghi trực tiếp nội dung JSON từ secret vào file
       - name: Create Firebase service account file
         if: matrix.service.name == 'notification-service'
         run: |
