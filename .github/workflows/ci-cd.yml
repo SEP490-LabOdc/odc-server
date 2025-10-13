@@ -68,7 +68,7 @@ jobs:
           if [ "${{ matrix.service }}" = "eureka-server" ]; then echo "path=infrastructure/eureka-server" >> $GITHUB_OUTPUT; fi
 
       - name: Create Firebase service account file
-        if: matrix.service == 'notification-service' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON != ''
+        if: matrix.service == 'notification-service'
         run: |
           cat << 'EOF' > domain-services/notification-service/src/main/resources/firebase-service-account.json
           ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}
