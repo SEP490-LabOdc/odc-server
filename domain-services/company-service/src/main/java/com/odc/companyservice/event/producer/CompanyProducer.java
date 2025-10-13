@@ -1,18 +1,19 @@
 package com.odc.companyservice.event.producer;
 
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.notification.v1.SendOtpRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class CompanyProducer {
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final EventPublisher eventPublisher;
 
-    public void sendEmailEvent(String email) {
-        log.info("send email event : {}", email);
-        kafkaTemplate.send("email.otp.company_verification", email);
+    public void sendOtpEmailEvent(SendOtpRequest request) {
+        log.info("send email event : {}", request.getEmail());
+        eventPublisher.publish("email.otp.company_verification", request);
     }
 }
