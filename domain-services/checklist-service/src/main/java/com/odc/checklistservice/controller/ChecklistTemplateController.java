@@ -5,6 +5,7 @@ import com.odc.checklistservice.dto.request.UpdateChecklistTemplateRequest;
 import com.odc.checklistservice.dto.response.GetChecklistTemplateResponse;
 import com.odc.checklistservice.service.ChecklistTemplateService;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.SearchRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,16 @@ public class ChecklistTemplateController {
             @Valid @RequestBody CreateChecklistTemplateRequest request) {
         ApiResponse<UUID> apiResponse = checklistTemplateService.createChecklistTemplate(request);
         return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<?>> universalSearchChecklistTemplate(@RequestBody SearchRequest request) {
+        boolean isPaginated = request.getPage() != null && request.getSize() != null;
+        if (isPaginated) {
+            return ResponseEntity.ok(checklistTemplateService.searchChecklistTemplatesWithPagination(request));
+        }
+
+        return ResponseEntity.ok(checklistTemplateService.searchAllChecklistTemplates(request));
     }
 
     @GetMapping("/{id}")
