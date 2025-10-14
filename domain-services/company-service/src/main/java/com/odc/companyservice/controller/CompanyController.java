@@ -2,6 +2,7 @@ package com.odc.companyservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
+import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.request.UpdateRegisterStatusRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
@@ -35,7 +36,7 @@ public class CompanyController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@PathVariable UUID id, @Valid @RequestBody UpdateRegisterStatusRequest request) {
+    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@PathVariable UUID id, @Valid @RequestBody ReviewCompanyInfoRequest request) {
         companyService.updateRegisterCompanyStatus(id, request.getStatus());
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đăng ký thành công.", null));
     }
