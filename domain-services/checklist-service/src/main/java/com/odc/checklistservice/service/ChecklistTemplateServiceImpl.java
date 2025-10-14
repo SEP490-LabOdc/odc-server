@@ -8,9 +8,18 @@ import com.odc.checklistservice.entity.TemplateGroup;
 import com.odc.checklistservice.entity.TemplateItem;
 import com.odc.checklistservice.repository.ChecklistTemplateRepository;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
+import com.odc.common.dto.SearchRequest;
+import com.odc.common.dto.SortRequest;
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.common.specification.GenericSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +37,46 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
         ChecklistTemplate template = mapCreateRequestToEntity(request);
         ChecklistTemplate savedTemplate = templateRepository.save(template);
         return ApiResponse.success("Tạo checklist template thành công.", savedTemplate.getId());
+    }
+
+    @Override
+    public ApiResponse<List<GetChecklistTemplateResponse>> searchAllChecklistTemplates(SearchRequest request) {
+        Specification<ChecklistTemplate> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        return ApiResponse.success(templateRepository
+                .findAll(specification, sort)
+                .stream()
+                .map(this::mapEntityToGetResponseDto)
+                .toList());
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<GetChecklistTemplateResponse>> searchChecklistTemplatesWithPagination(SearchRequest request) {
+        Specification<ChecklistTemplate> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+
+        Page<GetChecklistTemplateResponse> page = templateRepository
+                .findAll(specification, pageable)
+                .map(this::mapEntityToGetResponseDto);
+
+        return ApiResponse.success(PaginatedResult.from(page));
     }
 
     @Override
@@ -127,7 +176,6 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
         response.setDescription(entity.getDescription());
         response.setEntityType(entity.getEntityType());
         response.setCreatedAt(entity.getCreatedAt());
-        response.setUpdatedAt(entity.getUpdatedAt());
 
         if (entity.getGroups() != null) {
             response.setGroups(entity.getGroups().stream().map(group -> {

@@ -15,7 +15,6 @@ public class GetChecklistTemplateResponse {
     private String description;
     private String entityType;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private List<GroupResponse> groups;
 
     @Data
