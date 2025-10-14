@@ -23,12 +23,17 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Create Firebase service account file
-        if: matrix.service.name == 'notification-service'
-        run: |
-          echo "Sanitizing and writing Firebase config..."
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}" | tr -d '\n\r' > domain-services/notification-service/src/main/resources/firebase-service-account.json
-          echo "File created. Verification:"
-          cat domain-services/notification-service/src/main/resources/firebase-service-account.json
+        if: (matrix.service.name || matrix.service) == 'notification-service'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const firebaseConfig = process.env.FIREBASE_CONFIG;
+            const filePath = 'domain-services/notification-service/src/main/resources/firebase-service-account.json';
+            fs.writeFileSync(filePath, firebaseConfig);
+            console.log(`Successfully wrote Firebase config to ${filePath}`);
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}
           
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
