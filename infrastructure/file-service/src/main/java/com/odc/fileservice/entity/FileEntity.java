@@ -8,6 +8,7 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Builder
 @Getter
@@ -30,4 +31,7 @@ public class FileEntity extends BaseEntity {
 
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
+
+    @Column(name = "entity_id", nullable = true)
+    private String entityId;
 }

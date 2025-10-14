@@ -18,7 +18,7 @@ public class FileService {
     private final S3Service s3Service;
     private final FileRepository fileRepository;
 
-    public FileEntity uploadFile(MultipartFile file) throws IOException {
+    public FileEntity uploadFile(MultipartFile file, String entityId) throws IOException {
         try {
             System.out.println("=== Upload File Debug ===");
             System.out.println("Original filename: " + file.getOriginalFilename());
@@ -45,6 +45,7 @@ public class FileService {
                     .fileUrl(fileUrl)
                     .s3Key(s3Key)
                     .uploadedAt(LocalDateTime.now())
+                    .entityId(entityId)
                     .build();
 
             FileEntity saved = fileRepository.save(fileEntity);
@@ -71,5 +72,8 @@ public class FileService {
 
         // Xóa thông tin file trong database
         fileRepository.delete(fileEntity);
+    }
+    public List<FileEntity> getFilesByEntityId(String entityId) {
+        return fileRepository.findByEntityId(entityId);
     }
 }

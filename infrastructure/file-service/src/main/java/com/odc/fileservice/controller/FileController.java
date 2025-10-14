@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
+
 @RestController
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
@@ -24,37 +26,46 @@ public class FileController {
     private final com.odc.fileservice.repository.FileRepository fileRepository;
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
-        try {
-            System.out.println("=== Upload Request Debug ===");
-            System.out.println("File name: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize());
-            System.out.println("Content type: " + file.getContentType());
-            System.out.println("Is empty: " + file.isEmpty());
+    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(value = "entityId", required = false) String entityId) {
+        {
+            try {
+                System.out.println("=== Upload Request Debug ===");
+                System.out.println("File name: " + file.getOriginalFilename());
+                System.out.println("File size: " + file.getSize());
+                System.out.println("Content type: " + file.getContentType());
+                System.out.println("Is empty: " + file.isEmpty());
 
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body("File is empty");
+                if (file.isEmpty()) {
+                    return ResponseEntity.badRequest().body("File is empty");
+                }
+
+                FileEntity uploadedFile = fileService.uploadFile(file, entityId);
+                return ResponseEntity.status(HttpStatus.CREATED).body(uploadedFile);
+
+            } catch (IllegalArgumentException e) {
+                System.err.println("Validation error: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
+            } catch (IOException e) {
+                System.err.println("IO error: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("IO error: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Unexpected error: " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + e.getMessage());
             }
-
-            FileEntity uploadedFile = fileService.uploadFile(file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(uploadedFile);
-
-        } catch (IllegalArgumentException e) {
-            System.err.println("Validation error: " + e.getMessage());
-            return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
-        } catch (IOException e) {
-            System.err.println("IO error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("IO error: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + e.getMessage());
         }
-    }
 
+
+    }
     @GetMapping
     public ResponseEntity<List<FileEntity>> getAllFiles() {
         return ResponseEntity.ok(fileService.getAllFiles());
+    }
+
+    @GetMapping("/entity/{entityId}")
+    public ResponseEntity<List<FileEntity>> getFilesByEntityId(@PathVariable String entityId) {
+        List<FileEntity> files = fileService.getFilesByEntityId(entityId);
+        return ResponseEntity.ok(files);
     }
 
     @DeleteMapping("/{id}")
@@ -63,4 +74,6 @@ public class FileController {
         return ResponseEntity.noContent().build();
     }
 
-    }
+
+}
+
