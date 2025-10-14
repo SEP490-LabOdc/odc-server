@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package com.odc.company.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.company.v1";
+option java_outer_classname = "ReviewCompanyInfoEventProto";
+
+message ReviewCompanyInfoEvent {
+  CreateChecklistRequest createChecklistRequest = 1;
+}
+
+message CreateChecklistRequest {
+  string templateId = 1;
+  string companyId = 2;
+  string assigneeId = 3;
+  string status = 4;
+  repeated CreateChecklistItemRequest items = 5;
+}
+
+message CreateChecklistItemRequest {
+  string templateItemId = 1;
+  string status = 2;
+  string notes = 3;
+  string completedById = 4;
+}

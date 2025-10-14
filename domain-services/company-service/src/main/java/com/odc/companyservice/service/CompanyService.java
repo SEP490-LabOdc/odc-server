@@ -3,6 +3,7 @@ package com.odc.companyservice.service;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
+import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 
@@ -21,4 +22,6 @@ public interface CompanyService {
     ApiResponse<Void> deleteCompany(UUID id);
 
     void updateRegisterCompanyStatus(UUID id, Status status);
+
+    void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request);
 }
