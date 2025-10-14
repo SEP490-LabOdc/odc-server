@@ -68,11 +68,17 @@ jobs:
           if [ "${{ matrix.service }}" = "eureka-server" ]; then echo "path=infrastructure/eureka-server" >> $GITHUB_OUTPUT; fi
 
       - name: Create Firebase service account file
-        if: matrix.service == 'notification-service'
-        run: |
-          cat << 'EOF' > domain-services/notification-service/src/main/resources/firebase-service-account.json
-          ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}
-          EOF
+        if: (matrix.service.name || matrix.service) == 'notification-service'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const firebaseConfig = process.env.FIREBASE_CONFIG;
+            const filePath = 'domain-services/notification-service/src/main/resources/firebase-service-account.json';
+            fs.writeFileSync(filePath, firebaseConfig);
+            console.log(`Successfully wrote Firebase config to ${filePath}`);
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
