@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -43,23 +44,20 @@ public class ReviewCompanyInfoHandler implements EventHandler {
                     .entityId(createChecklistRequest.getCompanyId())
                     .assigneeId(createChecklistRequest.getAssigneeId())
                     .status(ChecklistStatus.valueOf(createChecklistRequest.getStatus()))
-                    .items(
-                            createChecklistRequest
-                                    .getItemsList()
-                                    .stream()
-                                    .map(checkListItemRequest ->
-                                            ChecklistItem
-                                                    .builder()
-                                                    .templateItemId(UUID.fromString(checkListItemRequest.getTemplateItemId()))
-                                                    .notes(checkListItemRequest.getNotes())
-                                                    .status(ChecklistItemStatus.valueOf(checkListItemRequest.getStatus()))
-                                                    .completedById(checkListItemRequest.getCompletedById())
-                                                    .build()
-                                    )
-                                    .toList()
-                    )
                     .build();
 
+            List<ChecklistItem> items = createChecklistRequest.getItemsList()
+                    .stream()
+                    .map(req -> ChecklistItem.builder()
+                            .templateItemId(UUID.fromString(req.getTemplateItemId()))
+                            .notes(req.getNotes())
+                            .status(ChecklistItemStatus.valueOf(req.getStatus()))
+                            .completedById(req.getCompletedById())
+                            .checklist(checklist)
+                            .build())
+                    .toList();
+
+            checklist.setItems(items);
             checklistRepository.save(checklist);
         } catch (InvalidProtocolBufferException e) {
             log.error("received review company info event error", e);
