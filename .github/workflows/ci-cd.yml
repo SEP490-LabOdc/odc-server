@@ -23,25 +23,18 @@ jobs:
           filters: |
             user-service:
               - 'domain-services/user-service/**'
-              - 'shared/odc-common/**'
             company-service:
               - 'domain-services/company-service/**'
-              - 'shared/odc-common/**'
             notification-service:
               - 'domain-services/notification-service/**'
-              - 'shared/odc-common/**'
             checklist-service:
               - 'domain-services/checklist-service/**'
-              - 'shared/odc-common/**'
             email-service:
               - 'infrastructure/email-service/**'
-              - 'shared/odc-common/**'
             api-gateway:
               - 'infrastructure/api-gateway/**'
-              - 'shared/odc-common/**'
             eureka-server:
               - 'infrastructure/eureka-server/**'
-              - 'shared/odc-common/**'
 
   build-and-push:
     name: Build Changed Services
