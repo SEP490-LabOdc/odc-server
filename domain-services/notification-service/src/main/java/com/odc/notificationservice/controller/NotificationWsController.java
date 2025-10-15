@@ -19,4 +19,6 @@ public class NotificationWsController {
     public GetNotificationResponse markNotificationRecipientAsRead(UUID userId, UUID notificationRecipientId) {
         return notificationService.markAsRead(notificationRecipientId).getData();
     }
+
+
 }

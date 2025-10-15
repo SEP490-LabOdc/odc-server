@@ -3,12 +3,16 @@ package com.odc.companyservice.service;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
+import com.odc.companyservice.dto.request.CreateChecklistRequest;
+import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
+import com.odc.notification.v1.SendOtpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +62,10 @@ public class CompanyServiceImpl implements CompanyService {
         // 4. Ánh xạ từ Entity sang Response DTO
         CompanyResponse responseData = mapToResponse(savedCompany);
 
-        companyProducer.sendEmailEvent(request.getEmail());
+        companyProducer.sendOtpEmailEvent(SendOtpRequest
+                .newBuilder()
+                .setEmail(company.getEmail())
+                .build());
 
         // 5. Trả về trong cấu trúc ApiResponse chuẩn
         return ApiResponse.<CompanyResponse>builder()
@@ -147,6 +154,51 @@ public class CompanyServiceImpl implements CompanyService {
                 .timestamp(LocalDateTime.now())
                 .data(null)
                 .build();
+    }
+
+    @Override
+    public void updateRegisterCompanyStatus(UUID id, Status status) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        company.setStatus(status.toString());
+        companyRepository.save(company);
+    }
+
+    @Override
+    public void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        company.setStatus(request.getStatus());
+        companyRepository.save(company);
+
+        CreateChecklistRequest createChecklistRequest = request.getCreateChecklistRequest();
+
+        companyProducer.sendReviewCompanyInfoEvent(ReviewCompanyInfoEvent
+                .newBuilder()
+                .setCreateChecklistRequest(
+                        com.odc.company.v1.CreateChecklistRequest
+                                .newBuilder()
+                                .setTemplateId(createChecklistRequest.getTemplateId())
+                                .setCompanyId(createChecklistRequest.getCompanyId())
+                                .setAssigneeId(createChecklistRequest.getAssigneeId())
+                                .setStatus(createChecklistRequest.getStatus())
+                                .addAllItems(createChecklistRequest
+                                        .getItems()
+                                        .stream()
+                                        .map(checklist -> com.odc.company.v1.CreateChecklistItemRequest
+                                                .newBuilder()
+                                                .setTemplateItemId(checklist.getTemplateItemId())
+                                                .setStatus(checklist.getStatus())
+                                                .setNotes(checklist.getNotes())
+                                                .setCompletedById(checklist.getCompletedById())
+                                                .build()
+                                        )
+                                        .toList())
+                                .build()
+                )
+                .build());
     }
 
     // --- Private Helper Method để tránh lặp code ---

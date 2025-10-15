@@ -8,7 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(
         basePackages = {
                 "com.odc.common",
-                "com.odc.companyservice"
+                "com.odc.companyservice",
+                "com.odc.commonlib"
         }
 )
 public class CompanyServiceApplication {

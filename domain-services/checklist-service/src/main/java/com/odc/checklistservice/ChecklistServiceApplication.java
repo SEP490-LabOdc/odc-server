@@ -7,7 +7,8 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan(basePackages = {
         "com.odc.common",
-        "com.odc.checklistservice"
+        "com.odc.checklistservice",
+        "com.odc.commonlib"
 })
 public class ChecklistServiceApplication {
 

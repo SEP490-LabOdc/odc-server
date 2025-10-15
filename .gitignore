@@ -29,3 +29,5 @@ infrastructure/eureka-server/target
 infrastructure/config-server/target
 infrastructure/api-gateway/logs
 logs
+shared/odc-common-lib/target
+shared/odc-common-lib/src/main/resources/archetype-resources

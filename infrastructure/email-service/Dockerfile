@@ -12,6 +12,11 @@ WORKDIR /app/odc-common
 RUN mvn install -DskipTests
 WORKDIR /app
 
+COPY shared/odc-common-lib/ ./odc-common-lib/
+WORKDIR /app/odc-common-lib
+RUN mvn install -DskipTests
+WORKDIR /app
+
 COPY infrastructure/email-service/ ./email-service/
 WORKDIR /app/email-service
 RUN mvn package -DskipTests
