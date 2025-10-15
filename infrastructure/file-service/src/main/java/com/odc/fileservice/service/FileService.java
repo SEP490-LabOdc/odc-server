@@ -1,5 +1,7 @@
 package com.odc.fileservice.service;
 
+import com.odc.common.constant.ApiConstants;
+import com.odc.common.exception.BusinessException;
 import com.odc.fileservice.entity.FileEntity;
 import com.odc.fileservice.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,44 +21,22 @@ public class FileService {
     private final FileRepository fileRepository;
 
     public FileEntity uploadFile(MultipartFile file, String entityId) throws IOException {
-        try {
-            System.out.println("=== Upload File Debug ===");
-            System.out.println("Original filename: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize());
-            System.out.println("Content type: " + file.getContentType());
-            System.out.println("Is empty: " + file.isEmpty());
-
-            if (file.isEmpty()) {
-                throw new IllegalArgumentException("File is empty");
-            }
-
-            String originalFileName = file.getOriginalFilename();
-            String s3Key = "uploads/" + UUID.randomUUID().toString() + "-" + originalFileName;
-
-            System.out.println("S3 Key: " + s3Key);
-
-            // Upload file lên S3 và lấy URL
-            String fileUrl = s3Service.uploadFile(s3Key, file);
-            System.out.println("S3 URL: " + fileUrl);
-
-            // Lưu thông tin file vào database
-            FileEntity fileEntity = FileEntity.builder()
-                    .fileName(originalFileName)
-                    .fileUrl(fileUrl)
-                    .s3Key(s3Key)
-                    .uploadedAt(LocalDateTime.now())
-                    .entityId(entityId)
-                    .build();
-
-            FileEntity saved = fileRepository.save(fileEntity);
-            System.out.println("Saved to database: " + saved.getId());
-            return saved;
-
-        } catch (Exception e) {
-            System.err.println("Upload failed: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+        if(file.isEmpty()){
+            throw new BusinessException("File is empty", ApiConstants.VALIDATION_ERROR);
         }
+        String originalFileName = file.getOriginalFilename();
+        String s3Key = "uploads/" + UUID.randomUUID().toString() + "_" + originalFileName;
+
+        String fileUrl = s3Service.uploadFile(s3Key, file);
+
+        FileEntity fileEntity = FileEntity.builder()
+                .fileName(originalFileName)
+                .fileUrl(fileUrl)
+                .s3Key(s3Key)
+                .uploadedAt(LocalDateTime.now())
+                .entityId(entityId)
+                .build();
+        return fileRepository.save(fileEntity);
     }
 
     public List<FileEntity> getAllFiles() {

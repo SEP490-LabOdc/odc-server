@@ -1,5 +1,8 @@
 package com.odc.fileservice.controller;
 
+import com.odc.common.constant.ApiConstants;
+import com.odc.common.dto.ApiResponse;
+import com.odc.common.exception.BusinessException;
 import com.odc.fileservice.entity.FileEntity;
 import com.odc.fileservice.service.FileService;
 import com.odc.fileservice.service.S3Service;
@@ -26,36 +29,17 @@ public class FileController {
     private final com.odc.fileservice.repository.FileRepository fileRepository;
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(value = "entityId", required = false) String entityId) {
-        {
-            try {
-                System.out.println("=== Upload Request Debug ===");
-                System.out.println("File name: " + file.getOriginalFilename());
-                System.out.println("File size: " + file.getSize());
-                System.out.println("Content type: " + file.getContentType());
-                System.out.println("Is empty: " + file.isEmpty());
+    public ResponseEntity<ApiResponse<FileEntity>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "entityId", required = false) String entityId) throws IOException {
 
-                if (file.isEmpty()) {
-                    return ResponseEntity.badRequest().body("File is empty");
-                }
-
-                FileEntity uploadedFile = fileService.uploadFile(file, entityId);
-                return ResponseEntity.status(HttpStatus.CREATED).body(uploadedFile);
-
-            } catch (IllegalArgumentException e) {
-                System.err.println("Validation error: " + e.getMessage());
-                return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
-            } catch (IOException e) {
-                System.err.println("IO error: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("IO error: " + e.getMessage());
-            } catch (Exception e) {
-                System.err.println("Unexpected error: " + e.getMessage());
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + e.getMessage());
-            }
+        if(file.isEmpty()){
+            throw new BusinessException("File is empty", ApiConstants.VALIDATION_ERROR);
         }
 
-
+        FileEntity uploadedFile = fileService.uploadFile(file, entityId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("File uploaded successfully", uploadedFile));
     }
     @GetMapping
     public ResponseEntity<List<FileEntity>> getAllFiles() {

@@ -1,5 +1,7 @@
 package com.odc.fileservice.service;
 
+import com.odc.common.constant.ApiConstants;
+import com.odc.common.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -33,11 +35,6 @@ public class S3Service {
 
     public String uploadFile(String key, MultipartFile file) throws IOException {
         try {
-            System.out.println("Uploading file: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize());
-            System.out.println("Content type: " + file.getContentType());
-            System.out.println("S3 key: " + key);
-            System.out.println("Bucket: " + bucketName);
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
@@ -48,12 +45,9 @@ public class S3Service {
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
             String url = s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(key)).toExternalForm();
-            System.out.println("Upload successful. URL: " + url);
             return url;
         } catch (Exception e) {
-            System.err.println("Upload failed: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+            throw new BusinessException("Failed to upload file to S3: " + e.getMessage(), ApiConstants.INTERNAL_ERROR);
         }
     }
 
