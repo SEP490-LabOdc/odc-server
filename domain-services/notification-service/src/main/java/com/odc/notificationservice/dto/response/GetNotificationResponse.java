@@ -1,6 +1,7 @@
 package com.odc.notificationservice.dto.response;
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 @Builder
 @Setter
+@Getter
 public class GetNotificationResponse {
     private UUID notificationRecipientId;
     private String type;

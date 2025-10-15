@@ -5,6 +5,7 @@ import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.notificationservice.dto.response.GetNotificationResponse;
 import com.odc.notificationservice.entity.NotificationRecipient;
 import com.odc.notificationservice.repository.NotificationRecipientRepository;
+import com.odc.notificationservice.util.NotificationServiceUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,7 @@ public class NotificationServiceImpl implements NotificationService {
         List<GetNotificationResponse> data = notificationRecipientRepository
                 .findAllNotificationsByUserIdAndReadStatus(userId, readStatus)
                 .stream()
-                .map(this::toGetNotificationResponse)
+                .map(NotificationServiceUtil::toGetNotificationResponse)
                 .toList();
 
         return ApiResponse.success(data);
@@ -38,7 +39,7 @@ public class NotificationServiceImpl implements NotificationService {
         recipient.setReadAt(Instant.now());
         notificationRecipientRepository.save(recipient);
 
-        return ApiResponse.success("Thao tác thành công.", toGetNotificationResponse(recipient));
+        return ApiResponse.success("Thao tác thành công.", NotificationServiceUtil.toGetNotificationResponse(recipient));
     }
 
     @Override
@@ -49,24 +50,8 @@ public class NotificationServiceImpl implements NotificationService {
                     notificationRecipient.setReadStatus(true);
                     notificationRecipient.setReadAt(Instant.now());
                     notificationRecipientRepository.save(notificationRecipient);
-                    return toGetNotificationResponse(notificationRecipient);
+                    return NotificationServiceUtil.toGetNotificationResponse(notificationRecipient);
                 })
                 .toList());
-    }
-
-    private GetNotificationResponse toGetNotificationResponse(NotificationRecipient notificationRecipient) {
-        return GetNotificationResponse
-                .builder()
-                .notificationRecipientId(notificationRecipient.getId())
-                .type(notificationRecipient.getNotification().getType())
-                .title(notificationRecipient.getNotification().getTitle())
-                .content(notificationRecipient.getNotification().getContent())
-                .data(notificationRecipient.getNotification().getData())
-                .category(notificationRecipient.getNotification().getCategory())
-                .priority(notificationRecipient.getNotification().getPriority())
-                .deepLink(notificationRecipient.getNotification().getDeepLink())
-                .sentAt(notificationRecipient.getNotification().getSentAt())
-                .readStatus(notificationRecipient.getReadStatus())
-                .build();
     }
 }
