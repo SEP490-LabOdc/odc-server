@@ -72,7 +72,10 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 "/api/v1/auth/register",
                 "/api/v1/auth/refresh",
                 "/actuator",
-                "/v3/api-docs/merged"
+                "/v3/api-docs/merged",
+                "/api/v1/companies/register",
+                "/api/v1/otp",
+                "/api/v1/files"
         );
 
         return publicEndpoints.stream()

@@ -8,7 +8,7 @@ spring:
 
   # H2 Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/file_service_db
+    url: jdbc:postgresql://localhost:5432/file_db
     driver-class-name: org.postgresql.Driver
     username: admin
     password: 12345
