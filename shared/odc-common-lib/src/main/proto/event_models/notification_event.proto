@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package com.odc.notification.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.notification.v1";
+option java_outer_classname = "NotificationEventProto";
+
+message NotificationEvent {
+  string id = 1;
+  string type = 2;
+  string title = 3;
+  string content = 4;
+  map<string, string> data = 5;
+  string deep_link = 6;
+  string priority = 7;
+  Target target = 8;
+  repeated Channel channels = 9; // thêm mới
+  int64 created_at = 10;
+}
+
+enum Channel {
+  CHANNEL_UNSPECIFIED = 0;
+  WEB = 1;   // Gửi realtime qua WebSocket / SSE
+  MOBILE = 2; // Gửi push notification qua FCM
+  EMAIL = 3;  // (optional future use)
+}
+
+message Target {
+  oneof target_type {
+    AllTarget all = 1;
+    RoleTarget role = 2;
+    UserTarget user = 3;
+  }
+}
+
+message AllTarget {
+  bool include_inactive = 1;
+}
+
+message RoleTarget {
+  repeated string roles = 1;
+}
+
+message UserTarget {
+  repeated string user_ids = 1;
+}
