@@ -3,7 +3,10 @@ package com.odc.companyservice.service;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
+import com.odc.companyservice.dto.request.CreateChecklistRequest;
+import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
@@ -160,6 +163,42 @@ public class CompanyServiceImpl implements CompanyService {
 
         company.setStatus(status.toString());
         companyRepository.save(company);
+    }
+
+    @Override
+    public void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        company.setStatus(request.getStatus());
+        companyRepository.save(company);
+
+        CreateChecklistRequest createChecklistRequest = request.getCreateChecklistRequest();
+
+        companyProducer.sendReviewCompanyInfoEvent(ReviewCompanyInfoEvent
+                .newBuilder()
+                .setCreateChecklistRequest(
+                        com.odc.company.v1.CreateChecklistRequest
+                                .newBuilder()
+                                .setTemplateId(createChecklistRequest.getTemplateId())
+                                .setCompanyId(createChecklistRequest.getCompanyId())
+                                .setAssigneeId(createChecklistRequest.getAssigneeId())
+                                .setStatus(createChecklistRequest.getStatus())
+                                .addAllItems(createChecklistRequest
+                                        .getItems()
+                                        .stream()
+                                        .map(checklist -> com.odc.company.v1.CreateChecklistItemRequest
+                                                .newBuilder()
+                                                .setTemplateItemId(checklist.getTemplateItemId())
+                                                .setStatus(checklist.getStatus())
+                                                .setNotes(checklist.getNotes())
+                                                .setCompletedById(checklist.getCompletedById())
+                                                .build()
+                                        )
+                                        .toList())
+                                .build()
+                )
+                .build());
     }
 
     // --- Private Helper Method để tránh lặp code ---
