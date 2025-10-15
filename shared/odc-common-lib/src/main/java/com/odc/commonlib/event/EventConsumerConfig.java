@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.config.MethodKafkaListenerEndpoint;
+import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.util.Assert;
@@ -59,6 +60,9 @@ public class EventConsumerConfig {
     }
 
     private MessageHandlerMethodFactory messageHandlerMethodFactory() {
-        return new DefaultMessageHandlerMethodFactory();
+        DefaultMessageHandlerMethodFactory factory = new DefaultMessageHandlerMethodFactory();
+        factory.setMessageConverter(new ByteArrayMessageConverter());
+        factory.afterPropertiesSet();
+        return factory;
     }
 }
