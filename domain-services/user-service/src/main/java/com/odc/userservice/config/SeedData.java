@@ -38,6 +38,10 @@ public class SeedData implements CommandLineRunner {
                 "Standard user role with limited access",
                 createPermissionsForUser());
 
+        seedRole(com.odc.common.constant.Role.COMPANY.toString(),
+                "Company role for managing job postings and reviewing candidates",
+                createPermissionsForCompany());
+
         log.info("Role seeding completed!");
     }
 
@@ -87,6 +91,14 @@ public class SeedData implements CommandLineRunner {
         Map<String, Set<String>> permissions = new HashMap<>();
         permissions.put("users", Set.of("read", "update"));
         permissions.put("tasks", Set.of("read"));
+        return permissions;
+    }
+
+    private Map<String, Set<String>> createPermissionsForCompany() {
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("jobs", Set.of("create", "read", "update", "delete"));
+        permissions.put("applications", Set.of("read", "update"));
+        permissions.put("company-profile", Set.of("read", "update"));
         return permissions;
     }
 }

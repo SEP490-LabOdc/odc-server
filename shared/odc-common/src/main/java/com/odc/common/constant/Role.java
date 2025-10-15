@@ -4,5 +4,6 @@ public enum Role {
     SYSTEM_ADMIN,
     LAB_ADMIN,
     SUPERVISOR,
-    USER;
+    USER,
+    COMPANY
 }
