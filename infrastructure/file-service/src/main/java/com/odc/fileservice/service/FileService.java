@@ -21,7 +21,7 @@ public class FileService {
     private final FileRepository fileRepository;
 
     public FileEntity uploadFile(MultipartFile file, String entityId) throws IOException {
-        if(file.isEmpty()){
+        if (file.isEmpty()) {
             throw new BusinessException("File is empty", ApiConstants.VALIDATION_ERROR);
         }
         String originalFileName = file.getOriginalFilename();
@@ -53,6 +53,7 @@ public class FileService {
         // Xóa thông tin file trong database
         fileRepository.delete(fileEntity);
     }
+
     public List<FileEntity> getFilesByEntityId(String entityId) {
         return fileRepository.findByEntityId(entityId);
     }

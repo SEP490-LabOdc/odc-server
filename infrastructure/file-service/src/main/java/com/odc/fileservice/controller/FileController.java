@@ -11,13 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @RestController
 @RequestMapping("/api/v1/files")
@@ -33,7 +30,7 @@ public class FileController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "entityId", required = false) String entityId) throws IOException {
 
-        if(file.isEmpty()){
+        if (file.isEmpty()) {
             throw new BusinessException("File is empty", ApiConstants.VALIDATION_ERROR);
         }
 
@@ -41,6 +38,7 @@ public class FileController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("File uploaded successfully", uploadedFile));
     }
+
     @GetMapping
     public ResponseEntity<List<FileEntity>> getAllFiles() {
         return ResponseEntity.ok(fileService.getAllFiles());
@@ -57,7 +55,5 @@ public class FileController {
         fileService.deleteFile(id);
         return ResponseEntity.noContent().build();
     }
-
-
 }
 

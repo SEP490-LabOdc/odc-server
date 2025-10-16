@@ -2,6 +2,7 @@ package com.odc.fileservice.service;
 
 import com.odc.common.constant.ApiConstants;
 import com.odc.common.exception.BusinessException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -11,7 +12,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 
