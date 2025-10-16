@@ -23,14 +23,19 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
+    // Grouped public paths for clarity
+    private static final String[] PERMIT_ALL_PATHS = {
+            "/api/v1/auth/**",
+            "/actuator/**",
+            "/user-service/v3/api-docs/**",
+            "/user-service/swagger/**"
+    };
+
     @Bean(name = "UserService_SecurityFilterChain")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/user-service/v3/api-docs/**").permitAll()
-                        .requestMatchers("/user-service/swagger/**").permitAll()
+                        .requestMatchers(PERMIT_ALL_PATHS).permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf.disable())

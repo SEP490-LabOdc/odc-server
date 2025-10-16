@@ -21,14 +21,18 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private static final String[] PERMIT_ALL_PATHS = {
+            "/ws/**",
+            "/actuator/**",
+            "/notification-service/v3/api-docs/**",
+            "/notification-service/swagger/**"
+    };
+
     @Bean(name = "NotificationService_SecurityFilterChain")
     public SecurityFilterChain springSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/notification-service/v3/api-docs/**").permitAll()
-                        .requestMatchers("/notification-service/swagger/**").permitAll()
+                        .requestMatchers(PERMIT_ALL_PATHS).permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)

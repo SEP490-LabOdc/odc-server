@@ -27,6 +27,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
+    // Paths that should bypass JWT filter for efficiency
+    private static final String[] EXCLUDED_PREFIXES = {
+            "/api/v1/auth/",
+            "/actuator/",
+            "/user-service/"
+    };
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -43,7 +50,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .orElseThrow(() -> new ResourceNotFoundException("Not found userId!"));
 
             // Set authentication context
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(UUID.fromString(userId), null,
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    UUID.fromString(userId), null,
                     AuthorityUtils.createAuthorityList(user.getRole().getName().toUpperCase()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } else {
@@ -58,12 +66,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     User user = userRepository.findByEmail(email)
                             .orElseThrow(() -> new ResourceNotFoundException("Not found user!"));
 
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    user.getId(),
-                                    null,
-                                    AuthorityUtils.createAuthorityList(user.getRole().getName().toUpperCase())
-                            );
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            user.getId(),
+                            null,
+                            AuthorityUtils.createAuthorityList(user.getRole().getName().toUpperCase()));
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
@@ -76,8 +82,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Skip filter for auth endpoints and actuator
-        return path.startsWith("/api/v1/auth/") ||
-                path.startsWith("/actuator/");
+        for (String prefix : EXCLUDED_PREFIXES) {
+            if (path.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

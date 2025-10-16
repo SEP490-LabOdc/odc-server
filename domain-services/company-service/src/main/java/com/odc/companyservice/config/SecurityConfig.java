@@ -3,7 +3,7 @@ package com.odc.companyservice.config;
 import com.odc.common.exception.CustomAccessDeniedHandler;
 import com.odc.common.exception.CustomAuthenticationEntryPoint;
 import com.odc.companyservice.security.JwtAuthenticationFilter;
-import jakarta.ws.rs.HttpMethod;
+import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,15 +24,24 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Grouped public paths for clarity
+    private static final String[] PERMIT_ALL_PATHS = {
+            "/api/v1/companies/register",
+            "/actuator/**",
+            "/company-service/v3/api-docs/**",
+            "/company-service/swagger/**"
+    };
+
+    private static final String[] GET_PERMIT_PATHS = {
+            "/api/v1/companies"
+    };
+
     @Bean(name = "CompanyService_SecurityFilterChain")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/companies/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/companies").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/company-service/v3/api-docs/**").permitAll()
-                        .requestMatchers("/company-service/swagger/**").permitAll()
+                        .requestMatchers(PERMIT_ALL_PATHS).permitAll()
+                        .requestMatchers(HttpMethod.GET, GET_PERMIT_PATHS).permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)

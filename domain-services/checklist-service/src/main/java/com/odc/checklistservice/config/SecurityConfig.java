@@ -21,14 +21,18 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private static final String[] PERMIT_ALL_PATHS = {
+            "/ws/**",
+            "/actuator/**",
+            "/checklist-service/v3/api-docs/**",
+            "/checklist-service/swagger/**"
+    };
+
     @Bean(name = "ChecklistService_SecurityFilterChain")
     public SecurityFilterChain springSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/checklist-service/v3/api-docs/**").permitAll()
-                        .requestMatchers("/checklist-service/swagger/**").permitAll()
+                        .requestMatchers(PERMIT_ALL_PATHS).permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
