@@ -3,6 +3,7 @@ package com.odc.companyservice.config;
 import com.odc.common.exception.CustomAccessDeniedHandler;
 import com.odc.common.exception.CustomAuthenticationEntryPoint;
 import com.odc.companyservice.security.JwtAuthenticationFilter;
+import jakarta.ws.rs.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/companies/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/companies").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/company-service/v3/api-docs/**").permitAll()
                         .requestMatchers("/company-service/swagger/**").permitAll()
