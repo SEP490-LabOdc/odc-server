@@ -61,7 +61,8 @@ jobs:
           if [ "${{ matrix.service }}" = "email-service" ]; then echo "path=infrastructure/email-service" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "api-gateway" ]; then echo "path=infrastructure/api-gateway" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "eureka-server" ]; then echo "path=infrastructure/eureka-server" >> $GITHUB_OUTPUT; fi
-
+          if [ "${{ matrix.service }}" = "file-service" ]; then echo "path=infrastructure/file-service" >> $GITHUB_OUTPUT; fi
+          
       - name: Create Firebase service account file
         if: (matrix.service.name || matrix.service) == 'notification-service'
         uses: actions/github-script@v6
