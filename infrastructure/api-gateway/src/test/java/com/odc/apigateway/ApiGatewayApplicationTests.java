@@ -10,7 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
                 "spring.cloud.config.enabled=false"
         }
 )
-
 class ApiGatewayApplicationTests {
 
     @Test

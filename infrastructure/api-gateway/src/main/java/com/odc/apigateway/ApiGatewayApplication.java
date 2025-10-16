@@ -11,10 +11,10 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
         HibernateJpaAutoConfiguration.class,
         JpaRepositoriesAutoConfiguration.class
 },
-scanBasePackages = {
-        "com.odc.common.util",
-        "com.odc.apigateway"
-})
+        scanBasePackages = {
+                "com.odc.common.util",
+                "com.odc.apigateway"
+        })
 public class ApiGatewayApplication {
 
     public static void main(String[] args) {

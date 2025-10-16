@@ -39,7 +39,7 @@ public class CompanyController {
         companyService.reviewCompanyInfo(id, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đăng ký thành công.", null));
     }
-    
+
     @GetMapping
     public ResponseEntity<ApiResponse<java.util.List<CompanyResponse>>> getAllCompanies() {
         ApiResponse<java.util.List<CompanyResponse>> response = companyService.getAllCompanies();

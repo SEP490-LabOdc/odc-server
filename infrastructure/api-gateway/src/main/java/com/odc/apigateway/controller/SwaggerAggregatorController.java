@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/v3/api-docs")
 @RequiredArgsConstructor
 @Slf4j
-public class SwaggerAggregatorController    {
+public class SwaggerAggregatorController {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper mapper;

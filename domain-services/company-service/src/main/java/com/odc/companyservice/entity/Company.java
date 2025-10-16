@@ -1,7 +1,6 @@
 package com.odc.companyservice.entity;
 
 import com.odc.common.entity.BaseEntity;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 
