@@ -104,6 +104,13 @@ spring:
             - Path=/api/v1/otp/**
           filters:
             - StripPrefix=0
+        # File Service
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/api/v1/files/**
+          filters:
+            - StripPrefix=0
 
       # Global Filters
       default-filters:

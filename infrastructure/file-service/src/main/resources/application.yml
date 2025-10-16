@@ -5,3 +5,48 @@ server:
 spring:
   application:
     name: file-service
+
+  # H2 Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/file_db
+    driver-class-name: org.postgresql.Driver
+    username: admin
+    password: 12345
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  servlet:
+    multipart:
+          max-file-size: 10MB
+          max-request-size: 10MB
+          enabled: true
+
+# AWS S3 Configuration
+cloud:
+  aws:
+    region: ap-southeast-1
+    s3:
+      bucket-name:"${AWS_S3_BUCKET_NAME:file-service-bucket}"
+    credentials:
+      access-key: "${AWS_ACCESS_KEY_ID:your_access_key}"
+      secret-key: "${AWS_SECRET_ACCESS_KEY:your_secret_key}"
+
+
+# OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /file-service/v3/api-docs
+  swagger-ui:
+    path: /file-service/swagger/index.html
+
