@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(
         basePackages = {
                 "com.odc.fileservice",
-                "com.odc.common.config",
+                "com.odc.common",
         }
 )
 public class FileServiceApplication {

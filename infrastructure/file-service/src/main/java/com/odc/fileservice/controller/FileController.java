@@ -40,20 +40,26 @@ public class FileController {
     }
 
     @GetMapping
-    public ResponseEntity<List<FileEntity>> getAllFiles() {
-        return ResponseEntity.ok(fileService.getAllFiles());
+    public ResponseEntity<ApiResponse<List<FileEntity>>> getAllFiles() {
+        return ResponseEntity.ok(
+                ApiResponse.success(fileService.getAllFiles())
+        );
     }
 
     @GetMapping("/entity/{entityId}")
-    public ResponseEntity<List<FileEntity>> getFilesByEntityId(@PathVariable String entityId) {
+    public ResponseEntity<ApiResponse<List<FileEntity>>> getFilesByEntityId(@PathVariable String entityId) {
         List<FileEntity> files = fileService.getFilesByEntityId(entityId);
-        return ResponseEntity.ok(files);
+        return ResponseEntity.ok(
+                ApiResponse.success(files)
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFile(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteFile(@PathVariable UUID id) {
         fileService.deleteFile(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                ApiResponse.success("Xóa thành công file.", null)
+        );
     }
 }
 
