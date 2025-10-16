@@ -35,6 +35,8 @@ jobs:
               - 'infrastructure/api-gateway/**'
             eureka-server:
               - 'infrastructure/eureka-server/**'
+            file-service:
+              - 'infrastructure/file-service/**'
 
   build-and-push:
     name: Build Changed Services
