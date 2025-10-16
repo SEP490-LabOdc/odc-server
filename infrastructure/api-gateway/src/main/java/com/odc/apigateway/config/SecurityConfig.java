@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .pathMatchers("/swagger/**").permitAll()
                         .pathMatchers("/user-service/v3/api-docs/**").permitAll()
                         .pathMatchers("/company-service/v3/api-docs/**").permitAll()
-                        .pathMatchers("/api/v1/files/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/files").permitAll()
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Protected endpoints
                         .pathMatchers("/api/v1/users/**").authenticated()  // Other user endpoints still need auth
