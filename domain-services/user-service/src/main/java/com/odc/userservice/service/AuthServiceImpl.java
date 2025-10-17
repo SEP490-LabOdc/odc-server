@@ -128,7 +128,8 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
 
         String accessToken = jwtUtil.generateToken(user.getEmail(),
-                Map.of("role", user.getRole().getName()));
+                Map.of("role", user.getRole().getName(),
+                        "userId", user.getId()));
 
         return ApiResponse.success(RefreshTokenResponse.builder()
                 .accessToken(accessToken)
