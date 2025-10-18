@@ -9,21 +9,21 @@ import lombok.Getter;
 @Getter
 public class UserRegisterRequest {
 
-    @NotBlank(message = "Full name is required")
+    @NotBlank(message = "Yêu cầu nhập họ và tên")
     private String fullName;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "Yêu cầu nhập Email")
+    @Email(message = "Định dạng email không hợp lệ")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @NotBlank(message = "Yêu cầu nhập mật khẩu")
+    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
     private String password;
 
-    @NotBlank(message = "Confirm password is required")
+    @NotBlank(message = "Yêu cầu xác nhận mật khẩu")
     private String confirmPassword;
 
-    @AssertTrue(message = "Passwords must match")
+    @AssertTrue(message = "Mật khẩu và xác nhận mật khẩu không khớp")
     public boolean isPasswordMatch() {
         return password != null && password.equals(confirmPassword);
     }

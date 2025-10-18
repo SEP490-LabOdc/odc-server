@@ -209,6 +209,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .phone(company.getPhone())
                 .taxCode(company.getTaxCode())
                 .address(company.getAddress())
+                .description(company.getDescription())
                 .website(company.getWebsite())
                 .status(company.getStatus())
                 .domain(company.getDomain())

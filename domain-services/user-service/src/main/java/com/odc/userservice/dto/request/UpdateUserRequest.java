@@ -12,10 +12,10 @@ import java.time.LocalDate;
 @Setter
 public class UpdateUserRequest {
     // ✅ Có thể update
-    @NotBlank(message = "Full name is required")
+    @NotBlank(message = "Yêu cầu nhập họ và tên")
     private String fullName;
 
-    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Số điện thoại không hợp lệ")
     private String phone;
 
     private Gender gender;

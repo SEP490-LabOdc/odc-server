@@ -17,17 +17,17 @@ public class FallbackController {
 
     @GetMapping("/user-service")
     public Mono<ResponseEntity<Map<String, Object>>> userServiceFallback() {
-        return Mono.just(createFallbackResponse("User Service is currently unavailable"));
+        return Mono.just(createFallbackResponse("User Service không khả dụng"));
     }
 
     @GetMapping("/business-service")
     public Mono<ResponseEntity<Map<String, Object>>> businessServiceFallback() {
-        return Mono.just(createFallbackResponse("Business Service is currently unavailable"));
+        return Mono.just(createFallbackResponse("Business Service không khả dụng"));
     }
 
     @GetMapping("/talent-pool-service")
     public Mono<ResponseEntity<Map<String, Object>>> talentPoolServiceFallback() {
-        return Mono.just(createFallbackResponse("Talent Pool Service is currently unavailable"));
+        return Mono.just(createFallbackResponse("Talent Pool Service không khả dụng"));
     }
 
     private ResponseEntity<Map<String, Object>> createFallbackResponse(String message) {

@@ -29,7 +29,7 @@ public class CustomServerAuthenticationEntryPoint implements ServerAuthenticatio
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
         ApiResponse<Object> body = ApiResponse.error(
-                "You are not authenticated. Please login.",
+                "Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.",
                 ApiConstants.AUTHENTICATION_ERROR);
 
         try {

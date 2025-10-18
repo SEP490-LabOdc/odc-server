@@ -111,7 +111,7 @@ springdoc:
 # gRPC Configuration
 grpc:
   server:
-    address: ${GRPC-SERVER-USER-SERVICE:0.0.0.0}
+    address: ${USER-SERVICE-GRPC:0.0.0.0}
     port: 9091
 
 # Custom properties
