@@ -4,6 +4,7 @@ public enum Status {
     ACTIVE,
     INACTIVE,
     PENDING,
+    PENDING_VERIFICATION,
     COMPLETED,
     CANCELED,
     REVIEWING,

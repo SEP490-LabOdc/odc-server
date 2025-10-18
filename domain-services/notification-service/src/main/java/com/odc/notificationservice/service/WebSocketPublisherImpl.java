@@ -8,8 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
-import java.util.UUID;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -18,20 +17,23 @@ public class WebSocketPublisherImpl implements WebSocketPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public void publish(Set<UUID> userIds, NotificationRecipient notification) {
-        if (userIds == null || userIds.isEmpty()) {
-            log.warn("No user IDs provided for WebSocket notification of type {}", notification.getNotification().getType());
+    public void publish(List<NotificationRecipient> recipients) {
+        if (recipients == null || recipients.isEmpty()) {
+            log.warn("No recipients provided for WebSocket notification.");
             return;
         }
 
-        userIds.forEach(userId -> {
+        recipients.forEach(recipient -> {
             try {
-                String destination = String.format("/topic/notifications/%s", userId);
-                messagingTemplate.convertAndSend(destination, NotificationServiceUtil.toGetNotificationResponse(notification));
+                // Each user gets a message with their own specific notificationRecipientId
+                GetNotificationResponse response = NotificationServiceUtil.toGetNotificationResponse(recipient);
+                String destination = "/queue/notifications";
 
-                log.debug("sent WebSocket notification '{}' to user {}", notification.getNotification().getType(), userId);
+                messagingTemplate.convertAndSendToUser(recipient.getUserId().toString(), destination, response);
+
+                log.debug("Sent WebSocket notification '{}' to user {}", recipient.getNotification().getType(), recipient.getUserId());
             } catch (Exception e) {
-                log.error("error sending WebSocket notification to user {}: {}", userId, e.getMessage(), e);
+                log.error("Error sending WebSocket notification to user {}: {}", recipient.getUserId(), e.getMessage(), e);
             }
         });
     }
@@ -41,9 +43,9 @@ public class WebSocketPublisherImpl implements WebSocketPublisher {
         try {
             GetNotificationResponse response = NotificationServiceUtil.toGetNotificationResponse(recipient);
             messagingTemplate.convertAndSend("/topic/notifications/all", response);
-            log.info("broadcast notification [{}] to all users", response.getType());
+            log.info("Broadcast notification [{}] to all users", response.getType());
         } catch (Exception ex) {
-            log.error("failed to send WebSocket notification to all users");
+            log.error("Failed to send WebSocket notification to all users: {}", ex.getMessage(), ex);
         }
     }
 }

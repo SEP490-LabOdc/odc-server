@@ -80,6 +80,13 @@ logging:
   file:
     name: logs/email-service.log
 
+# gRPC Configuration
+grpc:
+  client:
+    user-service:
+      address: 0.0.0.0
+      port: 9091
+
 springdoc:
   api-docs:
     path: /email-service/v3/api-docs

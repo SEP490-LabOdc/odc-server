@@ -22,6 +22,13 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
+    private static final String[] EXCLUDED_PREFIXES = {
+        "/api/v1/auth/",
+        "/actuator/",
+        "/notification-service/",
+        "/ws/"
+    };
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         // Log request details for debugging
@@ -53,10 +60,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-
-        return path.startsWith("/api/v1/auth/") ||
-                path.startsWith("/actuator/") ||
-                path.startsWith("/notification-service/") ||
-                path.startsWith("/ws/");
+        for (String prefix : EXCLUDED_PREFIXES) {
+            if (path.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

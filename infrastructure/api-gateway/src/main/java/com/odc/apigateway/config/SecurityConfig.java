@@ -1,5 +1,7 @@
 package com.odc.apigateway.config;
 
+import com.odc.apigateway.security.CustomServerAccessDeniedHandler;
+import com.odc.apigateway.security.CustomServerAuthenticationEntryPoint;
 import com.odc.apigateway.security.JwtAuthenticationManager;
 import com.odc.apigateway.security.SecurityContextRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,38 @@ public class SecurityConfig {
 
     private final JwtAuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
+    private final CustomServerAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomServerAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    // Grouped path patterns for clearer authorization rules
+    private static final String[] PERMIT_ALL_PATHS = {
+            "/actuator/**",
+            "/api/v1/auth/**",
+            "/api/v1/companies/register",
+            "/api/v1/otp/**",
+            "/api/v1/users", // Allow GET all users without auth (base path)
+            "/v3/api-docs/**",
+            "/swagger/**",
+            "/user-service/v3/api-docs/**",
+            "/company-service/v3/api-docs/**",
+            "/ws/**"
+    };
+
+    private static final String[] AUTHENTICATED_PATHS = {
+            "/api/v1/users/**", // Other user endpoints still need auth
+            "/api/v1/businesses/**",
+            "/api/v1/talents/**"
+    };
+
+    private static final String[] GET_PERMIT_PATHS = {
+            "/api/v1/companies"
+    };
+
+    private static final String[] POST_PERMIT_PATHS = {
+            "/api/v1/files"
+    };
+
+    private static final String[] OPTIONS_ANY_PATH = { "/**" };
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -32,27 +66,22 @@ public class SecurityConfig {
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
-                .authorizeExchange(exchanges -> exchanges
-                        // Public endpoints
-                        .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/api/v1/auth/**").permitAll()
-                        .pathMatchers("/api/v1/companies/register").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/v1/companies").permitAll()
-                        .pathMatchers("/api/v1/otp/**").permitAll()
-                        .pathMatchers("/api/v1/users").permitAll()  // Allow GET all users without auth
-                        .pathMatchers("/v3/api-docs/**").permitAll()
-                        .pathMatchers("/swagger/**").permitAll()
-                        .pathMatchers("/user-service/v3/api-docs/**").permitAll()
-                        .pathMatchers("/company-service/v3/api-docs/**").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/v1/files").permitAll()
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Protected endpoints
-                        .pathMatchers("/api/v1/users/**").authenticated()  // Other user endpoints still need auth
-                        .pathMatchers("/api/v1/businesses/**").authenticated()
-                        .pathMatchers("/api/v1/talents/**").authenticated()
-                        .anyExchange().authenticated()
-                )
+                .authorizeExchange(exchanges -> {
+                    // Public endpoints
+                    exchanges.pathMatchers(PERMIT_ALL_PATHS).permitAll();
+                    exchanges.pathMatchers(HttpMethod.GET, GET_PERMIT_PATHS).permitAll();
+                    exchanges.pathMatchers(HttpMethod.POST, POST_PERMIT_PATHS).permitAll();
+                    exchanges.pathMatchers(HttpMethod.OPTIONS, OPTIONS_ANY_PATH).permitAll();
+
+                    // Protected endpoints
+                    exchanges.pathMatchers(AUTHENTICATED_PATHS).authenticated();
+                    exchanges.anyExchange().authenticated();
+                })
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .exceptionHandling(
+                        exceptions -> exceptions
+                                .accessDeniedHandler(customAccessDeniedHandler)
+                                .authenticationEntryPoint(customAuthenticationEntryPoint))
                 .build();
     }
 

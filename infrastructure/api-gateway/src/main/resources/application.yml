@@ -68,7 +68,7 @@ spring:
             - StripPrefix=0
 
         - id: notification-service-ws
-          uri: lb://notification-service
+          uri: lb://notification-service/ws
           predicates:
             - Path=/ws/**
           filters:

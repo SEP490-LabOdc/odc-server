@@ -49,7 +49,7 @@ public class Company extends BaseEntity {
     @Column(name = "user_id", nullable = true)
     private UUID userId; // The ID of the user who owns/created this company
 
-    @Column(name = "domain", unique = true)
+    @Column(name = "domain", unique = false)
     private String domain;
 
     @Column(name = "contact_person_name", nullable = false)

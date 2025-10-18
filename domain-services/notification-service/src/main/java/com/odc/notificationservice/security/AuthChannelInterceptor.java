@@ -3,6 +3,7 @@ package com.odc.notificationservice.security;
 import com.odc.common.exception.UnauthenticatedException;
 import com.odc.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AuthChannelInterceptor implements ChannelInterceptor {
     private final JwtUtil jwtUtil;
 
@@ -25,8 +27,10 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            String token = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
-            if (token != null && !token.startsWith("Bearer ")) {
+            String authHeader = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
                 String email = jwtUtil.extractUsername(token);
                 if (jwtUtil.validateToken(token, email)) {
                     String role = jwtUtil.extractClaim(token, claims -> claims.get("role")).toString();
@@ -38,7 +42,6 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
                             AuthorityUtils.createAuthorityList(role.toUpperCase())
                     ));
                 }
-
             } else {
                 throw new UnauthenticatedException("Invalid token");
             }

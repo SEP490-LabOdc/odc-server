@@ -7,11 +7,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -21,18 +19,31 @@ public class FcmServiceImpl implements FcmService {
     private final DeviceTokenRepository deviceTokenRepository;
 
     @Override
-    public void sendToDevices(GetNotificationResponse notification, List<String> deviceTokens) {
-        if (deviceTokens == null || deviceTokens.isEmpty()) {
-            log.warn("No device tokens provided. Skip sending FCM notification.");
+    public void sendToDevices(GetNotificationResponse notification, List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            log.warn("No user IDs provided. Skip sending FCM notification.");
             return;
         }
 
-        log.info("Sending FCM notification '{}' to {} devices", notification.getType(), deviceTokens.size());
+        // 1. Convert userIds from List<String> to Set<UUID>
+        Set<UUID> userUUIDs = userIds.stream().map(UUID::fromString).collect(Collectors.toSet());
 
-        // Split tokens into smaller batches (max 500 per FCM batch)
-        List<List<String>> batches = splitIntoBatches(deviceTokens);
+        // 2. Fetch actual device tokens from the database
+        List<String> actualDeviceTokens = deviceTokenRepository.findDeviceTokensByUserIds(userUUIDs);
+
+        if (actualDeviceTokens.isEmpty()) {
+            log.warn("No device tokens found for the given users. Skip sending FCM notification.");
+            return;
+        }
+
+        log.info("Sending FCM notification '{}' to {} devices for {} users", notification.getType(), actualDeviceTokens.size(), userIds.size());
+
+        // 3. Split tokens into smaller batches (more efficient implementation)
+        List<List<String>> batches = splitIntoBatches(actualDeviceTokens);
 
         for (List<String> batch : batches) {
+            // Note: The notification payload is generic for all users in the batch.
+            // Recipient-specific data (like notificationRecipientId) cannot be included here.
             MulticastMessage message = buildMulticastMessage(notification, batch);
 
             try {
@@ -40,7 +51,7 @@ public class FcmServiceImpl implements FcmService {
                 log.info("FCM batch sent: success={}, failure={}",
                         response.getSuccessCount(), response.getFailureCount());
 
-                // Handle invalid tokens (optional)
+                // 4. Handle invalid tokens
                 handleFailedTokens(batch, response);
 
             } catch (FirebaseMessagingException e) {
@@ -51,7 +62,7 @@ public class FcmServiceImpl implements FcmService {
 
     private MulticastMessage buildMulticastMessage(GetNotificationResponse notification, List<String> tokens) {
         return MulticastMessage.builder()
-                .putAllData(convertNotificationToMap(notification))
+                .putAllData(convertNotificationToGenericMap(notification))
                 .addAllTokens(tokens)
                 .setNotification(com.google.firebase.messaging.Notification.builder()
                         .setTitle(notification.getTitle())
@@ -60,15 +71,15 @@ public class FcmServiceImpl implements FcmService {
                 .build();
     }
 
-    private Map<String, String> convertNotificationToMap(GetNotificationResponse n) {
+    private Map<String, String> convertNotificationToGenericMap(GetNotificationResponse n) {
         Map<String, String> map = new HashMap<>();
-        map.put("notificationRecipientId", String.valueOf(n.getNotificationRecipientId()));
+        // Payload should be generic for a multicast message.
+        // Do not include recipient-specific data like 'notificationRecipientId' or 'readStatus'.
         map.put("type", n.getType());
         map.put("category", n.getCategory());
         map.put("priority", n.getPriority());
         map.put("deepLink", n.getDeepLink());
         map.put("sentAt", n.getSentAt() != null ? n.getSentAt().toString() : "");
-        map.put("readStatus", String.valueOf(n.getReadStatus()));
 
         if (n.getData() != null) {
             n.getData().forEach((k, v) -> map.put(k, String.valueOf(v)));
@@ -79,30 +90,42 @@ public class FcmServiceImpl implements FcmService {
 
     private void handleFailedTokens(List<String> tokens, BatchResponse response) {
         List<String> invalidTokens = new ArrayList<>();
-
         List<SendResponse> sendResponses = response.getResponses();
+
         for (int i = 0; i < sendResponses.size(); i++) {
             if (!sendResponses.get(i).isSuccessful()) {
                 String token = tokens.get(i);
-                String errorCode = sendResponses.get(i).getException().getErrorCode().toString();
+                FirebaseMessagingException exception = sendResponses.get(i).getException();
 
-                if ("registration-token-not-registered".equals(errorCode)) {
-                    invalidTokens.add(token);
+                // Add a null check for safety and use the modern way to get the error code
+                if (exception != null && exception.getMessagingErrorCode() != null) {
+                    if (MessagingErrorCode.UNREGISTERED.equals(exception.getMessagingErrorCode())) {
+                        invalidTokens.add(token);
+                    }
                 }
             }
         }
 
         if (!invalidTokens.isEmpty()) {
             log.warn("Removing {} invalid FCM tokens", invalidTokens.size());
+            // The repository method should be transactional
             deviceTokenRepository.deleteAllByTokenIn(invalidTokens);
         }
     }
 
+    /**
+     * More efficient batch splitting with O(n) complexity.
+     */
     private List<List<String>> splitIntoBatches(List<String> tokens) {
-        return new ArrayList<>(
-                tokens.stream()
-                        .collect(Collectors.groupingBy(token -> tokens.indexOf(token) / MAX_BATCH_SIZE))
-                        .values()
-        );
+        int totalSize = tokens.size();
+        if (totalSize == 0) {
+            return new ArrayList<>();
+        }
+
+        int numBatches = (int) Math.ceil((double) totalSize / MAX_BATCH_SIZE);
+
+        return IntStream.range(0, numBatches)
+                .mapToObj(i -> tokens.subList(i * MAX_BATCH_SIZE, Math.min((i + 1) * MAX_BATCH_SIZE, totalSize)))
+                .collect(Collectors.toList());
     }
 }
