@@ -27,7 +27,7 @@ public class CustomServerAccessDeniedHandler implements ServerAccessDeniedHandle
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
         ApiResponse<Object> body = ApiResponse.error(
-                "You do not have permission to access this resource.",
+                "Bạn không được phép truy cập vào nội dung này.",
                 ApiConstants.AUTHORIZATION_ERROR
         );
         try {

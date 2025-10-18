@@ -24,12 +24,12 @@ import java.util.Set;
 public class Role extends BaseEntity {
 
     @Column(unique = true, nullable = false, length = 50)
-    @NotBlank(message = "Role name is required")
-    @Size(max = 50, message = "Role name must not exceed 50 characters")
+    @NotBlank(message = "Yêu cầu nhập role name")
+    @Size(max = 50, message = "Role name không được vượt quá 50 ký tự")
     private String name;
 
     @Column(length = 255)
-    @Size(max = 255, message = "Description must not exceed 255 characters")
+    @Size(max = 255, message = "Description không được vượt quá 255 ký tự")
     private String description;
 
     @Type(JsonBinaryType.class)

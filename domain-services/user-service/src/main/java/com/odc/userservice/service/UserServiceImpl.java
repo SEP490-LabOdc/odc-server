@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     public ApiResponse<GetUserResponse> getUserById(UUID id) {
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
-                .message("Get user successfully!")
+                .message("Lấy thông tin user thành công!")
                 .timestamp(LocalDateTime.now())
                 .data(userRepository.findById(id)
                         .map(u -> GetUserResponse.builder()
@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
                                 .role(u.getRole().getName())
                                 .gender(u.getGender())
                                 .build())
-                        .orElseThrow(() -> new ResourceNotFoundException("Not found user")))
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user")))
                 .build();
     }
 
@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
 
         return ApiResponse.<List<GetUserResponse>>builder()
                 .success(true)
-                .message("Get all users successfully!")
+                .message("Lấy danh sách user thành công !")
                 .timestamp(LocalDateTime.now())
                 .data(users)
                 .build();
@@ -80,13 +80,13 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             return ApiResponse.<GetUserResponse>builder()
                     .success(false)
-                    .message("Email already exists")
+                    .message("Email đã tồn tại ")
                     .timestamp(LocalDateTime.now())
                     .build();
         }
 
         Role role = roleRepository.findByName(com.odc.common.constant.Role.USER.toString())
-                .orElseThrow(() -> new ResourceNotFoundException("Default USER role not found. Please ensure USER role exists in database."));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Role mặc định USER. Vui lòng đảm bảo rằng Role USER đã tồn tại trong cơ sở dữ liệu."));
 
         User user = User.builder()
                 .email(request.getEmail())
@@ -108,7 +108,7 @@ public class UserServiceImpl implements UserService {
 
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
-                .message("User created successfully!")
+                .message("Thêm người dùng mới thành công!")
                 .timestamp(LocalDateTime.now())
                 .data(toGetUserResponse(user))
                 .build();
@@ -131,7 +131,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public ApiResponse<GetUserResponse> updateProfile(UUID userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không thấy User"));
 
         // Update only allowed fields
         user.setFullName(request.getFullName());
@@ -145,7 +145,7 @@ public class UserServiceImpl implements UserService {
 
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
-                .message("Profile updated successfully!")
+                .message("Cập nhật hồ sơ thành công !")
                 .timestamp(LocalDateTime.now())
                 .data(toGetUserResponse(user))
                 .build();
@@ -155,13 +155,13 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public ApiResponse<Void> updatePassword(UUID userId, UpdatePasswordRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User"));
 
         // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
             return ApiResponse.<Void>builder()
                     .success(false)
-                    .message("Current password is incorrect")
+                    .message("Mật khẩu hiện tại không đúng!")
                     .timestamp(LocalDateTime.now())
                     .build();
         }
@@ -172,7 +172,7 @@ public class UserServiceImpl implements UserService {
 
         return ApiResponse.<Void>builder()
                 .success(true)
-                .message("Password updated successfully!")
+                .message("Cập nhật mật khẩu thành công!")
                 .timestamp(LocalDateTime.now())
                 .build();
     }
@@ -181,17 +181,17 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public ApiResponse<GetUserResponse> updateRole(UUID userId, UpdateRoleRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User"));
 
         Role role = roleRepository.findByName(request.getRoleName())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Role"));
 
         user.setRole(role);
         userRepository.save(user);
 
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
-                .message("Role updated successfully!")
+                .message("Cập nhật Role thành công!")
                 .timestamp(LocalDateTime.now())
                 .data(toGetUserResponse(user))
                 .build();
@@ -201,14 +201,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public ApiResponse<GetUserResponse> updateStatus(UUID userId, Status status) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User"));
 
         user.setStatus(status);
         userRepository.save(user);
 
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
-                .message("Status updated successfully!")
+                .message("Cập nhật trạng thái thành công!")
                 .timestamp(LocalDateTime.now())
                 .data(toGetUserResponse(user))
                 .build();
@@ -217,11 +217,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public ApiResponse<Void> deleteUser(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User"));
         userRepository.delete(user);
         return ApiResponse.<Void>builder()
                 .success(true)
-                .message("User deleted successfully!")
+                .message("Xóa User thành công!")
                 .timestamp(LocalDateTime.now())
                 .build();
     }

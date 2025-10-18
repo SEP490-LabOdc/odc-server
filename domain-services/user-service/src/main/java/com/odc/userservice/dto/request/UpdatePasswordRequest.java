@@ -9,17 +9,17 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UpdatePasswordRequest {
-    @NotBlank(message = "Current password is required")
+    @NotBlank(message = "Yêu cầu nhập mật khẩu hiện tại")
     private String currentPassword;
 
-    @NotBlank(message = "New password is required")
-    @Size(min = 8, message = "New password must be at least 8 characters long")
+    @NotBlank(message = "Yêu cầu nhập mật khẩu mới")
+    @Size(min = 8, message = "Mật khẩu mới phải có ít nhất 8 ký tự")
     private String newPassword;
 
-    @NotBlank(message = "Confirm password is required")
+    @NotBlank(message = "Yêu cầu xác nhận mật khẩu mới")
     private String confirmPassword;
 
-    @AssertTrue(message = "New passwords must match")
+    @AssertTrue(message = "Mật khẩu mới và xác nhận mật khẩu không khớp")
     public boolean isPasswordMatch() {
         return newPassword != null && newPassword.equals(confirmPassword);
     }

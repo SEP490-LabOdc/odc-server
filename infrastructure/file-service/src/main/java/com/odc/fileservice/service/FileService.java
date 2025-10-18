@@ -22,7 +22,7 @@ public class FileService {
 
     public FileEntity uploadFile(MultipartFile file, String entityId) throws IOException {
         if (file.isEmpty()) {
-            throw new BusinessException("File is empty", ApiConstants.VALIDATION_ERROR);
+            throw new BusinessException("File rỗng", ApiConstants.VALIDATION_ERROR);
         }
         String originalFileName = file.getOriginalFilename();
         String s3Key = "uploads/" + UUID.randomUUID().toString() + "_" + originalFileName;
@@ -45,7 +45,7 @@ public class FileService {
 
     public void deleteFile(UUID id) {
         FileEntity fileEntity = fileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy file với Id: " + id));
 
         // Xóa file trên S3
         s3Service.deleteFile(fileEntity.getS3Key());

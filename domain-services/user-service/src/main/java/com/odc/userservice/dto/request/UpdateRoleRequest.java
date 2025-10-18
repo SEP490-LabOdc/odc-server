@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UpdateRoleRequest {
-    @NotNull(message = "Role ID is required")
+    @NotNull(message = "Role name không được để trống")
     private String roleName;
 }

@@ -13,18 +13,18 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class CreateUserRequest {
-    @NotBlank(message = "Full name is required")
+    @NotBlank(message = "Yêu cầu nhập họ và tên")
     private String fullName;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "Yêu cầu nhập Email")
+    @Email(message = "Định dạng email không hợp lệ")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @NotBlank(message = "Yêu cầu nhập mật khẩu")
+    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
     private String password;
 
-    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Số điện thoại không hợp lệ")
     private String phone;
 
     private Gender gender;
