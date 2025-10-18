@@ -101,6 +101,11 @@ logging:
           simp: DEBUG
 
 # gRPC Configuration
+grpc:
+  client:
+    user-service:
+      address: ${USER-SERVICE-GRPC:0.0.0.0}
+      port: 9091
 
 springdoc:
   api-docs:
@@ -108,8 +113,4 @@ springdoc:
   swagger-ui:
     path: /notification-service/swagger/index.html
 
-grpc:
-  client:
-    user-service:
-      address: 0.0.0.0
-      port: 9091
+
