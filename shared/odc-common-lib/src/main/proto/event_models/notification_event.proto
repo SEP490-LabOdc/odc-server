@@ -15,8 +15,9 @@ message NotificationEvent {
   string deep_link = 6;
   string priority = 7;
   Target target = 8;
-  repeated Channel channels = 9; // thêm mới
+  repeated Channel channels = 9;
   int64 created_at = 10;
+  string category = 11;
 }
 
 enum Channel {

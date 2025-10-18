@@ -96,6 +96,13 @@ logging:
   file:
     name: logs/company-service.log
 
+# gRPC Configuration
+grpc:
+  client:
+    user-service:
+      address: 0.0.0.0
+      port: 9091
+
 springdoc:
   api-docs:
     path: /company-service/v3/api-docs

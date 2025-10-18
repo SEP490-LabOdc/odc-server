@@ -29,7 +29,6 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyProducer companyProducer;
 
     @Override
-    @Transactional
     public ApiResponse<CompanyResponse> registerCompany(CompanyRegisterRequest request) {
         // 1. Kiểm tra nghiệp vụ, dùng Exception tùy chỉnh
         companyRepository.findByEmail(request.getEmail()).ifPresent(c -> {
@@ -53,7 +52,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .contactPersonEmail(request.getContactPersonEmail())
                 .contactPersonName(request.getContactPersonName())
                 .contactPersonPhone(request.getContactPersonPhone())
-                .status(Status.PENDING.toString())
+                .status(Status.PENDING_VERIFICATION.toString())
                 .build();
 
         // 3. Lưu vào database

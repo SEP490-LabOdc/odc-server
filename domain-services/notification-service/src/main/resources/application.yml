@@ -92,9 +92,24 @@ management:
 logging:
   file:
     name: logs/notification-service.log
+  level:
+    org:
+      springframework:
+        web:
+          socket: DEBUG
+        messaging:
+          simp: DEBUG
+
+# gRPC Configuration
 
 springdoc:
   api-docs:
     path: /notification-service/v3/api-docs
   swagger-ui:
     path: /notification-service/swagger/index.html
+
+grpc:
+  client:
+    user-service:
+      address: 0.0.0.0
+      port: 9091

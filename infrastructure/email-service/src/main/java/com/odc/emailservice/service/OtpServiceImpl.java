@@ -1,10 +1,12 @@
 package com.odc.emailservice.service;
 
 import com.odc.common.exception.BusinessException;
+import com.odc.commonlib.event.EventPublisher;
 import com.odc.emailservice.constants.EmailTemplateConstant;
 import com.odc.emailservice.dto.request.ConfirmOtpRequest;
 import com.odc.emailservice.dto.request.SendOtpRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +16,11 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OtpServiceImpl implements OtpService {
     private final EmailService emailService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final EventPublisher eventPublisher;
 
     @Override
     public void sendOtpRequest(SendOtpRequest request) {
@@ -43,6 +47,13 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public void confirmOtpRequest(ConfirmOtpRequest request) {
         clearCache(request.getEmail(), request.getOtp());
+
+        eventPublisher.publish("email.otp.confirmed", com.odc.notification.v1.SendOtpRequest
+                .newBuilder()
+                .setEmail(request.getEmail())
+                .build());
+
+        log.info("otp code confirmed and publish event to notification service: {}", request);
     }
 
     private String generateAndCacheOtp(String key) {

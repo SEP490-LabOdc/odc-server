@@ -38,7 +38,8 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger/**",
             "/user-service/v3/api-docs/**",
-            "/company-service/v3/api-docs/**"
+            "/company-service/v3/api-docs/**",
+            "/ws/**"
     };
 
     private static final String[] AUTHENTICATED_PATHS = {
