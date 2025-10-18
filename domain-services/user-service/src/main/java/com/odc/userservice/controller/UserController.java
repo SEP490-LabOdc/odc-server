@@ -24,20 +24,20 @@ public class UserController {
 
     private final UserService userService;
 
-    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.principal")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('LAB_ADMIN') or #id == authentication.principal")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<GetUserResponse>> getUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('LAB_ADMIN')")
     public ResponseEntity<ApiResponse<List<GetUserResponse>>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('LAB_ADMIN')")
     public ResponseEntity<ApiResponse<GetUserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.ok(userService.createUser(request));
@@ -51,7 +51,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfile(id, request));
     }
 
-    @PreAuthorize("hasAuthority('USER') and #id == authentication.principal")
+    @PreAuthorize("(hasAuthority('USER') or hasAuthority('SYSTEM_ADMIN'))and #id == authentication.principal")
     @PutMapping("/{id}/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
             @PathVariable UUID id,
@@ -59,7 +59,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updatePassword(id, request));
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     @PutMapping("/{id}/role")
     public ResponseEntity<ApiResponse<GetUserResponse>> updateRole(
             @PathVariable UUID id,
@@ -67,7 +67,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateRole(id, request));
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('LAB_ADMIN')")
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<GetUserResponse>> updateStatus(
             @PathVariable UUID id,
@@ -75,6 +75,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateStatus(id, status));
     }
 
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or #id == authentication.principal")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.deleteUser(id));
