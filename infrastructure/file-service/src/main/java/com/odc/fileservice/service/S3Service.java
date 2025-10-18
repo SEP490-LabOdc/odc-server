@@ -47,7 +47,7 @@ public class S3Service {
             String url = s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(key)).toExternalForm();
             return url;
         } catch (Exception e) {
-            throw new BusinessException("Failed to upload file to S3: " + e.getMessage(), ApiConstants.INTERNAL_ERROR);
+            throw new BusinessException("Tải file lên S3 thất bại: " + e.getMessage(), ApiConstants.INTERNAL_ERROR);
         }
     }
 

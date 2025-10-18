@@ -31,12 +31,12 @@ public class FileController {
             @RequestParam(value = "entityId", required = false) String entityId) throws IOException {
 
         if (file.isEmpty()) {
-            throw new BusinessException("File is empty", ApiConstants.VALIDATION_ERROR);
+            throw new BusinessException("File rỗng", ApiConstants.VALIDATION_ERROR);
         }
 
         FileEntity uploadedFile = fileService.uploadFile(file, entityId);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("File uploaded successfully", uploadedFile));
+                .body(ApiResponse.success("File đã tải lên thành công", uploadedFile));
     }
 
     @GetMapping
@@ -58,7 +58,7 @@ public class FileController {
     public ResponseEntity<ApiResponse<Void>> deleteFile(@PathVariable UUID id) {
         fileService.deleteFile(id);
         return ResponseEntity.ok(
-                ApiResponse.success("Xóa thành công file.", null)
+                ApiResponse.success("Xóa file thành công.", null)
         );
     }
 }

@@ -58,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ApiResponse<UserRegisterResponse> register(UserRegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new BusinessException("Email already exists!");
+            throw new BusinessException("Email đã tồn tại");
         }
 
         User user = User.builder()
@@ -75,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
         ApiResponse<UserRegisterResponse> response = new ApiResponse<>();
 
         response.setSuccess(true);
-        response.setMessage("User registered successfully!");
+        response.setMessage("Đăng ký thành công!");
         response.setData(
                 UserRegisterResponse.builder().id(user.getId())
                         .email(user.getEmail())
@@ -90,11 +90,11 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .map(u -> {
                     if (!passwordEncoder.matches(request.getPassword(), u.getPasswordHash())) {
-                        throw new UnauthenticatedException("Invalid email or password!");
+                        throw new UnauthenticatedException("Không tồn tại email hoặc mật khẩu không đúng!");
                     }
                     return u;
                 })
-                .orElseThrow(() -> new UnauthenticatedException("Email does not exist!"));
+                .orElseThrow(() -> new UnauthenticatedException("Email Không tồn tại !"));
 
         String redisKey = String.format("user:%s:refreshToken", user.getId().toString());
 
@@ -105,7 +105,7 @@ public class AuthServiceImpl implements AuthService {
                     .set(redisKey, refreshToken, refreshExpiration, TimeUnit.DAYS);
         }
 
-        return ApiResponse.success("Login successfully!",
+        return ApiResponse.success("Đăng nhập thành công !",
                 UserLoginResponse
                         .builder()
                         .accessToken(jwtUtil.generateToken(user.getEmail(),
@@ -121,11 +121,11 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = stringRedisTemplate.opsForValue().get(redisKey);
 
         if (refreshToken == null || refreshToken.isEmpty())
-            throw new UnauthenticatedException("Invalid refresh token!");
+            throw new UnauthenticatedException("Refresh token không hợp lệ !");
 
 
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("không tìm thấy User!"));
 
         String accessToken = jwtUtil.generateToken(user.getEmail(),
                 Map.of("role", user.getRole().getName()));
@@ -139,7 +139,7 @@ public class AuthServiceImpl implements AuthService {
     public ApiResponse<UserLoginResponse> loginWithGoogle(GoogleLoginRequest request) {
         GoogleIdToken.Payload payload = verifyGoogleToken(request.getIdToken());
         if (payload == null) {
-            throw new UnauthenticatedException("Invalid Google ID token!");
+            throw new UnauthenticatedException("Mã Google ID token không hợp lệ !");
         }
 
         String email = payload.getEmail();
@@ -166,7 +166,7 @@ public class AuthServiceImpl implements AuthService {
 
     private User createUserFromGoogle(GoogleIdToken.Payload payload) {
         if (userRepository.existsByEmail(payload.getEmail())) {
-            throw new BusinessException("Email already exists!");
+            throw new BusinessException("Email đã tồn tại !");
         }
 
         User newUser = User.builder()
@@ -176,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
                 .avatarUrl((String) payload.get("picture"))
                 .passwordHash(passwordEncoder.encode(generateRandomPassword())) // Tạo password ngẫu nhiên
                 .role(roleRepository.findByName(Role.USER.toString())
-                        .orElseThrow(() -> new ResourceNotFoundException("Default USER role not found.")))
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Role user mặc định (USER).")))
                 .build();
 
         return userRepository.save(newUser);
@@ -196,7 +196,7 @@ public class AuthServiceImpl implements AuthService {
                     .set(redisKey, refreshToken, refreshExpiration, TimeUnit.DAYS);
         }
 
-        return ApiResponse.success("Login successfully!",
+        return ApiResponse.success("Đăng nhập thành công !",
                 UserLoginResponse
                         .builder()
                         .accessToken(jwtUtil.generateToken(user.getEmail(),

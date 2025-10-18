@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GoogleLoginRequest {
-    @NotBlank(message = "Google ID token is required")
+    @NotBlank(message = "ID token không được để trống")
     private String idToken;
 }
