@@ -15,7 +15,6 @@ import com.odc.companyservice.repository.CompanyRepository;
 import com.odc.notification.v1.SendOtpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;

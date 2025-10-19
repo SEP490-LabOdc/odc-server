@@ -17,20 +17,6 @@ public class NotificationRoutingConfig {
     private DefaultRule defaults;
     private Map<String, Rule> rules;
 
-    @Data
-    public static class DefaultRule {
-        private List<String> channels;
-        private String target_strategy;
-        private List<String> roles;
-    }
-
-    @Data
-    public static class Rule {
-        private List<String> channels;
-        private String target_strategy;
-        private List<String> roles;
-    }
-
     @PostConstruct
     public void loadConfig() throws Exception {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
@@ -51,5 +37,19 @@ public class NotificationRoutingConfig {
         r.setRoles(def.getRoles());
         r.setTarget_strategy(def.getTarget_strategy());
         return r;
+    }
+
+    @Data
+    public static class DefaultRule {
+        private List<String> channels;
+        private String target_strategy;
+        private List<String> roles;
+    }
+
+    @Data
+    public static class Rule {
+        private List<String> channels;
+        private String target_strategy;
+        private List<String> roles;
     }
 }

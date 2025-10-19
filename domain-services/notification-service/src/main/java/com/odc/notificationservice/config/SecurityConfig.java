@@ -17,16 +17,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     private static final String[] PERMIT_ALL_PATHS = {
             "/ws/**",
             "/actuator/**",
             "/notification-service/v3/api-docs/**",
             "/notification-service/swagger/**"
     };
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean(name = "NotificationService_SecurityFilterChain")
     public SecurityFilterChain springSecurityFilterChain(HttpSecurity http) throws Exception {

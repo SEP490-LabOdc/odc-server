@@ -24,15 +24,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
-
     // Paths that should bypass JWT filter for efficiency
     private static final String[] EXCLUDED_PREFIXES = {
             "/api/v1/auth/",
             "/actuator/",
             "/user-service/"
     };
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

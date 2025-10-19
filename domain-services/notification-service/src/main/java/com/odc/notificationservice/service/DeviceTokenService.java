@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public interface DeviceTokenService {
     ApiResponse<Void> registerDeviceToken(RegisterDeviceTokenRequest request);
+
     ApiResponse<List<GetDeviceTokenResponse>> getDeviceTokensByUserId(UUID userId);
+
     ApiResponse<Void> deleteDeviceToken(String token);
 }

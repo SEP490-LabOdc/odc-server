@@ -23,11 +23,6 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationManager authenticationManager;
-    private final SecurityContextRepository securityContextRepository;
-    private final CustomServerAccessDeniedHandler customAccessDeniedHandler;
-    private final CustomServerAuthenticationEntryPoint customAuthenticationEntryPoint;
-
     // Grouped path patterns for clearer authorization rules
     private static final String[] PERMIT_ALL_PATHS = {
             "/actuator/**",
@@ -41,22 +36,22 @@ public class SecurityConfig {
             "/company-service/v3/api-docs/**",
             "/ws/**"
     };
-
     private static final String[] AUTHENTICATED_PATHS = {
             "/api/v1/users/**", // Other user endpoints still need auth
             "/api/v1/businesses/**",
             "/api/v1/talents/**"
     };
-
     private static final String[] GET_PERMIT_PATHS = {
             "/api/v1/companies"
     };
-
     private static final String[] POST_PERMIT_PATHS = {
             "/api/v1/files"
     };
-
-    private static final String[] OPTIONS_ANY_PATH = { "/**" };
+    private static final String[] OPTIONS_ANY_PATH = {"/**"};
+    private final JwtAuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
+    private final CustomServerAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomServerAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
