@@ -3,6 +3,7 @@ package com.odc.common.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -32,7 +33,12 @@ public abstract class BaseEventLog {
     @Column(name = "payload", columnDefinition = "BYTEA")
     private byte[] payload;
 
-    @LastModifiedDate
+    @CreatedDate
     @Column(name = "received_at")
     private Instant receivedAt;
+
+    @LastModifiedDate
+    @Column(name = "processed_at")
+    private Instant processedAt;
+
 }

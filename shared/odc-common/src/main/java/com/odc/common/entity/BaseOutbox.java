@@ -3,6 +3,7 @@ package com.odc.common.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -31,7 +32,7 @@ public abstract class BaseOutbox {
 
     private Boolean processed;
 
-    @LastModifiedDate
+    @CreatedDate
     @Column(name = "created_at")
     private Instant createdAt;
 }
