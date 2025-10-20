@@ -15,12 +15,12 @@ message CreateChecklistRequest {
   string companyId = 2;
   string assigneeId = 3;
   string status = 4;
-  repeated CreateChecklistItemRequest items = 5;
+  string notes = 5;
+  repeated CreateChecklistItemRequest items = 6;
 }
 
 message CreateChecklistItemRequest {
   string templateItemId = 1;
-  string status = 2;
-  string notes = 3;
-  string completedById = 4;
+  bool isChecked = 2;
+  string completedById = 3;
 }

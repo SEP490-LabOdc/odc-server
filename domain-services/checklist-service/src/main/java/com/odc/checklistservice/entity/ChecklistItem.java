@@ -22,12 +22,8 @@ public class ChecklistItem extends BaseEntity {
     @Column(name = "template_item_id", nullable = false)
     private UUID templateItemId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ChecklistItemStatus status;
-
-    @Column(columnDefinition = "TEXT")
-    private String notes;
+    @Column(name = "is_checked", nullable = false)
+    private Boolean isChecked;
 
     @Column(name = "completed_by_id")
     private String completedById;

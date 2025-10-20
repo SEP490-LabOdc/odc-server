@@ -182,15 +182,15 @@ public class CompanyServiceImpl implements CompanyService {
                                 .setCompanyId(createChecklistRequest.getCompanyId())
                                 .setAssigneeId(createChecklistRequest.getAssigneeId())
                                 .setStatus(createChecklistRequest.getStatus())
+                                .setNotes(createChecklistRequest.getNotes())
                                 .addAllItems(createChecklistRequest
                                         .getItems()
                                         .stream()
                                         .map(checklist -> com.odc.company.v1.CreateChecklistItemRequest
                                                 .newBuilder()
                                                 .setTemplateItemId(checklist.getTemplateItemId())
-                                                .setStatus(checklist.getStatus())
-                                                .setNotes(checklist.getNotes())
                                                 .setCompletedById(checklist.getCompletedById())
+                                                .setIsChecked(checklist.getIsChecked())
                                                 .build()
                                         )
                                         .toList())
