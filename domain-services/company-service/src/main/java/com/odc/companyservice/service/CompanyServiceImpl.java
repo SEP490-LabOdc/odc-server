@@ -3,6 +3,10 @@ package com.odc.companyservice.service;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.common.util.EnumUtil;
+import com.odc.company.v1.CompanyApprovedEvent;
+import com.odc.company.v1.CompanyUpdateRequestEmailEvent;
+import com.odc.company.v1.ContactUser;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.CreateChecklistRequest;
@@ -168,10 +172,43 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
 
+        if (!EnumUtil.isEnumValueExist(request.getStatus(), Status.class)) {
+            throw new RuntimeException("Trạng thái không hợp lệ.");
+        }
+
         company.setStatus(request.getStatus());
         companyRepository.save(company);
 
         CreateChecklistRequest createChecklistRequest = request.getCreateChecklistRequest();
+
+        if (company.getStatus().equalsIgnoreCase(Status.ACTIVE.toString())) {
+            CompanyApprovedEvent companyApprovedEvent = CompanyApprovedEvent.newBuilder()
+                    .setCompanyName(company.getName())
+                    .setApprovedBy(company.getUpdatedBy())
+                    .setEmail(company.getEmail())
+                    .setContactUser(ContactUser.newBuilder()
+                            .setName(company.getContactPersonName())
+                            .setEmail(company.getContactPersonEmail())
+                            .setPhone(company.getContactPersonPhone())
+                            .build())
+                    .build();
+            companyProducer.publishCompanyApprovedEmail(companyApprovedEvent);
+        } else if (company.getStatus().equalsIgnoreCase(Status.UPDATE_REQUIRED.toString())) {
+            CompanyUpdateRequestEmailEvent companyUpdateRequestEmailEvent = CompanyUpdateRequestEmailEvent.newBuilder()
+                    .setCompanyId(company.getId().toString())
+                    .setCompanyName(company.getName())
+                    .setNotes(createChecklistRequest.getNotes())
+                    .setEmail(company.getEmail())
+//                    .setIncompleteChecklists(
+//                            createChecklistRequest
+//                                    .getItems()
+//                                    .stream()
+//                                    .map(createChecklistItemRequest -> createChecklistItemRequest.get)
+//                    )
+                    .build();
+
+            companyProducer.publishCompanyUpdateRequestEmail(companyUpdateRequestEmailEvent);
+        }
 
         companyProducer.sendReviewCompanyInfoEvent(ReviewCompanyInfoEvent
                 .newBuilder()
