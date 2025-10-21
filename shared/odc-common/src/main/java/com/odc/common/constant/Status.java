@@ -8,4 +8,6 @@ public enum Status {
     COMPLETED,
     CANCELED,
     REVIEWING,
+    UPDATE_REQUIRED,
+    DISABLED
 }
