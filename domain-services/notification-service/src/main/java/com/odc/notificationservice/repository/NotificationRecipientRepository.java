@@ -12,8 +12,10 @@ import java.util.UUID;
 
 @Repository
 public interface NotificationRecipientRepository extends JpaRepository<NotificationRecipient, UUID> {
-    @Query("SELECT nr FROM NotificationRecipient nr WHERE nr.userId = :userId AND (:readStatus IS NULL OR nr.readStatus = :readStatus)")
+    @Query("SELECT nr FROM NotificationRecipient nr WHERE nr.userId = :userId AND (:readStatus IS NULL OR nr.readStatus = :readStatus) ORDER BY nr.notification.sentAt DESC")
     List<NotificationRecipient> findAllNotificationsByUserIdAndReadStatus(@Param("userId") UUID userId, @Param("readStatus") Boolean readStatus);
+
     Optional<NotificationRecipient> findByIdAndReadStatus(UUID id, Boolean readStatus);
+
     List<NotificationRecipient> findAllByUserIdAndReadStatus(UUID userId, Boolean readStatus);
 }

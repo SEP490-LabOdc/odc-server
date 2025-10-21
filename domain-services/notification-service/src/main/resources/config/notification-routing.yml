@@ -1,26 +1,26 @@
 defaults:
-  channels: [WEB]          # Nếu không có channel nào được set
+  channels: [ WEB ]          # Nếu không có channel nào được set
   target_strategy: ROLE    # Default lấy theo role
-  roles: ["ADMIN"]         # Default gửi cho admin
+  roles: [ "ADMIN" ]         # Default gửi cho admin
 
 rules:
   COMPANY_REGISTRATION:
-    channels: [WEB]
+    channels: [ WEB ]
     target_strategy: ROLE
-    roles: ["LAB_ ADMIN", "SUPER_ADMIN"]
+    roles: [ "LAB_ ADMIN", "SUPER_ADMIN" ]
 
   TASK_ASSIGNED:
-    channels: [MOBILE, WEB]
+    channels: [ MOBILE, WEB ]
     target_strategy: USER
 
   SYSTEM_ALERT:
-    channels: [WEB, MOBILE]
+    channels: [ WEB, MOBILE ]
     target_strategy: ALL
 
   USER_MENTIONED:
-    channels: [WEB]
+    channels: [ WEB ]
     target_strategy: USER
 
   PERFORMANCE_REVIEW:
-    channels: [MOBILE]
+    channels: [ MOBILE ]
     target_strategy: USER

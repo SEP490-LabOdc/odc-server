@@ -20,16 +20,14 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final JwtUtil jwtUtil;
-
     private static final String[] EXCLUDED_PREFIXES = {
             "/actuator/",
             "/company-service/"
     };
-
     private static final String[] EXCLUDED_EXACT_PATHS = {
             "/api/v1/companies/register"
     };
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

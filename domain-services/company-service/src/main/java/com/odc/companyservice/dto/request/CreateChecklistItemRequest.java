@@ -4,5 +4,6 @@ import lombok.Getter;
 
 @Getter
 public class CreateChecklistItemRequest {
-    private String templateItemId, status, notes, completedById;
+    private String templateItemId, completedById;
+    private Boolean isChecked;
 }

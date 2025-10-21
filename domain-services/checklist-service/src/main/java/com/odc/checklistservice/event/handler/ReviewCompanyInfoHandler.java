@@ -44,16 +44,16 @@ public class ReviewCompanyInfoHandler implements EventHandler {
                     .entityId(createChecklistRequest.getCompanyId())
                     .assigneeId(createChecklistRequest.getAssigneeId())
                     .status(ChecklistStatus.valueOf(createChecklistRequest.getStatus()))
+                    .notes(createChecklistRequest.getNotes())
                     .build();
 
             List<ChecklistItem> items = createChecklistRequest.getItemsList()
                     .stream()
                     .map(req -> ChecklistItem.builder()
                             .templateItemId(UUID.fromString(req.getTemplateItemId()))
-                            .notes(req.getNotes())
-                            .status(ChecklistItemStatus.valueOf(req.getStatus()))
                             .completedById(req.getCompletedById())
                             .checklist(checklist)
+                            .isChecked(req.getIsChecked())
                             .build())
                     .toList();
 

@@ -14,24 +14,29 @@ Parent POM cho LabOdc Platform microservices architecture.
 ## Usage
 
 ### Build All Modules
+
 ```bash
 ./mvnw clean install
 ```
 
 ### Run Tests
+
 ```bash
 ./mvnw test
 ```
 
 ### Build with Specific Profile
+
 ```bash
 ./mvnw clean install -Pprod
 ```
 
 ### Build Docker Images
+
 ```bash
 ./mvnw clean package -Pdocker
 ```
+
 ## Profiles
 
 - `dev` (default): Development environment

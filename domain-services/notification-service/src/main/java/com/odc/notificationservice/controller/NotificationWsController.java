@@ -24,7 +24,7 @@ public class NotificationWsController {
      * Handles a WebSocket message to mark a specific notification as read for a user.
      * It includes an authorization check to ensure a user can only mark their own notifications as read.
      *
-     * @param userId The ID of the user making the request.
+     * @param userId                  The ID of the user making the request.
      * @param notificationRecipientId The ID of the notification recipient to be marked as read.
      * @return The updated notification details, sent back to the user's private queue.
      */

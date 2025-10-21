@@ -12,7 +12,7 @@ public interface NotificationService {
     /**
      * Marks a notification as read, ensuring that the user has permission to do so.
      *
-     * @param userId The ID of the user requesting the action.
+     * @param userId                  The ID of the user requesting the action.
      * @param notificationRecipientId The ID of the notification to mark as read.
      * @return An ApiResponse containing the updated notification response.
      */

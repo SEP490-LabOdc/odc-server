@@ -46,7 +46,7 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
                 throw new UnauthenticatedException("Invalid token");
             }
         }
-        
+
         return message;
     }
 }

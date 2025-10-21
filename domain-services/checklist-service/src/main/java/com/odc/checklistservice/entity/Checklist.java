@@ -31,6 +31,9 @@ public class Checklist extends BaseEntity {
     @Column(nullable = false)
     private ChecklistStatus status;
 
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ChecklistItem> items;
 }

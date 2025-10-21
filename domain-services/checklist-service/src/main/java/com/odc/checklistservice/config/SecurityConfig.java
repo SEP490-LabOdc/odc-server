@@ -1,8 +1,8 @@
 package com.odc.checklistservice.config;
 
+import com.odc.checklistservice.security.JwtAuthenticationFilter;
 import com.odc.common.exception.CustomAccessDeniedHandler;
 import com.odc.common.exception.CustomAuthenticationEntryPoint;
-import com.odc.checklistservice.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,16 +17,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     private static final String[] PERMIT_ALL_PATHS = {
             "/ws/**",
             "/actuator/**",
             "/checklist-service/v3/api-docs/**",
             "/checklist-service/swagger/**"
     };
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean(name = "ChecklistService_SecurityFilterChain")
     public SecurityFilterChain springSecurityFilterChain(HttpSecurity http) throws Exception {

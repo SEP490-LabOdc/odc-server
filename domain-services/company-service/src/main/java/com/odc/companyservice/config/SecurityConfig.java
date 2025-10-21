@@ -3,10 +3,10 @@ package com.odc.companyservice.config;
 import com.odc.common.exception.CustomAccessDeniedHandler;
 import com.odc.common.exception.CustomAuthenticationEntryPoint;
 import com.odc.companyservice.security.JwtAuthenticationFilter;
-import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,10 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     // Grouped public paths for clarity
     private static final String[] PERMIT_ALL_PATHS = {
             "/api/v1/companies/register",
@@ -31,10 +27,12 @@ public class SecurityConfig {
             "/company-service/v3/api-docs/**",
             "/company-service/swagger/**"
     };
-
     private static final String[] GET_PERMIT_PATHS = {
             "/api/v1/companies"
     };
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean(name = "CompanyService_SecurityFilterChain")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
