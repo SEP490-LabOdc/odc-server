@@ -1,6 +1,8 @@
 package com.odc.companyservice.event.producer;
 
 import com.odc.commonlib.event.EventPublisher;
+import com.odc.company.v1.CompanyApprovedEvent;
+import com.odc.company.v1.CompanyUpdateRequestEmailEvent;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.SendOtpRequest;
@@ -27,5 +29,15 @@ public class CompanyProducer {
     public void notifyCompanyRegistrationEvent(NotificationEvent event) {
         log.info("notify company registration event: {}", event);
         eventPublisher.publish("notifications", event);
+    }
+
+    public void publishCompanyApprovedEmail(CompanyApprovedEvent event) {
+        log.info("publish company approved email event : {}", event);
+        eventPublisher.publish("company.approved.event", event);
+    }
+
+    public void publishCompanyUpdateRequestEmail(CompanyUpdateRequestEmailEvent event)  {
+        log.info("publish company update request email event : {}", event);
+        eventPublisher.publish("email.company_update_request", event);
     }
 }

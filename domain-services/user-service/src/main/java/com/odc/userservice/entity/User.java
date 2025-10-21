@@ -45,10 +45,10 @@ public class User extends BaseEntity {
     @Column
     private String address;
 
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified")
     private Boolean emailVerified = false;
 
-    @Column(name = "phone_verified", nullable = false)
+    @Column(name = "phone_verified")
     private Boolean phoneVerified = false;
 
     @ManyToOne
