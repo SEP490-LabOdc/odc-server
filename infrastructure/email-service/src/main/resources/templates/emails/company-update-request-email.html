@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+            border: 1px solid #ddd;
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc3545; /* Màu đỏ cho thông báo cần hành động */
+        }
+
+        .content p {
+            font-size: 16px;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .content strong {
+            color: #dc3545;
+        }
+
+        .checklist-item {
+            text-align: left;
+            margin-left: 20px;
+            margin-bottom: 5px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">Yêu cầu cập nhật thông tin công ty</div>
+    <div class="content">
+        <p>Kính gửi <strong><span th:text="${companyName}">[Tên công ty]</span></strong>,</p>
+        <p>Chúng tôi nhận thấy rằng có một số thông tin của công ty bạn trên LabOdc chưa được hoàn thành hoặc cần cập nhật. Để đảm bảo hồ sơ của bạn được đầy đủ và chính xác, vui lòng xem xét các mục dưới đây:</p>
+
+        <p><strong>Các mục cần cập nhật:</strong></p>
+        <ul th:if="${!incompleteChecklists.isEmpty()}">
+            <li th:each="item : ${incompleteChecklists}" class="checklist-item" th:text="${item}">[Tên checklist chưa hoàn thành]</li>
+        </ul>
+        <p th:if="${incompleteChecklists.isEmpty()}">Không có mục cụ thể nào được liệt kê, vui lòng kiểm tra lại hồ sơ của bạn.</p>
+
+        <p th:if="${notes != null and notes != ''}"><strong>Ghi chú từ LabOdc:</strong> <span th:text="${notes}">[Ghi chú bổ sung]</span></p>
+
+        <p>Vui lòng nhấp vào liên kết dưới đây để truy cập và cập nhật thông tin của bạn:</p>
+        <p style="text-align: center;">
+            <a th:href="${updateLink}" class="button">Cập nhật thông tin ngay</a>
+        </p>
+        <p>Nếu bạn có bất kỳ câu hỏi nào, xin vui lòng liên hệ với chúng tôi.</p>
+        <p>Trân trọng,</p>
+        <p>Đội ngũ LabOdc</p>
+    </div>
+    <div class="footer">
+        &copy; 2025 LabOdc.
+    </div>
+</div>
+</body>
+</html>

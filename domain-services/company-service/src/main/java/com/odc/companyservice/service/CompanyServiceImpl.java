@@ -8,10 +8,7 @@ import com.odc.company.v1.CompanyApprovedEvent;
 import com.odc.company.v1.CompanyUpdateRequestEmailEvent;
 import com.odc.company.v1.ContactUser;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
-import com.odc.companyservice.dto.request.CompanyRegisterRequest;
-import com.odc.companyservice.dto.request.CreateChecklistRequest;
-import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
-import com.odc.companyservice.dto.request.UpdateCompanyRequest;
+import com.odc.companyservice.dto.request.*;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.event.producer.CompanyProducer;
@@ -194,17 +191,18 @@ public class CompanyServiceImpl implements CompanyService {
                     .build();
             companyProducer.publishCompanyApprovedEmail(companyApprovedEvent);
         } else if (company.getStatus().equalsIgnoreCase(Status.UPDATE_REQUIRED.toString())) {
+            List<String> incompleteChecklists = createChecklistRequest
+                    .getItems()
+                    .stream()
+                    .map(CreateChecklistItemRequest::getTemplateItemId)
+                    .toList();
+
             CompanyUpdateRequestEmailEvent companyUpdateRequestEmailEvent = CompanyUpdateRequestEmailEvent.newBuilder()
                     .setCompanyId(company.getId().toString())
                     .setCompanyName(company.getName())
                     .setNotes(createChecklistRequest.getNotes())
                     .setEmail(company.getEmail())
-//                    .setIncompleteChecklists(
-//                            createChecklistRequest
-//                                    .getItems()
-//                                    .stream()
-//                                    .map(createChecklistItemRequest -> createChecklistItemRequest.get)
-//                    )
+                    .addAllIncompleteChecklists(incompleteChecklists)
                     .build();
 
             companyProducer.publishCompanyUpdateRequestEmail(companyUpdateRequestEmailEvent);
