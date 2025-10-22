@@ -86,6 +86,9 @@ grpc:
     user-service:
       address: ${USER-SERVICE-GRPC:0.0.0.0}
       port: 9091
+    checklist-service:
+      address: ${CHECKLIST-SERVICE-GRPC:0.0.0.0}
+      port: 9093
 
 springdoc:
   api-docs:
