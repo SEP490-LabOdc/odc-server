@@ -23,5 +23,5 @@ public interface CompanyService {
 
     void updateRegisterCompanyStatus(UUID id, Status status);
 
-    void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request);
+    void reviewCompanyInfo(ReviewCompanyInfoRequest request);
 }

@@ -14,6 +14,9 @@ import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
 import com.odc.notification.v1.SendOtpRequest;
+import com.odc.userservice.v1.CheckEmailRequest;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyProducer companyProducer;
+    private final ManagedChannel userServiceChannel;
 
     @Override
     public ApiResponse<CompanyResponse> registerCompany(CompanyRegisterRequest request) {
@@ -37,6 +41,15 @@ public class CompanyServiceImpl implements CompanyService {
         companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
             throw new BusinessException("Mã số thuế đã tồn tại");
         });
+
+        if (UserServiceGrpc
+                .newBlockingStub(userServiceChannel)
+                .checkEmailExists(CheckEmailRequest.newBuilder()
+                        .setEmail(request.getContactPersonEmail())
+                        .build())
+                .getResult()) {
+            throw new BusinessException("Email người liên hệ đã tồn tại");
+        }
 
         // 2. Ánh xạ từ DTO sang Entity
         Company company = Company.builder()
@@ -165,9 +178,9 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+    public void reviewCompanyInfo(ReviewCompanyInfoRequest request) {
+        Company company = companyRepository.findById(UUID.fromString(request.getCreateChecklistRequest().getCompanyId()))
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + request.getCreateChecklistRequest().getCompanyId()));
 
         if (!EnumUtil.isEnumValueExist(request.getStatus(), Status.class)) {
             throw new RuntimeException("Trạng thái không hợp lệ.");

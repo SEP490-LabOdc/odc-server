@@ -34,9 +34,9 @@ public class CompanyController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@PathVariable UUID id, @Valid @RequestBody ReviewCompanyInfoRequest request) {
-        companyService.reviewCompanyInfo(id, request);
+    @PostMapping("/review")
+    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@Valid @RequestBody ReviewCompanyInfoRequest request) {
+        companyService.reviewCompanyInfo(request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đăng ký thành công.", null));
     }
 
