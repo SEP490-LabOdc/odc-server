@@ -1,6 +1,5 @@
 package com.odc.checklistservice.repository;
 
-import com.odc.checklist.v1.TemplateItem;
 import com.odc.checklistservice.entity.ChecklistItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
