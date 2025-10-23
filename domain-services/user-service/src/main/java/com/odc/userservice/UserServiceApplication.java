@@ -9,7 +9,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ComponentScan(
         basePackages = {
                 "com.odc.common",
-                "com.odc.userservice"
+                "com.odc.userservice",
+                "com.odc.commonlib"
         }
 )
 @EnableAsync

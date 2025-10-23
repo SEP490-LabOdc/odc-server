@@ -9,5 +9,6 @@ public enum Status {
     CANCELED,
     REVIEWING,
     UPDATE_REQUIRED,
-    DISABLED
+    DISABLED,
+    APPROVED
 }

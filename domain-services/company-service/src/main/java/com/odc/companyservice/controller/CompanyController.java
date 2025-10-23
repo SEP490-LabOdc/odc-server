@@ -5,6 +5,7 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,11 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyById(@PathVariable UUID id) {
         ApiResponse<CompanyResponse> response = companyService.getCompanyById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/checklists")
+    public ResponseEntity<ApiResponse<GetCompanyChecklistResponse>> getCompanyChecklists(@PathVariable UUID id) {
+        return ResponseEntity.ok(companyService.getCompanyChecklistByCompanyId(id));
     }
 
     @DeleteMapping("/{id}")

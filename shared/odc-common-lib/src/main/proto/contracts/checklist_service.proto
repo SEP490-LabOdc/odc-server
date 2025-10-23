@@ -7,6 +7,7 @@ option java_outer_classname = "ChecklistServiceProto";
 
 service ChecklistService {
   rpc GetDescriptions(GetDescriptionsRequest) returns (GetDescriptionsResponse);
+  rpc GetChecklistItemsByTemplateTypeAndEntityId(GetChecklistItemsByTemplateTypeAndEntityIdRequest) returns (GetChecklistItemsByTemplateTypeAndEntityIdResponse);
 }
 
 message GetDescriptionsRequest {
@@ -15,4 +16,18 @@ message GetDescriptionsRequest {
 
 message GetDescriptionsResponse {
   repeated string descriptions = 1;
+}
+
+message GetChecklistItemsByTemplateTypeAndEntityIdRequest {
+  string templateType = 1;
+  string entityId = 2;
+}
+
+message TemplateItem {
+  string id = 1;
+  bool isChecked = 2;
+}
+
+message GetChecklistItemsByTemplateTypeAndEntityIdResponse {
+  repeated TemplateItem templateItems = 1;
 }

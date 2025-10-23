@@ -1,8 +1,8 @@
 package com.odc.checklistservice.grpc;
 
-import com.odc.checklist.v1.ChecklistServiceGrpc;
-import com.odc.checklist.v1.GetDescriptionsRequest;
-import com.odc.checklist.v1.GetDescriptionsResponse;
+import com.odc.checklist.v1.*;
+import com.odc.checklistservice.repository.ChecklistItemRepository;
+import com.odc.checklistservice.repository.ChecklistTemplateRepository;
 import com.odc.checklistservice.repository.TemplateItemRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +17,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChecklistGrpcServiceImpl extends ChecklistServiceGrpc.ChecklistServiceImplBase {
     private final TemplateItemRepository templateItemRepository;
+    private final ChecklistItemRepository checklistItemRepository;
+    private final ChecklistTemplateRepository checklistTemplateRepository;
 
     @Override
     public void getDescriptions(GetDescriptionsRequest request, StreamObserver<GetDescriptionsResponse> responseObserver) {
@@ -33,6 +35,34 @@ public class ChecklistGrpcServiceImpl extends ChecklistServiceGrpc.ChecklistServ
         log.info("response data: {}", descriptions);
 
         responseObserver.onNext(GetDescriptionsResponse.newBuilder().addAllDescriptions(descriptions).build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getChecklistItemsByTemplateTypeAndEntityId(GetChecklistItemsByTemplateTypeAndEntityIdRequest request, StreamObserver<GetChecklistItemsByTemplateTypeAndEntityIdResponse> responseObserver) {
+        UUID templateId = checklistTemplateRepository.findIdByEntityTypeById(request.getTemplateType());
+        log.info("templateId: {}", templateId);
+        if (templateId == null) {
+            log.info("templateId is null");
+            responseObserver.onError(
+                    new RuntimeException("templateId is null")
+            );
+            return;
+        }
+
+        List<TemplateItem> templateItems = checklistItemRepository
+                .getChecklistItemsByTemplateTypeAndEntityId(templateId, request.getEntityId())
+                .stream()
+                .map(ci -> TemplateItem
+                        .newBuilder()
+                        .setId(ci.getTemplateItemId().toString())
+                        .setIsChecked(ci.getIsChecked())
+                        .build())
+                .toList();
+
+        responseObserver.onNext(GetChecklistItemsByTemplateTypeAndEntityIdResponse.newBuilder()
+                .addAllTemplateItems(templateItems)
+                .build());
         responseObserver.onCompleted();
     }
 }

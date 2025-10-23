@@ -1,6 +1,9 @@
 package com.odc.companyservice.service;
 
+import com.odc.checklist.v1.ChecklistServiceGrpc;
+import com.odc.checklist.v1.GetChecklistItemsByTemplateTypeAndEntityIdRequest;
 import com.odc.common.constant.Status;
+import com.odc.common.constant.Template;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.util.EnumUtil;
@@ -10,6 +13,7 @@ import com.odc.company.v1.ContactUser;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.*;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
@@ -17,7 +21,7 @@ import com.odc.notification.v1.SendOtpRequest;
 import com.odc.userservice.v1.CheckEmailRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,11 +30,22 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyProducer companyProducer;
+
+    @Qualifier("userServiceChannel")
     private final ManagedChannel userServiceChannel;
+
+    @Qualifier("checklistServiceChannel")
+    private final ManagedChannel checklistServiceChannel;
+
+    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyProducer companyProducer, ManagedChannel userServiceChannel, ManagedChannel checklistServiceChannel) {
+        this.companyRepository = companyRepository;
+        this.companyProducer = companyProducer;
+        this.userServiceChannel = userServiceChannel;
+        this.checklistServiceChannel = checklistServiceChannel;
+    }
 
     @Override
     public ApiResponse<CompanyResponse> registerCompany(CompanyRegisterRequest request) {
@@ -86,6 +101,48 @@ public class CompanyServiceImpl implements CompanyService {
                 .timestamp(LocalDateTime.now())
                 .data(responseData)
                 .build();
+    }
+
+    @Override
+    public ApiResponse<GetCompanyChecklistResponse> getCompanyChecklistByCompanyId(UUID id) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        GetCompanyChecklistResponse data = GetCompanyChecklistResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .taxCode(company.getTaxCode())
+                .address(company.getAddress())
+                .description(company.getDescription())
+                .website(company.getWebsite())
+                .status(company.getStatus())
+                .domain(company.getDomain())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
+                .createdAt(company.getCreatedAt())
+                .build();
+
+        data.setChecklists(
+                ChecklistServiceGrpc
+                        .newBlockingStub(checklistServiceChannel)
+                        .getChecklistItemsByTemplateTypeAndEntityId(GetChecklistItemsByTemplateTypeAndEntityIdRequest
+                                .newBuilder()
+                                .setEntityId(company.getId().toString())
+                                .setTemplateType(Template.COMPANY_REGISTRATION.toString())
+                                .build()).getTemplateItemsList()
+                        .stream()
+                        .map(templateItem -> GetCompanyChecklistResponse.GetChecklistResponse
+                                .builder()
+                                .id(UUID.fromString(templateItem.getId()))
+                                .isChecked(templateItem.getIsChecked())
+                                .build())
+                        .toList()
+        );
+
+        return ApiResponse.success(data);
     }
 
     @Override
