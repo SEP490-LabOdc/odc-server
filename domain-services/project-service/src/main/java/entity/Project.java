@@ -3,9 +3,14 @@ package entity;
 
 import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class Project  extends BaseEntity {
@@ -32,4 +37,11 @@ public class Project  extends BaseEntity {
 
     @Column(name = "budget")
     private BigDecimal budget;
+
+    @ManyToMany
+    @JoinTable(
+            name = "project_skills",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id"))
+    private Set<Skill> skills = new HashSet<>();
 }
