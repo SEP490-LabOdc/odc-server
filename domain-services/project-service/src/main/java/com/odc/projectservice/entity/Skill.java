@@ -1,4 +1,4 @@
-package entity;
+package com.odc.projectservice.entity;
 
 import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.Column;
