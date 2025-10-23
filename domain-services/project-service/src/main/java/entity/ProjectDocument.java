@@ -1,13 +1,18 @@
 package entity;
 
 import com.odc.common.entity.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "project_documents")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProjectDocument extends BaseEntity {
     @Column(name = "document_name", nullable = false)
     private String documentName;

@@ -2,16 +2,21 @@ package entity;
 
 import com.odc.common.entity.BaseEntity;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.Column;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+@Entity
+@Table(name = "project_applications")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProjectApplication extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
