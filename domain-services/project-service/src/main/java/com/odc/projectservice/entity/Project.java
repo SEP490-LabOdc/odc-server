@@ -18,7 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Project  extends BaseEntity {
+public class Project extends BaseEntity {
     @Column(name = "company_id", nullable = false)
     private UUID companyId;
 

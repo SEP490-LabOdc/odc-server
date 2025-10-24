@@ -1,6 +1,5 @@
 package com.odc.projectservice.security;
 
-import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.common.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
