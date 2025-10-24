@@ -10,8 +10,12 @@ import java.util.UUID;
 
 public interface SkillService {
     ApiResponse<SkillResponse> createSkill(CreateSkillRequest request);
+
     ApiResponse<SkillResponse> updateSkill(UUID id, UpdateSkillRequest request);
+
     ApiResponse<SkillResponse> deleteSkill(UUID id);
+
     ApiResponse<List<SkillResponse>> getAllSkills();
+
     ApiResponse<SkillResponse> getSkillById(UUID id);
 }
