@@ -6,6 +6,7 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,5 +24,7 @@ public interface CompanyService {
 
     void updateRegisterCompanyStatus(UUID id, Status status);
 
-    void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request);
+    void reviewCompanyInfo(ReviewCompanyInfoRequest request);
+
+    ApiResponse<GetCompanyChecklistResponse> getCompanyChecklistByCompanyId(UUID id);
 }

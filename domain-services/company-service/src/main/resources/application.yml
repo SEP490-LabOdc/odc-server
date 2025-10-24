@@ -102,9 +102,17 @@ grpc:
     user-service:
       address: ${USER-SERVICE-GRPC:0.0.0.0}
       port: 9091
+    checklist-service:
+      address: ${CHECKLIST-SERVICE-GRPC:0.0.0.0}
+      port: 9093
 
 springdoc:
   api-docs:
     path: /company-service/v3/api-docs
   swagger-ui:
     path: /company-service/swagger/index.html
+
+# Custom properties
+custom:
+  client:
+    address: ${CUSTOM_CLIENT_ADDRESS:http://localhost:5173}

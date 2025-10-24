@@ -1,0 +1,18 @@
+syntax = "proto3";
+package com.odc.userservice.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.userservice.v1";
+option java_outer_classname = "UserServiceProto";
+
+service UserService {
+  rpc CheckEmailExists(CheckEmailRequest) returns (CheckEmailResponse);
+}
+
+message CheckEmailRequest {
+  string email = 1;
+}
+
+message CheckEmailResponse {
+  bool result = 1;
+}

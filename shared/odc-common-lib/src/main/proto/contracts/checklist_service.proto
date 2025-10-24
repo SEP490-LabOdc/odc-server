@@ -1,0 +1,33 @@
+syntax = "proto3";
+package com.odc.checklist.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.checklist.v1";
+option java_outer_classname = "ChecklistServiceProto";
+
+service ChecklistService {
+  rpc GetDescriptions(GetDescriptionsRequest) returns (GetDescriptionsResponse);
+  rpc GetChecklistItemsByTemplateTypeAndEntityId(GetChecklistItemsByTemplateTypeAndEntityIdRequest) returns (GetChecklistItemsByTemplateTypeAndEntityIdResponse);
+}
+
+message GetDescriptionsRequest {
+  repeated string ids = 1;
+}
+
+message GetDescriptionsResponse {
+  repeated string descriptions = 1;
+}
+
+message GetChecklistItemsByTemplateTypeAndEntityIdRequest {
+  string templateType = 1;
+  string entityId = 2;
+}
+
+message TemplateItem {
+  string id = 1;
+  bool isChecked = 2;
+}
+
+message GetChecklistItemsByTemplateTypeAndEntityIdResponse {
+  repeated TemplateItem templateItems = 1;
+}

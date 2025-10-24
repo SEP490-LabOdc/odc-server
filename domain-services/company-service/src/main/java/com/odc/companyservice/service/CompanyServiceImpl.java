@@ -1,6 +1,9 @@
 package com.odc.companyservice.service;
 
+import com.odc.checklist.v1.ChecklistServiceGrpc;
+import com.odc.checklist.v1.GetChecklistItemsByTemplateTypeAndEntityIdRequest;
 import com.odc.common.constant.Status;
+import com.odc.common.constant.Template;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.util.EnumUtil;
@@ -8,16 +11,17 @@ import com.odc.company.v1.CompanyApprovedEvent;
 import com.odc.company.v1.CompanyUpdateRequestEmailEvent;
 import com.odc.company.v1.ContactUser;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
-import com.odc.companyservice.dto.request.CompanyRegisterRequest;
-import com.odc.companyservice.dto.request.CreateChecklistRequest;
-import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
-import com.odc.companyservice.dto.request.UpdateCompanyRequest;
+import com.odc.companyservice.dto.request.*;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
 import com.odc.notification.v1.SendOtpRequest;
-import lombok.RequiredArgsConstructor;
+import com.odc.userservice.v1.CheckEmailRequest;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,10 +30,22 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyProducer companyProducer;
+
+    @Qualifier("userServiceChannel")
+    private final ManagedChannel userServiceChannel;
+
+    @Qualifier("checklistServiceChannel")
+    private final ManagedChannel checklistServiceChannel;
+
+    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyProducer companyProducer, ManagedChannel userServiceChannel, ManagedChannel checklistServiceChannel) {
+        this.companyRepository = companyRepository;
+        this.companyProducer = companyProducer;
+        this.userServiceChannel = userServiceChannel;
+        this.checklistServiceChannel = checklistServiceChannel;
+    }
 
     @Override
     public ApiResponse<CompanyResponse> registerCompany(CompanyRegisterRequest request) {
@@ -40,6 +56,15 @@ public class CompanyServiceImpl implements CompanyService {
         companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
             throw new BusinessException("Mã số thuế đã tồn tại");
         });
+
+        if (UserServiceGrpc
+                .newBlockingStub(userServiceChannel)
+                .checkEmailExists(CheckEmailRequest.newBuilder()
+                        .setEmail(request.getContactPersonEmail())
+                        .build())
+                .getResult()) {
+            throw new BusinessException("Email người liên hệ đã tồn tại");
+        }
 
         // 2. Ánh xạ từ DTO sang Entity
         Company company = Company.builder()
@@ -76,6 +101,48 @@ public class CompanyServiceImpl implements CompanyService {
                 .timestamp(LocalDateTime.now())
                 .data(responseData)
                 .build();
+    }
+
+    @Override
+    public ApiResponse<GetCompanyChecklistResponse> getCompanyChecklistByCompanyId(UUID id) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        GetCompanyChecklistResponse data = GetCompanyChecklistResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .taxCode(company.getTaxCode())
+                .address(company.getAddress())
+                .description(company.getDescription())
+                .website(company.getWebsite())
+                .status(company.getStatus())
+                .domain(company.getDomain())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
+                .createdAt(company.getCreatedAt())
+                .build();
+
+        data.setChecklists(
+                ChecklistServiceGrpc
+                        .newBlockingStub(checklistServiceChannel)
+                        .getChecklistItemsByTemplateTypeAndEntityId(GetChecklistItemsByTemplateTypeAndEntityIdRequest
+                                .newBuilder()
+                                .setEntityId(company.getId().toString())
+                                .setTemplateType(Template.COMPANY_REGISTRATION.toString())
+                                .build()).getTemplateItemsList()
+                        .stream()
+                        .map(templateItem -> GetCompanyChecklistResponse.GetChecklistResponse
+                                .builder()
+                                .id(UUID.fromString(templateItem.getId()))
+                                .isChecked(templateItem.getIsChecked())
+                                .build())
+                        .toList()
+        );
+
+        return ApiResponse.success(data);
     }
 
     @Override
@@ -168,9 +235,9 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public void reviewCompanyInfo(UUID id, ReviewCompanyInfoRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+    public void reviewCompanyInfo(ReviewCompanyInfoRequest request) {
+        Company company = companyRepository.findById(UUID.fromString(request.getCreateChecklistRequest().getCompanyId()))
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + request.getCreateChecklistRequest().getCompanyId()));
 
         if (!EnumUtil.isEnumValueExist(request.getStatus(), Status.class)) {
             throw new RuntimeException("Trạng thái không hợp lệ.");
@@ -194,17 +261,18 @@ public class CompanyServiceImpl implements CompanyService {
                     .build();
             companyProducer.publishCompanyApprovedEmail(companyApprovedEvent);
         } else if (company.getStatus().equalsIgnoreCase(Status.UPDATE_REQUIRED.toString())) {
+            List<String> incompleteChecklists = createChecklistRequest
+                    .getItems()
+                    .stream()
+                    .map(CreateChecklistItemRequest::getTemplateItemId)
+                    .toList();
+
             CompanyUpdateRequestEmailEvent companyUpdateRequestEmailEvent = CompanyUpdateRequestEmailEvent.newBuilder()
                     .setCompanyId(company.getId().toString())
                     .setCompanyName(company.getName())
                     .setNotes(createChecklistRequest.getNotes())
                     .setEmail(company.getEmail())
-//                    .setIncompleteChecklists(
-//                            createChecklistRequest
-//                                    .getItems()
-//                                    .stream()
-//                                    .map(createChecklistItemRequest -> createChecklistItemRequest.get)
-//                    )
+                    .addAllIncompleteChecklists(incompleteChecklists)
                     .build();
 
             companyProducer.publishCompanyUpdateRequestEmail(companyUpdateRequestEmailEvent);

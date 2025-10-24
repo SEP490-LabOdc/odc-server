@@ -120,6 +120,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(Exception ex, WebRequest request) {
+        log.error("Runtime error: {}", ex.getMessage(), ex);
+        ApiResponse<Object> response = ApiResponse.error(ex.getMessage(), ApiConstants.BUSINESS_ERROR);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(UnauthenticatedException.class)
     public ResponseEntity<ApiResponse<Object>> handleUnauthenticatedException(
             UnauthenticatedException ex, WebRequest request) {

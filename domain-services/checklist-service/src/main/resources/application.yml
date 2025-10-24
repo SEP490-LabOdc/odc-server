@@ -96,6 +96,12 @@ logging:
   file:
     name: logs/checklist-service.log
 
+# gRPC Configuration
+grpc:
+  server:
+    address: 0.0.0.0
+    port: 9093
+
 springdoc:
   api-docs:
     path: /checklist-service/v3/api-docs

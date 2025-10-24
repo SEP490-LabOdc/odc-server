@@ -5,6 +5,7 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +35,9 @@ public class CompanyController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@PathVariable UUID id, @Valid @RequestBody ReviewCompanyInfoRequest request) {
-        companyService.reviewCompanyInfo(id, request);
+    @PostMapping("/review")
+    public ResponseEntity<ApiResponse<Void>> updateCompanyRegisterStatus(@Valid @RequestBody ReviewCompanyInfoRequest request) {
+        companyService.reviewCompanyInfo(request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đăng ký thành công.", null));
     }
 
@@ -50,6 +51,11 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyById(@PathVariable UUID id) {
         ApiResponse<CompanyResponse> response = companyService.getCompanyById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/checklists")
+    public ResponseEntity<ApiResponse<GetCompanyChecklistResponse>> getCompanyChecklists(@PathVariable UUID id) {
+        return ResponseEntity.ok(companyService.getCompanyChecklistByCompanyId(id));
     }
 
     @DeleteMapping("/{id}")
