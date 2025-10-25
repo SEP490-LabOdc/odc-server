@@ -250,6 +250,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         if (company.getStatus().equalsIgnoreCase(Status.ACTIVE.toString())) {
             CompanyApprovedEvent companyApprovedEvent = CompanyApprovedEvent.newBuilder()
+                    .setCompanyId(company.getId().toString())
                     .setCompanyName(company.getName())
                     .setApprovedBy(company.getUpdatedBy())
                     .setEmail(company.getEmail())
