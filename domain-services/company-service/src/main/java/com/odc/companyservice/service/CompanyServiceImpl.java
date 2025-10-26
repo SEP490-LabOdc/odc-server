@@ -88,7 +88,6 @@ public class CompanyServiceImpl implements CompanyService {
 
             );
         }
-        ;
 
         // 2. Ánh xạ từ DTO sang Entity
         Company company = Company.builder()
