@@ -34,8 +34,12 @@ public class FileService {
                 .fileUrl(fileUrl)
                 .s3Key(s3Key)
                 .uploadedAt(LocalDateTime.now())
-                .entityId(entityId)
                 .build();
+
+        if(entityId != null && !entityId.isEmpty()) {
+            fileEntity.setEntityId(entityId);
+        }
+
         return fileRepository.save(fileEntity);
     }
 
