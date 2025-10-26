@@ -95,3 +95,8 @@ springdoc:
     path: /email-service/v3/api-docs
   swagger-ui:
     path: /email-service/swagger/index.html
+
+# Custom properties:
+custom:
+  client:
+    address: ${CUSTOM_CLIENT_ADDRESS:http://localhost:5173}
