@@ -6,6 +6,7 @@ import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
+import com.odc.companyservice.dto.response.GetCompanyEditResponse;
 import com.odc.companyservice.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,11 @@ import java.util.UUID;
 public class CompanyController {
 
     private final CompanyService companyService;
+
+    @GetMapping("/for-update")
+    public ResponseEntity<ApiResponse<GetCompanyEditResponse>> getEditCompany(@RequestParam String token) {
+        return ResponseEntity.ok(companyService.getCompanyEditByUpdateToken(token));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<CompanyResponse>> registerCompany(@Valid @RequestBody CompanyRegisterRequest request) {

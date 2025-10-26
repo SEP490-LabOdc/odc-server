@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package com.odc.notification.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.user.v1";
+option java_outer_classname = "ContactUserCreatedEventProto";
+
+message ContactUserCreatedEvent {
+  string user_id = 1;
+  string company_id = 2;
+}

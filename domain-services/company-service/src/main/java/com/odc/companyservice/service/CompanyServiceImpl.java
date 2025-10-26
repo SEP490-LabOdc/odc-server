@@ -2,6 +2,7 @@ package com.odc.companyservice.service;
 
 import com.odc.checklist.v1.ChecklistServiceGrpc;
 import com.odc.checklist.v1.GetChecklistItemsByTemplateTypeAndEntityIdRequest;
+import com.odc.common.constant.Constants;
 import com.odc.common.constant.Status;
 import com.odc.common.constant.Template;
 import com.odc.common.dto.ApiResponse;
@@ -14,7 +15,9 @@ import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.*;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
+import com.odc.companyservice.dto.response.GetCompanyEditResponse;
 import com.odc.companyservice.entity.Company;
+import com.odc.companyservice.entity.CompanyDocument;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
 import com.odc.notification.v1.SendOtpRequest;
@@ -22,9 +25,11 @@ import com.odc.userservice.v1.CheckEmailRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +38,7 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyProducer companyProducer;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Qualifier("userServiceChannel")
     private final ManagedChannel userServiceChannel;
@@ -40,9 +46,14 @@ public class CompanyServiceImpl implements CompanyService {
     @Qualifier("checklistServiceChannel")
     private final ManagedChannel checklistServiceChannel;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyProducer companyProducer, ManagedChannel userServiceChannel, ManagedChannel checklistServiceChannel) {
+    public CompanyServiceImpl(CompanyRepository companyRepository,
+                              CompanyProducer companyProducer,
+                              StringRedisTemplate stringRedisTemplate,
+                              ManagedChannel userServiceChannel,
+                              ManagedChannel checklistServiceChannel) {
         this.companyRepository = companyRepository;
         this.companyProducer = companyProducer;
+        this.stringRedisTemplate = stringRedisTemplate;
         this.userServiceChannel = userServiceChannel;
         this.checklistServiceChannel = checklistServiceChannel;
     }
@@ -66,6 +77,18 @@ public class CompanyServiceImpl implements CompanyService {
             throw new BusinessException("Email người liên hệ đã tồn tại");
         }
 
+        List<CompanyDocument> companyDocuments = new ArrayList<>();
+        if (!request.getBusinessLicenseLink().isEmpty()) {
+            companyDocuments.add(
+                    CompanyDocument.builder()
+                            .type(Constants.BUSINESS_LICENSE)
+                            .fileUrl(request.getBusinessLicenseLink())
+                            .uploadedAt(LocalDateTime.now())
+                            .build()
+
+            );
+        }
+
         // 2. Ánh xạ từ DTO sang Entity
         Company company = Company.builder()
                 .name(request.getName())
@@ -81,6 +104,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .contactPersonName(request.getContactPersonName())
                 .contactPersonPhone(request.getContactPersonPhone())
                 .status(Status.PENDING_VERIFICATION.toString())
+                .documents(companyDocuments)
                 .build();
 
         // 3. Lưu vào database
@@ -250,6 +274,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         if (company.getStatus().equalsIgnoreCase(Status.ACTIVE.toString())) {
             CompanyApprovedEvent companyApprovedEvent = CompanyApprovedEvent.newBuilder()
+                    .setCompanyId(company.getId().toString())
                     .setCompanyName(company.getName())
                     .setApprovedBy(company.getUpdatedBy())
                     .setEmail(company.getEmail())
@@ -302,6 +327,50 @@ public class CompanyServiceImpl implements CompanyService {
                                 .build()
                 )
                 .build());
+    }
+
+    @Override
+    public ApiResponse<GetCompanyEditResponse> getCompanyEditByUpdateToken(String token) {
+        String key = Constants.COMPANY_UPDATE_TOKEN_KEY_PREFIX + token;
+        String rawId = stringRedisTemplate.opsForValue()
+                .get(key);
+
+        if (rawId == null || rawId.isEmpty()) {
+            throw new BusinessException("Token không hợp lệ.");
+        }
+
+        UUID id = UUID.fromString(rawId);
+
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        GetCompanyEditResponse response = GetCompanyEditResponse.builder()
+                .id(company.getId())
+                .companyName(company.getName())
+                .companyEmail(company.getEmail())
+                .companyPhone(company.getPhone())
+                .taxCode(company.getTaxCode())
+                .address(company.getAddress())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
+                .getCompanyDocumentEditResponses(
+                        company.getDocuments() != null ?
+                                company.getDocuments()
+                                        .stream()
+                                        .map(documentCompany -> GetCompanyEditResponse.GetCompanyDocumentEditResponse
+                                                .builder()
+                                                .id(documentCompany.getId())
+                                                .fileUrl(documentCompany.getFileUrl())
+                                                .type(documentCompany.getType())
+                                                .build())
+                                        .toList()
+                                : new ArrayList<>()
+                )
+                .build();
+
+        stringRedisTemplate.delete(key);
+        return ApiResponse.success(response);
     }
 
     // --- Private Helper Method để tránh lặp code ---
