@@ -2,7 +2,10 @@ package com.odc.userservice.service;
 
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.SearchRequest;
+import com.odc.common.dto.SortRequest;
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.common.specification.GenericSpecification;
 import com.odc.userservice.dto.request.CreateUserRequest;
 import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
@@ -13,11 +16,14 @@ import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
 import com.odc.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -223,6 +229,30 @@ public class UserServiceImpl implements UserService {
                 .success(true)
                 .message("Xóa User thành công!")
                 .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @Override
+    public ApiResponse<List<GetUserResponse>> searchUsers(SearchRequest request) {
+        Specification<User> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+        List<GetUserResponse> users = userRepository.findAll(specification, sort)
+                .stream()
+                .map(this::toGetUserResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<GetUserResponse>>builder()
+                .success(true)
+                .message("Tìm kiếm người dùng thành công!")
+                .timestamp(LocalDateTime.now())
+                .data(users)
                 .build();
     }
 }
