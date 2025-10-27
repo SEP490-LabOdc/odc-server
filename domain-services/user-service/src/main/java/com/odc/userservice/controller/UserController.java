@@ -2,7 +2,6 @@ package com.odc.userservice.controller;
 
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
-import com.odc.common.dto.SearchRequest;
 import com.odc.userservice.dto.request.CreateUserRequest;
 import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
@@ -80,11 +79,5 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.deleteUser(id));
-    }
-
-    @PostMapping("/search")
-    public ResponseEntity<ApiResponse<List<GetUserResponse>>> searchUsers(
-            @RequestBody SearchRequest request) {
-        return ResponseEntity.ok(userService.searchUsers(request));
     }
 }

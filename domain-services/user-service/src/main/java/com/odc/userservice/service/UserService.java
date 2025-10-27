@@ -2,7 +2,6 @@ package com.odc.userservice.service;
 
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
-import com.odc.common.dto.SearchRequest;
 import com.odc.userservice.dto.request.CreateUserRequest;
 import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
@@ -28,6 +27,4 @@ public interface UserService {
     ApiResponse<GetUserResponse> updateStatus(UUID userId, Status status);
 
     ApiResponse<Void> deleteUser(UUID userId);
-
-    ApiResponse<List<GetUserResponse>> searchUsers(SearchRequest request);
 }

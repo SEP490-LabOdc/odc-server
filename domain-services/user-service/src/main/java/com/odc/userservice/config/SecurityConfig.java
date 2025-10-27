@@ -13,7 +13,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -25,8 +24,7 @@ public class SecurityConfig {
             "/api/v1/auth/**",
             "/actuator/**",
             "/user-service/v3/api-docs/**",
-            "/user-service/swagger/**",
-            "/api/v1/users/search"
+            "/user-service/swagger/**"
     };
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
