@@ -46,7 +46,7 @@ public class SecurityConfig {
             "/api/v1/companies"
     };
     private static final String[] POST_PERMIT_PATHS = {
-            "/api/v1/files"
+            "/api/v1/files/upload"
     };
     private static final String[] OPTIONS_ANY_PATH = {"/**"};
     private final JwtAuthenticationManager authenticationManager;
