@@ -122,9 +122,10 @@ public class AuthServiceImpl implements AuthService {
         String redisKey = String.format("user:%s:refreshToken", request.getUserId().toString());
         String refreshToken = stringRedisTemplate.opsForValue().get(redisKey);
 
-        if (refreshToken == null || refreshToken.isEmpty())
-            throw new UnauthenticatedException("Refresh token không hợp lệ !");
-
+        if (refreshToken == null ||
+                refreshToken.isEmpty() ||
+                !refreshToken.equals(request.getRefreshToken()))
+            throw new UnauthenticatedException("Refresh token không hợp lệ!");
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("không tìm thấy User!"));
