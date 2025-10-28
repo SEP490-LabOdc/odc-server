@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
     private int refreshExpiration;
     @Value("${google.client-id}")
     private String googleClientId;
+
 
     @Autowired
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, JwtUtil jwtUtil, StringRedisTemplate stringRedisTemplate) {
@@ -144,12 +146,23 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String email = payload.getEmail();
+        validateFptEmail(email);
         User user = userRepository.findByEmail(email).orElseGet(() -> createUserFromGoogle(payload));
 
         // Nếu user đã tồn tại nhưng không phải từ Google login, bạn có thể xử lý thêm ở đây
         // Ví dụ: throw new BusinessException("Email already exists with password login!");
 
         return generateTokenResponse(user);
+    }
+    private void validateFptEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            throw new UnauthenticatedException("Email không được để trống!");
+        }
+        boolean isFptEmail = email.toLowerCase().endsWith("@fpt.edu.vn");
+
+        if (!isFptEmail) {
+            throw new UnauthenticatedException("Chỉ cho phép đăng nhập bằng email FPT !");
+        }
     }
 
     private GoogleIdToken.Payload verifyGoogleToken(String idTokenString) {
