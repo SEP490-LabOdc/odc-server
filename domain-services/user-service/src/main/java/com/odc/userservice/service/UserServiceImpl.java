@@ -46,6 +46,8 @@ public class UserServiceImpl implements UserService {
                                 .fullName(u.getFullName())
                                 .role(u.getRole().getName())
                                 .gender(u.getGender())
+                                .address(u.getAddress())
+                                .status(u.getStatus())
                                 .build())
                         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user")))
                 .build();
@@ -64,6 +66,8 @@ public class UserServiceImpl implements UserService {
                         .fullName(user.getFullName())
                         .role(user.getRole().getName())
                         .gender(user.getGender())
+                        .address(user.getAddress())
+                        .status(user.getStatus())
                         .build())
                 .collect(Collectors.toList());
 
@@ -124,6 +128,8 @@ public class UserServiceImpl implements UserService {
                 .fullName(user.getFullName())
                 .role(user.getRole().getName())
                 .gender(user.getGender())
+                .address(user.getAddress())
+                .status(user.getStatus())
                 .build();
     }
 
