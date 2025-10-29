@@ -4,7 +4,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.odc.checklistservice.entity.Checklist;
 import com.odc.checklistservice.entity.ChecklistItem;
 import com.odc.checklistservice.repository.ChecklistRepository;
-import com.odc.common.constant.ChecklistItemStatus;
 import com.odc.common.constant.ChecklistStatus;
 import com.odc.commonlib.event.EventHandler;
 import com.odc.commonlib.util.ProtobufConverter;

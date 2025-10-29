@@ -132,22 +132,7 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
 
-        GetCompanyChecklistResponse data = GetCompanyChecklistResponse.builder()
-                .id(company.getId())
-                .name(company.getName())
-                .email(company.getEmail())
-                .phone(company.getPhone())
-                .taxCode(company.getTaxCode())
-                .address(company.getAddress())
-                .description(company.getDescription())
-                .website(company.getWebsite())
-                .status(company.getStatus())
-                .domain(company.getDomain())
-                .contactPersonPhone(company.getContactPersonPhone())
-                .contactPersonEmail(company.getContactPersonEmail())
-                .contactPersonName(company.getContactPersonName())
-                .createdAt(company.getCreatedAt())
-                .build();
+        GetCompanyChecklistResponse data = GetCompanyChecklistResponse.builder().build();
 
         data.setChecklists(
                 ChecklistServiceGrpc
@@ -390,7 +375,19 @@ public class CompanyServiceImpl implements CompanyService {
                 .contactPersonEmail(company.getContactPersonEmail())
                 .contactPersonName(company.getContactPersonName())
                 .createdAt(company.getCreatedAt())
+                .getCompanyDocumentResponses(
+                        company.getDocuments() == null ? new ArrayList<>()
+                                : company.getDocuments()
+                                .stream()
+                                .filter(document -> Constants.BUSINESS_LICENSE.equalsIgnoreCase(document.getType()))
+                                .map(document -> CompanyResponse
+                                        .GetCompanyDocumentResponse.builder()
+                                        .id(document.getId())
+                                        .fileUrl(document.getFileUrl())
+                                        .type(document.getType())
+                                        .build())
+                                .toList()
+                )
                 .build();
     }
-
 }

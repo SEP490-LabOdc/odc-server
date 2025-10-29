@@ -28,6 +28,7 @@ public class SecurityConfig {
             "/actuator/**",
             "/api/v1/auth/**",
             "/api/v1/companies/register",
+            "/api/v1/companies/for-update",
             "/api/v1/otp/**",
             "/api/v1/users", // Allow GET all users without auth (base path)
             "/v3/api-docs/**",
@@ -45,7 +46,7 @@ public class SecurityConfig {
             "/api/v1/companies"
     };
     private static final String[] POST_PERMIT_PATHS = {
-            "/api/v1/files"
+            "/api/v1/files/upload"
     };
     private static final String[] OPTIONS_ANY_PATH = {"/**"};
     private final JwtAuthenticationManager authenticationManager;

@@ -1,6 +1,5 @@
 package com.odc.checklistservice.entity;
 
-import com.odc.common.constant.ChecklistItemStatus;
 import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;

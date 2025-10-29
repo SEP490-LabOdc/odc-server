@@ -89,7 +89,7 @@ cloud:
   aws:
     region: ap-southeast-1
     s3:
-      bucket-name:"${AWS_S3_BUCKET_NAME:file-service-bucket}"
+      bucket-name: "${AWS_S3_BUCKET_NAME:file-service-bucket}"
     credentials:
       access-key: "${AWS_ACCESS_KEY_ID:your_access_key}"
       secret-key: "${AWS_SECRET_ACCESS_KEY:your_secret_key}"
