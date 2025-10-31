@@ -46,14 +46,3 @@ message CompanyUpdateRequestEmailEvent {
   string email = 4;
   repeated string incomplete_checklists = 5;
 }
-
-message UpdateCompanyRegistrationEvent {
-  string redis_key = 1;
-  repeated
-}
-
-message UpdateCompanyDocument {
-  string id = 1;
-  string fileUrl = 2;
-  string type = 3;
-}
