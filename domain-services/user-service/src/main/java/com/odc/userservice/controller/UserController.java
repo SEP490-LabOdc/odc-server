@@ -43,7 +43,7 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(request));
     }
 
-    @PreAuthorize("hasAuthority('USER') and #id == authentication.principal")
+    @PreAuthorize("#id == authentication.principal")
     @PutMapping("/{id}/profile")
     public ResponseEntity<ApiResponse<GetUserResponse>> updateProfile(
             @PathVariable UUID id,
