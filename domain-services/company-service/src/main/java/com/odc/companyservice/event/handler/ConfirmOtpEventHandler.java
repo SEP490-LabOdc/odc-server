@@ -64,7 +64,7 @@ public class ConfirmOtpEventHandler implements EventHandler {
                     .setTitle("New Company Registration Request")
                     .setContent("A new company named \"" + company.getName() + "\" has just registered and is awaiting verification.")
                     .putAllData(dataMap)
-                    .setDeepLink("/companies/" + company.getId())
+                    .setDeepLink("/approve?id=" + company.getId())
                     .setPriority("HIGH")
                     .setTarget(target)
                     .addAllChannels(List.of(
