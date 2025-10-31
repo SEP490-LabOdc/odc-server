@@ -396,6 +396,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setContactPersonEmail(request.getContactPersonEmail());
         company.setContactPersonName(request.getContactPersonName());
         company.setContactPersonPhone(request.getContactPersonPhone());
+        company.setStatus(Status.PENDING.toString());
 
         if (company.getDocuments() == null) {
             company.setDocuments(new ArrayList<>());
@@ -457,7 +458,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .setTitle("Company Information Updated")
                 .setContent("The company \"" + company.getName() + "\" has updated its registration details and is awaiting verification.")
                 .putAllData(dataMap)
-                .setDeepLink("/companies/" + company.getId())
+                .setDeepLink("/approve?id=" + company.getId())
                 .setPriority("HIGH")
                 .setTarget(target)
                 .addAllChannels(List.of(Channel.WEB))
