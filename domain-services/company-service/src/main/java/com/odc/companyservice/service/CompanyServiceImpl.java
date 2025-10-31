@@ -468,7 +468,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         return ApiResponse.success("Cập nhật thông tin công ty thành công.", null);
     }
-    
+
     // --- Private Helper Method để tránh lặp code ---
     private CompanyResponse mapToResponse(Company company) {
         return CompanyResponse.builder()
