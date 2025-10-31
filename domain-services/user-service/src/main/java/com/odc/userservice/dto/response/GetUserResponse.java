@@ -1,6 +1,7 @@
 package com.odc.userservice.dto.response;
 
 import com.odc.common.constant.Gender;
+import com.odc.common.constant.Status;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,4 +20,6 @@ public class GetUserResponse {
     private String avatarUrl;
     private String role;
     private Gender gender;
+    private String address;
+    private Status status;
 }
