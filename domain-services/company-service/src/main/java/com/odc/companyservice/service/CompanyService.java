@@ -4,6 +4,7 @@ import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
+import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
@@ -30,4 +31,6 @@ public interface CompanyService {
     ApiResponse<GetCompanyChecklistResponse> getCompanyChecklistByCompanyId(UUID id);
 
     ApiResponse<GetCompanyEditResponse> getCompanyEditByUpdateToken(String token);
+
+    ApiResponse<Void> updateCompanyOnboard(String token, UpdateCompanyRegistrationRequest request);
 }

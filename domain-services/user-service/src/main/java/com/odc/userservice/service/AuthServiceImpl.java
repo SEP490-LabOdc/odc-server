@@ -155,6 +155,7 @@ public class AuthServiceImpl implements AuthService {
 
         return generateTokenResponse(user);
     }
+
     private void validateFptEmail(String email) {
         if (email == null || email.isEmpty()) {
             throw new UnauthenticatedException("Email không được để trống!");

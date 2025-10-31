@@ -20,7 +20,7 @@ import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.entity.CompanyDocument;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
-import com.odc.notification.v1.SendOtpRequest;
+import com.odc.notification.v1.*;
 import com.odc.userservice.v1.CheckEmailRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -354,10 +355,120 @@ public class CompanyServiceImpl implements CompanyService {
                 )
                 .build();
 
-        stringRedisTemplate.delete(key);
         return ApiResponse.success(response);
     }
 
+    @Override
+    public ApiResponse<Void> updateCompanyOnboard(String token, UpdateCompanyRegistrationRequest request) {
+        String key = Constants.COMPANY_UPDATE_TOKEN_KEY_PREFIX + token;
+        String rawId = stringRedisTemplate.opsForValue().get(key);
+
+        if (rawId == null || rawId.isEmpty()) {
+            throw new BusinessException("Token không hợp lệ.");
+        }
+
+        UUID id = UUID.fromString(rawId);
+
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
+
+        companyRepository.findByEmail(request.getEmail()).ifPresent(c -> {
+            throw new BusinessException("Email công ty đã tồn tại");
+        });
+        companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
+            throw new BusinessException("Mã số thuế đã tồn tại");
+        });
+
+        if (UserServiceGrpc
+                .newBlockingStub(userServiceChannel)
+                .checkEmailExists(CheckEmailRequest.newBuilder()
+                        .setEmail(request.getContactPersonEmail())
+                        .build())
+                .getResult()) {
+            throw new BusinessException("Email người liên hệ đã tồn tại");
+        }
+
+        company.setName(request.getName());
+        company.setEmail(request.getEmail());
+        company.setPhone(request.getPhone());
+        company.setTaxCode(request.getTaxCode());
+        company.setAddress(request.getAddress());
+        company.setContactPersonEmail(request.getContactPersonEmail());
+        company.setContactPersonName(request.getContactPersonName());
+        company.setContactPersonPhone(request.getContactPersonPhone());
+
+        if (company.getDocuments() == null) {
+            company.setDocuments(new ArrayList<>());
+        }
+
+        List<UpdateCompanyDocumentRequest> docRequests = request.getUpdateCompanyDocumentRequests();
+        if (docRequests != null && !docRequests.isEmpty()) {
+
+            Map<UUID, CompanyDocument> existingMap = company.getDocuments().stream()
+                    .filter(doc -> doc.getId() != null)
+                    .collect(Collectors.toMap(CompanyDocument::getId, doc -> doc));
+
+            List<CompanyDocument> updatedList = new ArrayList<>();
+
+            for (UpdateCompanyDocumentRequest req : docRequests) {
+                if (req.getId() != null && existingMap.containsKey(req.getId())) {
+                    CompanyDocument existing = existingMap.get(req.getId());
+                    existing.setFileUrl(req.getFileUrl());
+                    existing.setType(req.getType());
+                    updatedList.add(existing);
+                } else {
+                    CompanyDocument newDoc = CompanyDocument.builder()
+                            .fileUrl(req.getFileUrl())
+                            .type(req.getType())
+                            .company(company)
+                            .build();
+                    updatedList.add(newDoc);
+                }
+            }
+
+            company.getDocuments().removeIf(doc ->
+                    doc.getId() != null &&
+                            updatedList.stream().noneMatch(u -> u.getId() != null && u.getId().equals(doc.getId()))
+            );
+
+            company.getDocuments().clear();
+            company.getDocuments().addAll(updatedList);
+        }
+
+        companyRepository.save(company);
+        stringRedisTemplate.delete(key);
+
+        Map<String, String> dataMap = Map.of(
+                "companyId", company.getId().toString(),
+                "companyName", company.getName()
+        );
+
+        RoleTarget roleTarget = RoleTarget.newBuilder()
+                .addRoles("LAB_ADMIN")
+                .build();
+
+        Target target = Target.newBuilder()
+                .setRole(roleTarget)
+                .build();
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("COMPANY_UPDATE")
+                .setTitle("Company Information Updated")
+                .setContent("The company \"" + company.getName() + "\" has updated its registration details and is awaiting verification.")
+                .putAllData(dataMap)
+                .setDeepLink("/companies/" + company.getId())
+                .setPriority("HIGH")
+                .setTarget(target)
+                .addAllChannels(List.of(Channel.WEB))
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("COMPANY_MANAGEMENT")
+                .build();
+        companyProducer.publishNotificationCompanyUpdateEvent(notificationEvent);
+
+        return ApiResponse.success("Cập nhật thông tin công ty thành công.", null);
+    }
+    
     // --- Private Helper Method để tránh lặp code ---
     private CompanyResponse mapToResponse(Company company) {
         return CompanyResponse.builder()
