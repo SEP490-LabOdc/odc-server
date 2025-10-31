@@ -3,6 +3,7 @@ package com.odc.companyservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
+import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
@@ -31,6 +32,12 @@ public class CompanyController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<CompanyResponse>> registerCompany(@Valid @RequestBody CompanyRegisterRequest request) {
         return new ResponseEntity<>(companyService.registerCompany(request), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/onboard/update")
+    public ResponseEntity<ApiResponse<Void>> updateCompanyOnboard(@RequestParam String token,
+                                                                  @Valid @RequestBody UpdateCompanyRegistrationRequest request) {
+        return ResponseEntity.ok(companyService.updateCompanyOnboard(token, request));
     }
 
     @PutMapping("/{id}")

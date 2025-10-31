@@ -40,4 +40,9 @@ public class CompanyProducer {
         log.info("publish company update request email event : {}", event);
         eventPublisher.publish("email.company_update_request", event);
     }
+
+    public void publishNotificationCompanyUpdateEvent(NotificationEvent event) {
+        eventPublisher.publish("notifications", event);
+        log.info("Company update notification event published successfully.");
+    }
 }
