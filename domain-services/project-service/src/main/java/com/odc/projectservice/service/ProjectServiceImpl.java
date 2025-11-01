@@ -1,7 +1,10 @@
 package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
+import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
+import com.odc.common.specification.GenericSpecification;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.ProjectResponse;
@@ -11,10 +14,16 @@ import com.odc.projectservice.entity.Skill;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -140,6 +149,51 @@ public class ProjectServiceImpl implements ProjectService {
                 .timestamp(LocalDateTime.now())
                 .data(projects)
                 .build();
+    }
+
+    @Override
+    public ApiResponse<List<ProjectResponse>> searchProjects(SearchRequest request) {
+        Specification<Project> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        List<ProjectResponse> projects = projectRepository.findAll(specification, sort)
+                .stream()
+                .map(this::convertToProjectResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<ProjectResponse>>builder()
+                .success(true)
+                .message("Tìm kiếm dự án thành công")
+                .timestamp(LocalDateTime.now())
+                .data(projects)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<ProjectResponse>> searchProjectsWithPagination(SearchRequest request) {
+        Specification<Project> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()){
+            for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+
+        Page<ProjectResponse> page = projectRepository.findAll(specification, pageable)
+                .map(this::convertToProjectResponse);
+
+        return ApiResponse.success(PaginatedResult.from(page));
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {
