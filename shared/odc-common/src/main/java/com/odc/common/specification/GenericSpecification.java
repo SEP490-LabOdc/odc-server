@@ -10,16 +10,14 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GenericSpecification<T> implements Specification<T> {
-
-    private final List<FilterRequest> filters;
-
-    public GenericSpecification(List<FilterRequest> filters) {
-        this.filters = filters;
-    }
+public record GenericSpecification<T>(List<FilterRequest> filters) implements Specification<T> {
 
     @Override
     public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+        if (filters == null || filters.isEmpty()) {
+            return cb.conjunction();
+        }
+
         List<Predicate> predicates = new ArrayList<>();
 
         for (FilterRequest filter : filters) {
