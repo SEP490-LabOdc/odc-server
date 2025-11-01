@@ -224,7 +224,9 @@ public class UserServiceImpl implements UserService {
     public ApiResponse<Void> deleteUser(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User"));
-        userRepository.delete(user);
+
+        user.setStatus(Status.INACTIVE);
+        userRepository.save(user);
         return ApiResponse.<Void>builder()
                 .success(true)
                 .message("Xóa User thành công!")
