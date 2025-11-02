@@ -1,6 +1,7 @@
 package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateSkillRequest;
 import com.odc.projectservice.dto.request.UpdateSkillRequest;
 import com.odc.projectservice.dto.response.SkillResponse;
@@ -49,5 +50,14 @@ public class SkillController {
     public ResponseEntity<ApiResponse<SkillResponse>> getSkillById(@PathVariable UUID id) {
         ApiResponse<SkillResponse> response = skillService.getSkillById(id);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<?>> searchSkills(@RequestBody SearchRequest request) {
+        boolean isPaginated = request.getPage() != null && request.getSize() != null;
+        if (isPaginated) {
+            return ResponseEntity.ok(skillService.searchSkillsWithPagination(request));
+        }
+        return ResponseEntity.ok(skillService.searchSkills(request));
     }
 }

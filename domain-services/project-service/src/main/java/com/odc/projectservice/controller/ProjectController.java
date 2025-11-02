@@ -52,6 +52,7 @@ public class ProjectController {
         ApiResponse<List<ProjectResponse>> response = projectService.getAllProjects();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<?>> searchProjects(@RequestBody SearchRequest request) {
         boolean isPaginated = request.getPage() != null && request.getSize() != null;

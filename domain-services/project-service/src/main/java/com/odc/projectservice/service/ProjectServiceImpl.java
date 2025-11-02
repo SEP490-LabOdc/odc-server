@@ -181,7 +181,7 @@ public class ProjectServiceImpl implements ProjectService {
         Specification<Project> specification = new GenericSpecification<>(request.getFilters());
 
         List<Sort.Order> orders = new ArrayList<>();
-        if (request.getSorts() != null && !request.getSorts().isEmpty()){
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
             for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
                 orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
             }
