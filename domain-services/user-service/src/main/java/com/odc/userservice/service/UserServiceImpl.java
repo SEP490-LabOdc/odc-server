@@ -2,6 +2,7 @@ package com.odc.userservice.service;
 
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.dto.SortRequest;
 import com.odc.common.exception.ResourceNotFoundException;
@@ -16,6 +17,9 @@ import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
 import com.odc.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -262,5 +266,25 @@ public class UserServiceImpl implements UserService {
                 .timestamp(LocalDateTime.now())
                 .data(users)
                 .build();
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<GetUserResponse>> searchUsersWithPagination(SearchRequest request) {
+        Specification<User> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+
+        Page<GetUserResponse> page = userRepository.findAll(specification, pageable)
+                .map(this::toGetUserResponse);
+
+        return ApiResponse.success(PaginatedResult.from(page));
     }
 }

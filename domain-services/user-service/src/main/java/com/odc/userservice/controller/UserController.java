@@ -83,8 +83,14 @@ public class UserController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<ApiResponse<List<GetUserResponse>>> searchUsers(
+    public ResponseEntity<ApiResponse<?>> searchUsers(
             @RequestBody SearchRequest request) {
+        boolean isPaginated = request.getPage() != null && request.getSize() != null;
+
+        if (isPaginated) {
+            return ResponseEntity.ok(userService.searchUsersWithPagination(request));
+        }
+
         return ResponseEntity.ok(userService.searchUsers(request));
     }
 }

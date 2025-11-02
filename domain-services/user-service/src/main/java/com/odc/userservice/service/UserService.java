@@ -2,6 +2,7 @@ package com.odc.userservice.service;
 
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.userservice.dto.request.CreateUserRequest;
 import com.odc.userservice.dto.request.UpdatePasswordRequest;
@@ -30,4 +31,6 @@ public interface UserService {
     ApiResponse<Void> deleteUser(UUID userId);
 
     ApiResponse<List<GetUserResponse>> searchUsers(SearchRequest request);
+
+    ApiResponse<PaginatedResult<GetUserResponse>> searchUsersWithPagination(SearchRequest request);
 }
