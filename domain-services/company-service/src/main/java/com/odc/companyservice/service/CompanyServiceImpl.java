@@ -372,14 +372,12 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
 
-        companyRepository.findByEmail(request.getEmail()).ifPresent(c -> {
-            throw new BusinessException("Email công ty đã tồn tại");
-        });
-        companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
-            throw new BusinessException("Mã số thuế đã tồn tại");
-        });
+        if (!company.getTaxCode().equalsIgnoreCase(request.getTaxCode()))
+            companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
+                throw new BusinessException("Mã số thuế đã tồn tại");
+            });
 
-        if (UserServiceGrpc
+        if (!company.getContactPersonEmail().equalsIgnoreCase(request.getContactPersonEmail()) && UserServiceGrpc
                 .newBlockingStub(userServiceChannel)
                 .checkEmailExists(CheckEmailRequest.newBuilder()
                         .setEmail(request.getContactPersonEmail())
@@ -389,7 +387,6 @@ public class CompanyServiceImpl implements CompanyService {
         }
 
         company.setName(request.getName());
-        company.setEmail(request.getEmail());
         company.setPhone(request.getPhone());
         company.setTaxCode(request.getTaxCode());
         company.setAddress(request.getAddress());
