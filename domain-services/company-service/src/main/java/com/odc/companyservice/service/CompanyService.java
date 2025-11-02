@@ -2,6 +2,8 @@ package com.odc.companyservice.service;
 
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
+import com.odc.common.dto.SearchRequest;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
@@ -33,4 +35,8 @@ public interface CompanyService {
     ApiResponse<GetCompanyEditResponse> getCompanyEditByUpdateToken(String token);
 
     ApiResponse<Void> updateCompanyOnboard(String token, UpdateCompanyRegistrationRequest request);
+
+    ApiResponse<List<CompanyResponse>> searchCompanies(SearchRequest request);
+
+    ApiResponse<PaginatedResult<CompanyResponse>> searchCompaniesWithPagination(SearchRequest request);
 }

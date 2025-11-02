@@ -6,7 +6,11 @@ import com.odc.common.constant.Constants;
 import com.odc.common.constant.Status;
 import com.odc.common.constant.Template;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
+import com.odc.common.dto.SearchRequest;
+import com.odc.common.dto.SortRequest;
 import com.odc.common.exception.BusinessException;
+import com.odc.common.specification.GenericSpecification;
 import com.odc.common.util.EnumUtil;
 import com.odc.company.v1.CompanyApprovedEvent;
 import com.odc.company.v1.CompanyUpdateRequestEmailEvent;
@@ -25,6 +29,11 @@ import com.odc.userservice.v1.CheckEmailRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -468,6 +477,71 @@ public class CompanyServiceImpl implements CompanyService {
         companyProducer.publishNotificationCompanyUpdateEvent(notificationEvent);
 
         return ApiResponse.success("Cập nhật thông tin công ty thành công.", null);
+    }
+
+    @Override
+    public ApiResponse<List<CompanyResponse>> searchCompanies(SearchRequest request) {
+        Specification<Company> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        List<CompanyResponse> companies = companyRepository.findAll(specification, sort)
+                .stream()
+                .map(this::mapToSearchResponse) // Sử dụng mapper riêng không có documents
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<CompanyResponse>>builder()
+                .success(true)
+                .message("Tìm kiếm công ty thành công")
+                .timestamp(LocalDateTime.now())
+                .data(companies)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<CompanyResponse>> searchCompaniesWithPagination(SearchRequest request) {
+        Specification<Company> specification = new GenericSpecification<>(request.getFilters());
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (request.getSorts() != null && !request.getSorts().isEmpty()) {
+            for (SortRequest sortRequest : request.getSorts()) {
+                orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
+            }
+        }
+        Sort sort = Sort.by(orders);
+
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+
+        Page<CompanyResponse> page = companyRepository.findAll(specification, pageable)
+                .map(this::mapToSearchResponse); // Sử dụng mapper riêng không có documents
+
+        return ApiResponse.success(PaginatedResult.from(page));
+    }
+
+    private CompanyResponse mapToSearchResponse(Company company) {
+        return CompanyResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .taxCode(company.getTaxCode())
+                .address(company.getAddress())
+                .description(company.getDescription())
+                .website(company.getWebsite())
+                .status(company.getStatus())
+                .domain(company.getDomain())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
+                .createdAt(company.getCreatedAt())
+                .getCompanyDocumentResponses(null)
+                .build();
     }
 
     // --- Private Helper Method để tránh lặp code ---
