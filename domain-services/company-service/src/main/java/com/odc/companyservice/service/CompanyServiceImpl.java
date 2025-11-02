@@ -78,18 +78,6 @@ public class CompanyServiceImpl implements CompanyService {
             throw new BusinessException("Email người liên hệ đã tồn tại");
         }
 
-        List<CompanyDocument> companyDocuments = new ArrayList<>();
-        if (!request.getBusinessLicenseLink().isEmpty()) {
-            companyDocuments.add(
-                    CompanyDocument.builder()
-                            .type(Constants.BUSINESS_LICENSE)
-                            .fileUrl(request.getBusinessLicenseLink())
-                            .uploadedAt(LocalDateTime.now())
-                            .build()
-
-            );
-        }
-
         // 2. Ánh xạ từ DTO sang Entity
         Company company = Company.builder()
                 .name(request.getName())
@@ -105,8 +93,21 @@ public class CompanyServiceImpl implements CompanyService {
                 .contactPersonName(request.getContactPersonName())
                 .contactPersonPhone(request.getContactPersonPhone())
                 .status(Status.PENDING_VERIFICATION.toString())
-                .documents(companyDocuments)
                 .build();
+
+        List<CompanyDocument> companyDocuments = new ArrayList<>();
+        if (!request.getBusinessLicenseLink().isEmpty()) {
+            companyDocuments.add(
+                    CompanyDocument.builder()
+                            .type(Constants.BUSINESS_LICENSE)
+                            .fileUrl(request.getBusinessLicenseLink())
+                            .uploadedAt(LocalDateTime.now())
+                            .company(company)
+                            .build()
+            );
+        }
+
+        company.setDocuments(companyDocuments);
 
         // 3. Lưu vào database
         Company savedCompany = companyRepository.save(company);
