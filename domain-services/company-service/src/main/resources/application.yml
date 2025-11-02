@@ -116,3 +116,4 @@ springdoc:
 custom:
   client:
     address: ${CUSTOM_CLIENT_ADDRESS:http://localhost:5173}
+
