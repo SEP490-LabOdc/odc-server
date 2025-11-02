@@ -29,6 +29,7 @@ public class SecurityConfig {
             "/api/v1/auth/**",
             "/api/v1/companies/register",
             "/api/v1/companies/for-update/**",
+            "/api/v1/companies/onboard/update/**",
             "/api/v1/otp/**",
             "/api/v1/users", // Allow GET all users without auth (base path)
             "/v3/api-docs/**",

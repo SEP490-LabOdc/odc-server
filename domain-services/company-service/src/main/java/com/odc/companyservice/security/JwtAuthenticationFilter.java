@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String[] EXCLUDED_EXACT_PATHS = {
             "/api/v1/companies/register",
             "/api/v1/companies/for-update",
+            "/api/v1/companies/onboard/update"
     };
     private final JwtUtil jwtUtil;
 
