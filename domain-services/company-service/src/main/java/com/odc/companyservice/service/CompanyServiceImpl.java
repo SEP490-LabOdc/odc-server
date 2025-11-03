@@ -379,18 +379,27 @@ public class CompanyServiceImpl implements CompanyService {
                 throw new BusinessException("Mã số thuế đã tồn tại");
             });
 
-        if (!company.getContactPersonEmail().equalsIgnoreCase(request.getContactPersonEmail()) && UserServiceGrpc
-                .newBlockingStub(userServiceChannel)
-                .checkEmailExists(CheckEmailRequest.newBuilder()
-                        .setEmail(request.getContactPersonEmail())
-                        .build())
-                .getResult()) {
-            throw new BusinessException("Email người liên hệ đã tồn tại");
-        }
+        if (!company.getPhone().equalsIgnoreCase(request.getPhone()))
+            companyRepository.findByPhone(request.getPhone()).ifPresent(c -> {
+                throw new BusinessException("Số điện thoại đã tồn tại");
+            });
+
+//        if (!company.getContactPersonEmail().equalsIgnoreCase(request.getContactPersonEmail()) && UserServiceGrpc
+//                .newBlockingStub(userServiceChannel)
+//                .checkEmailExists(CheckEmailRequest.newBuilder()
+//                        .setEmail(request.getContactPersonEmail())
+//                        .build())
+//                .getResult()) {
+//            throw new BusinessException("Email người liên hệ đã tồn tại");
+//        }
 
         company.setName(request.getName());
-        company.setPhone(request.getPhone());
-        company.setTaxCode(request.getTaxCode());
+        if(!company.getPhone().equalsIgnoreCase(request.getPhone()))
+            company.setPhone(request.getPhone());
+
+        if(!company.getTaxCode().equalsIgnoreCase(request.getTaxCode()))
+            company.setTaxCode(request.getTaxCode());
+
         company.setAddress(request.getAddress());
         company.setContactPersonEmail(request.getContactPersonEmail());
         company.setContactPersonName(request.getContactPersonName());
