@@ -6,6 +6,7 @@ import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyByIdResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.dto.response.GetCompanyEditResponse;
 import com.odc.companyservice.service.CompanyService;
@@ -61,8 +62,8 @@ public class CompanyController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyById(@PathVariable UUID id) {
-        ApiResponse<CompanyResponse> response = companyService.getCompanyById(id);
+    public ResponseEntity<ApiResponse<GetCompanyByIdResponse>> getCompanyById(@PathVariable UUID id) {
+        ApiResponse<GetCompanyByIdResponse> response = companyService.getCompanyById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

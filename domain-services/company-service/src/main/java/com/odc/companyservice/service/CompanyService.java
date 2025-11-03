@@ -7,6 +7,7 @@ import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyByIdResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.dto.response.GetCompanyEditResponse;
 
@@ -20,7 +21,7 @@ public interface CompanyService {
 
     ApiResponse<List<CompanyResponse>> getAllCompanies();
 
-    ApiResponse<CompanyResponse> getCompanyById(UUID id);
+    ApiResponse<GetCompanyByIdResponse> getCompanyById(UUID id);
 
     ApiResponse<Void> deleteCompany(UUID id);
 

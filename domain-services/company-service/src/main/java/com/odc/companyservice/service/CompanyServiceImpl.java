@@ -14,6 +14,7 @@ import com.odc.company.v1.ContactUser;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.*;
 import com.odc.companyservice.dto.response.CompanyResponse;
+import com.odc.companyservice.dto.response.GetCompanyByIdResponse;
 import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
 import com.odc.companyservice.dto.response.GetCompanyEditResponse;
 import com.odc.companyservice.entity.Company;
@@ -204,17 +205,17 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public ApiResponse<CompanyResponse> getCompanyById(UUID id) {
+    public ApiResponse<GetCompanyByIdResponse> getCompanyById(UUID id) {
         // 1. Tìm công ty theo ID, nếu không thấy thì ném lỗi ResourceNotFoundException
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với ID: " + id));
 
         // 2. Nếu tìm thấy, ánh xạ sang DTO và đóng gói trong ApiResponse
-        return ApiResponse.<CompanyResponse>builder()
+        return ApiResponse.<GetCompanyByIdResponse>builder()
                 .success(true)
                 .message("Lấy thông tin công ty thành công!")
                 .timestamp(LocalDateTime.now())
-                .data(mapToResponse(company)) // Tái sử dụng hàm map
+                .data(mapToGetCompanyIdResponse(company)) // Tái sử dụng hàm map
                 .build();
     }
 
@@ -481,7 +482,39 @@ public class CompanyServiceImpl implements CompanyService {
                 .website(company.getWebsite())
                 .status(company.getStatus())
                 .domain(company.getDomain())
-                .userId(company.getUserId().toString())
+                .contactPersonPhone(company.getContactPersonPhone())
+                .contactPersonEmail(company.getContactPersonEmail())
+                .contactPersonName(company.getContactPersonName())
+                .createdAt(company.getCreatedAt())
+                .getCompanyDocumentResponses(
+                        company.getDocuments() == null ? new ArrayList<>()
+                                : company.getDocuments()
+                                .stream()
+                                .filter(document -> Constants.BUSINESS_LICENSE.equalsIgnoreCase(document.getType()))
+                                .map(document -> CompanyResponse
+                                        .GetCompanyDocumentResponse.builder()
+                                        .id(document.getId())
+                                        .fileUrl(document.getFileUrl())
+                                        .type(document.getType())
+                                        .build())
+                                .toList()
+                )
+                .build();
+    }
+
+    private GetCompanyByIdResponse mapToGetCompanyIdResponse(Company company) {
+        return GetCompanyByIdResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .taxCode(company.getTaxCode())
+                .address(company.getAddress())
+                .description(company.getDescription())
+                .website(company.getWebsite())
+                .status(company.getStatus())
+                .domain(company.getDomain())
+                .userId(company.getUserId() == null ? "" : company.getUserId().toString())
                 .contactPersonPhone(company.getContactPersonPhone())
                 .contactPersonEmail(company.getContactPersonEmail())
                 .contactPersonName(company.getContactPersonName())

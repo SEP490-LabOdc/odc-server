@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class CompanyResponse {
+public class GetCompanyByIdResponse {
     private UUID id;
     private String name;
     private String email;
@@ -20,11 +20,12 @@ public class CompanyResponse {
     private String website;
     private String status;
     private String domain;
+    private String userId;
     private String contactPersonName;
     private String contactPersonEmail;
     private String contactPersonPhone;
     private LocalDateTime createdAt;
-    private List<GetCompanyDocumentResponse> getCompanyDocumentResponses;
+    private List<CompanyResponse.GetCompanyDocumentResponse> getCompanyDocumentResponses;
 
     @Data
     @Builder
