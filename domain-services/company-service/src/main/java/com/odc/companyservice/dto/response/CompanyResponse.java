@@ -20,6 +20,7 @@ public class CompanyResponse {
     private String website;
     private String status;
     private String domain;
+    private String userId;
     private String contactPersonName;
     private String contactPersonEmail;
     private String contactPersonPhone;
