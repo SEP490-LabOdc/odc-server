@@ -65,6 +65,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ApiResponse<List<GetUserResponse>> getAllUsers() {
+        Sort sort = Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("updatedAt")
+        );
         List<GetUserResponse> users = userRepository.findAll()
                 .stream()
                 .map(user -> GetUserResponse.builder()
