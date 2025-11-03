@@ -2,6 +2,7 @@ package com.odc.userservice.event;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.odc.common.constant.Role;
+import com.odc.common.constant.Status;
 import com.odc.common.util.StringUtil;
 import com.odc.commonlib.event.EventHandler;
 import com.odc.commonlib.event.EventPublisher;
@@ -47,6 +48,7 @@ public class ContactUserCreatedEventHandler implements EventHandler {
                     .phone(contactUser.getPhone())
                     .passwordHash(passwordEncoder.encode(StringUtil.generateRandomString(8)))
                     .role(companyRole)
+                    .status(Status.ACTIVE)
                     .build();
 
             userRepository.save(user);

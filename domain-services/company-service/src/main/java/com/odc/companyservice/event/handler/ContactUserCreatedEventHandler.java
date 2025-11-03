@@ -27,9 +27,8 @@ public class ContactUserCreatedEventHandler implements EventHandler {
         try {
             ContactUserCreatedEvent contactUserCreatedEvent = ContactUserCreatedEvent.parseFrom(eventPayload);
 
-            Company company = companyRepository.findByIdAndUserId(
-                    UUID.fromString(contactUserCreatedEvent.getCompanyId()),
-                    UUID.fromString(contactUserCreatedEvent.getUserId())
+            Company company = companyRepository.findById(
+                    UUID.fromString(contactUserCreatedEvent.getCompanyId())
             ).orElseThrow(() -> {
                 // TODO: Publish failed event to rollback (saga pattern + outbox pattern)
                 log.error("Company not found with id {}", contactUserCreatedEvent.getCompanyId());
