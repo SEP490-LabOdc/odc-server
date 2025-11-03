@@ -17,6 +17,9 @@ import java.time.LocalDateTime;
 @Builder
 public class CompanyDocument extends BaseEntity {
 
+    @Column(name = "file_name", nullable = false)
+    private String fileName;
+
     @Column(name = "type", nullable = false)
     private String type; // e.g., "BUSINESS_LICENSE", "TAX_CERTIFICATE"
 

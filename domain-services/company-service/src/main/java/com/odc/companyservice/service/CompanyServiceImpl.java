@@ -110,6 +110,7 @@ public class CompanyServiceImpl implements CompanyService {
             companyDocuments.add(
                     CompanyDocument.builder()
                             .type(Constants.BUSINESS_LICENSE)
+                            .fileName(request.getBusinessLicenseFileName())
                             .fileUrl(request.getBusinessLicenseLink())
                             .uploadedAt(LocalDateTime.now())
                             .company(company)
@@ -393,20 +394,20 @@ public class CompanyServiceImpl implements CompanyService {
                 throw new BusinessException("Số điện thoại đã tồn tại");
             });
 
-//        if (!company.getContactPersonEmail().equalsIgnoreCase(request.getContactPersonEmail()) && UserServiceGrpc
-//                .newBlockingStub(userServiceChannel)
-//                .checkEmailExists(CheckEmailRequest.newBuilder()
-//                        .setEmail(request.getContactPersonEmail())
-//                        .build())
-//                .getResult()) {
-//            throw new BusinessException("Email người liên hệ đã tồn tại");
-//        }
+        if (!company.getContactPersonEmail().equalsIgnoreCase(request.getContactPersonEmail()) && UserServiceGrpc
+                .newBlockingStub(userServiceChannel)
+                .checkEmailExists(CheckEmailRequest.newBuilder()
+                        .setEmail(request.getContactPersonEmail())
+                        .build())
+                .getResult()) {
+            throw new BusinessException("Email người liên hệ đã tồn tại");
+        }
 
         company.setName(request.getName());
-        if(!company.getPhone().equalsIgnoreCase(request.getPhone()))
+        if (!company.getPhone().equalsIgnoreCase(request.getPhone()))
             company.setPhone(request.getPhone());
 
-        if(!company.getTaxCode().equalsIgnoreCase(request.getTaxCode()))
+        if (!company.getTaxCode().equalsIgnoreCase(request.getTaxCode()))
             company.setTaxCode(request.getTaxCode());
 
         company.setAddress(request.getAddress());
@@ -433,11 +434,13 @@ public class CompanyServiceImpl implements CompanyService {
                     CompanyDocument existing = existingMap.get(req.getId());
                     existing.setFileUrl(req.getFileUrl());
                     existing.setType(req.getType());
+                    existing.setFileName(req.getFileName());
                     updatedList.add(existing);
                 } else {
                     CompanyDocument newDoc = CompanyDocument.builder()
                             .fileUrl(req.getFileUrl())
                             .type(req.getType())
+                            .fileName(req.getFileName())
                             .company(company)
                             .build();
                     updatedList.add(newDoc);
@@ -578,6 +581,7 @@ public class CompanyServiceImpl implements CompanyService {
                                         .GetCompanyDocumentResponse.builder()
                                         .id(document.getId())
                                         .fileUrl(document.getFileUrl())
+                                        .fileName(document.getFileName())
                                         .type(document.getType())
                                         .build())
                                 .toList()

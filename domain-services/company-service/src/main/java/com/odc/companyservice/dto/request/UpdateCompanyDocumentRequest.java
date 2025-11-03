@@ -7,5 +7,5 @@ import java.util.UUID;
 @Getter
 public class UpdateCompanyDocumentRequest {
     private UUID id;
-    private String fileUrl, type;
+    private String fileName, fileUrl, type;
 }

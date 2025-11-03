@@ -24,6 +24,7 @@ public class GetCompanyEditResponse {
     @Builder
     public static class GetCompanyDocumentEditResponse {
         private UUID id;
+        private String fileName;
         private String fileUrl;
         private String type;
     }

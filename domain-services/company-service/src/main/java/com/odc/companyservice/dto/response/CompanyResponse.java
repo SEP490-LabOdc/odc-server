@@ -30,6 +30,7 @@ public class CompanyResponse {
     @Builder
     public static class GetCompanyDocumentResponse {
         private UUID id;
+        private String fileName;
         private String fileUrl;
         private String type;
     }
