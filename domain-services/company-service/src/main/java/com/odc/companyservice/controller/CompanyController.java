@@ -1,6 +1,7 @@
 package com.odc.companyservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.SearchRequest;
 import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
@@ -76,5 +77,16 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<Void>> deleteCompany(@PathVariable UUID id) {
         ApiResponse<Void> response = companyService.deleteCompany(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<?>> searchCompanies(@RequestBody SearchRequest request) {
+        boolean isPaginated = request.getPage() != null && request.getSize() != null;
+
+        if (isPaginated) {
+            return ResponseEntity.ok(companyService.searchCompaniesWithPagination(request));
+        }
+
+        return ResponseEntity.ok(companyService.searchCompanies(request));
     }
 }

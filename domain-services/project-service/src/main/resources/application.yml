@@ -1,14 +1,14 @@
 server:
-  port: 8082
+  port: 8084
 
 # Spring
 spring:
   application:
-    name: company-service
+    name: project-service
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${COMPANY_DB_NAME:company_db}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_PROJECT_NAME:project_db}
     username: ${DB_USER:admin}
     password: ${DB_PASSWORD:12345}
     driver-class-name: org.postgresql.Driver
@@ -45,12 +45,18 @@ spring:
     bootstrap-servers:
       - ${KAFKA_BROKER_URL:localhost:9092}
     consumer:
-      group-id: company-service-consumer-group
+      group-id: user-service-consumer-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring:
           json:
             trusted:
               packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 
 # Eureka Configuration
 eureka:
@@ -94,26 +100,16 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
-    name: logs/company-service.log
-
-# gRPC Configuration
-grpc:
-  client:
-    user-service:
-      address: ${USER-SERVICE-GRPC:0.0.0.0}
-      port: 9091
-    checklist-service:
-      address: ${CHECKLIST-SERVICE-GRPC:0.0.0.0}
-      port: 9093
+    name: logs/project-service.log
 
 springdoc:
   api-docs:
-    path: /company-service/v3/api-docs
+    path: /project-service/v3/api-docs
   swagger-ui:
-    path: /company-service/swagger/index.html
+    path: /project-service/swagger/index.html
 
-# Custom properties
-custom:
-  client:
-    address: ${CUSTOM_CLIENT_ADDRESS:http://localhost:5173}
-
+## gRPC Configuration
+#grpc:
+#  server:
+#    address: 0.0.0.0
+#    port: 9094
