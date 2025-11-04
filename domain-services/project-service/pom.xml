@@ -179,12 +179,7 @@
             <artifactId>odc-common-lib</artifactId>
             <version>1.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.odc</groupId>
-            <artifactId>user-service</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-        </dependency>
+
     </dependencies>
 
     <build>

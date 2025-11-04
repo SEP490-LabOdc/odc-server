@@ -4,8 +4,8 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.ProjectParticipantsResponse;
 import com.odc.projectservice.dto.response.ProjectResponse;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -66,9 +66,9 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/participants")
-    public ResponseEntity<ApiResponse<ProjectParticipantsResponse>> getProjectParticipants(
+    public ResponseEntity<ApiResponse<List<UserParticipantResponse>>> getProjectParticipants(
             @PathVariable UUID projectId) {
-        ApiResponse<ProjectParticipantsResponse> response = projectService.getProjectParticipants(projectId);
+        ApiResponse<List<UserParticipantResponse>> response = projectService.getProjectParticipants(projectId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

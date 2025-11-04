@@ -9,7 +9,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-public class MentorInfoResponse {
+public class UserParticipantResponse {
     private UUID id;
-    private String fullName;
+    private String name;
+    private String roleName;
+    private boolean isLeader;
 }

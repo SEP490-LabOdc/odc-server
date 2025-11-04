@@ -5,7 +5,6 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
-import com.odc.projectservice.client.UserServiceClient;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
@@ -15,8 +14,9 @@ import com.odc.projectservice.entity.Skill;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
-import com.odc.userservice.dto.response.GetUserResponse;
-import lombok.RequiredArgsConstructor;
+import com.odc.userservice.v1.GetUserByIdResponse;
+import io.grpc.ManagedChannel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +24,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
+import com.odc.userservice.v1.UserServiceGrpc;
+import com.odc.userservice.v1.GetUserByIdRequest;
+
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,13 +38,39 @@ import java.util.stream.Collectors;
 
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberRepository projectMemberRepository;
-    private final UserServiceClient userServiceClient;
+
+    private final ManagedChannel userServiceChannel;
+
+    // Constructor với @Qualifier - THÊM CONSTRUCTOR NÀY
+    public ProjectServiceImpl(
+            ProjectRepository projectRepository,
+            SkillRepository skillRepository,
+            ProjectMemberRepository projectMemberRepository,
+            @Qualifier("userServiceChannel") ManagedChannel userServiceChannel) {
+        this.projectRepository = projectRepository;
+        this.skillRepository = skillRepository;
+        this.projectMemberRepository = projectMemberRepository;
+        this.userServiceChannel = userServiceChannel;
+    }
+    private GetUserByIdResponse getUserByIdViaGrpc(UUID userId) {
+        try {
+            return UserServiceGrpc
+                    .newBlockingStub(userServiceChannel)
+                    .getUserById(GetUserByIdRequest.newBuilder()
+                            .setUserId(userId.toString())
+                            .build());
+        } catch (Exception e) {
+            // Log error nếu cần
+            return null;
+        }
+    }
+
+
 
     @Override
     public ApiResponse<ProjectResponse> createProject(CreateProjectRequest request) {
@@ -202,29 +232,36 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ApiResponse<ProjectParticipantsResponse> getProjectParticipants(UUID projectId) {
+    public ApiResponse<List<UserParticipantResponse>> getProjectParticipants(UUID projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        MentorInfoResponse mentorInfo = null;
+        List<UserParticipantResponse> participants = new ArrayList<>();
+
+        // Get mentor info và thêm vào list
         if (project.getMentorId() != null) {
-            GetUserResponse mentorUser = userServiceClient.getUserById(project.getMentorId());
-            if (mentorUser != null) {
-                mentorInfo = MentorInfoResponse.builder()
-                        .id(mentorUser.getId())
-                        .fullName(mentorUser.getFullName())
+            GetUserByIdResponse mentorResponse = getUserByIdViaGrpc(project.getMentorId());
+            if (mentorResponse != null) {
+                UserParticipantResponse mentorParticipant = UserParticipantResponse.builder()
+                        .id(UUID.fromString(mentorResponse.getId()))
+                        .name(mentorResponse.getFullName())
+                        .roleName("Mentor") // hoặc null nếu không có roleName cho mentor
+                        .isLeader(false) // mentor không phải leader theo mặc định
                         .build();
+                participants.add(mentorParticipant);
             }
         }
+
+        // Get talents info và thêm vào list
         List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
-        List<ProjectMemberInfoResponse> talentInfos = members.stream()
+        List<UserParticipantResponse> talentParticipants = members.stream()
                 .map(member -> {
-                    GetUserResponse user = userServiceClient.getUserById(member.getUserId());
-                    if (user != null) {
-                        return ProjectMemberInfoResponse.builder()
-                                .id(user.getId())
-                                .fullName(user.getFullName())
-                                .roleInProject(member.getRoleInProject())
+                    GetUserByIdResponse userResponse = getUserByIdViaGrpc(member.getUserId());
+                    if (userResponse != null) {
+                        return UserParticipantResponse.builder()
+                                .id(UUID.fromString(userResponse.getId()))
+                                .name(userResponse.getFullName())
+                                .roleName(member.getRoleInProject())
                                 .isLeader(member.isLeader())
                                 .build();
                     }
@@ -233,19 +270,16 @@ public class ProjectServiceImpl implements ProjectService {
                 .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
 
-        ProjectParticipantsResponse responseData = ProjectParticipantsResponse.builder()
-                .mentor(mentorInfo)
-                .talents(talentInfos)
-                .build();
+        participants.addAll(talentParticipants);
 
-        return ApiResponse.<ProjectParticipantsResponse>builder()
+        return ApiResponse.<List<UserParticipantResponse>>builder()
                 .success(true)
                 .message("Lấy thông tin người tham gia dự án thành công")
                 .timestamp(LocalDateTime.now())
-                .data(responseData)
+                .data(participants)
                 .build();
-
     }
+
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()

@@ -7,6 +7,7 @@ option java_outer_classname = "UserServiceProto";
 
 service UserService {
   rpc CheckEmailExists(CheckEmailRequest) returns (CheckEmailResponse);
+  rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
 }
 
 message CheckEmailRequest {
@@ -15,4 +16,15 @@ message CheckEmailRequest {
 
 message CheckEmailResponse {
   bool result = 1;
+}
+message GetUserByIdRequest {
+  string user_id = 1;
+}
+message GetUserByIdResponse {
+  string id = 1;
+  string full_name = 2;
+  string email = 3;
+  string phone = 4;
+  string avatar_url = 5;
+  string role = 6;
 }
