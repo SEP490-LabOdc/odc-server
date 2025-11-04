@@ -361,6 +361,7 @@ public class CompanyServiceImpl implements CompanyService {
                                                 .id(documentCompany.getId())
                                                 .fileUrl(documentCompany.getFileUrl())
                                                 .type(documentCompany.getType())
+                                                .fileName(documentCompany.getFileName())
                                                 .build())
                                         .toList()
                                 : new ArrayList<>()
