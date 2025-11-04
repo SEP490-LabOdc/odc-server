@@ -152,6 +152,13 @@ spring:
             allowCredentials: true
             maxAge: 3600
 
+  # Load balancer Configuration
+    loadbalancer:
+      clients:
+        notification-service:
+          sticky-session:
+            instance-id-cookie-name: NSC_STICKY
+
 # Eureka Configuration
 eureka:
   client:
