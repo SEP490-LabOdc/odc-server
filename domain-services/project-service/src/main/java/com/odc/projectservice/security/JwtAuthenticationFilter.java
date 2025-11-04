@@ -22,7 +22,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String[] EXCLUDED_PREFIXES = {
             "/actuator/",
-            "/checklist-service/",
+            "/project-service/",
             "/ws/"
     };
     private final JwtUtil jwtUtil;

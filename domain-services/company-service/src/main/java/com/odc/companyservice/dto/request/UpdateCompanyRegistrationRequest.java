@@ -12,10 +12,6 @@ public class UpdateCompanyRegistrationRequest {
     @NotBlank(message = "Tên công ty không được để trống")
     private String name;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
-    private String email;
-
     @NotBlank(message = "Số điện thoại không được để trống")
     private String phone;
 

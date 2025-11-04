@@ -23,7 +23,8 @@ public class SecurityConfig {
     // Grouped public paths for clarity
     private static final String[] PERMIT_ALL_PATHS = {
             "/api/v1/companies/register",
-            "/api/v1/companies/for-update",
+            "/api/v1/companies/for-update/**",
+            "/api/v1/companies/onboard/update/**",
             "/actuator/**",
             "/company-service/v3/api-docs/**",
             "/company-service/swagger/**"

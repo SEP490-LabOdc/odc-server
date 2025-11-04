@@ -89,6 +89,21 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Project Service
+        - id: project-service
+          uri: lb://project-service
+          predicates:
+            - Path=/api/v1/projects/**
+          filters:
+            - StripPrefix=0
+
+        - id: project-skill-service
+          uri: lb://project-service
+          predicates:
+            - Path=/api/v1/skills/**
+          filters:
+            - StripPrefix=0
+
         # Checklist Service
         - id: checklist-template-service
           uri: lb://checklist-service

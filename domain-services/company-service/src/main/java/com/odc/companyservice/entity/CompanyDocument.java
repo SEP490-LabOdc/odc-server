@@ -4,6 +4,7 @@ import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.ws.rs.DefaultValue;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,11 @@ import java.time.LocalDateTime;
 @Builder
 public class CompanyDocument extends BaseEntity {
 
-    @Column(name = "type", nullable = false)
+    @Column(name = "file_name", nullable = false)
+    private String fileName;
+
+    @Column(name = "type")
+    @DefaultValue("")
     private String type; // e.g., "BUSINESS_LICENSE", "TAX_CERTIFICATE"
 
     @Column(name = "file_url", nullable = false)

@@ -1,6 +1,7 @@
 package com.odc.companyservice.repository;
 
 import com.odc.companyservice.entity.Company;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,6 @@ public interface CompanyRepository extends JpaRepository<Company, UUID>, JpaSpec
     Optional<Company> findByTaxCode(String taxCode);
 
     Optional<Company> findByIdAndUserId(UUID id, UUID userId);
+
+    Optional<Object> findByPhone(@NotBlank(message = "Số điện thoại không được để trống") String phone);
 }

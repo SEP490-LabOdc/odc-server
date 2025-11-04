@@ -27,6 +27,7 @@ public class CompanyRegisterRequest {
 
     @DefaultValue("")
     private String businessLicenseLink;
+    private String businessLicenseFileName;
 
     // Contact person
     @NotBlank(message = "Tên của người liên lạc không được để trống")

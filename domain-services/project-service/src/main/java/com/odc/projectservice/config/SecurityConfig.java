@@ -24,8 +24,8 @@ public class SecurityConfig {
     private static final String[] PERMIT_ALL_PATHS = {
             "/api/v1/auth/**",
             "/actuator/**",
-            "/checklist-service/v3/api-docs/**",
-            "/checklist-service/swagger/**"
+            "/project-service/v3/api-docs/**",
+            "/project-service/swagger/**"
     };
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
