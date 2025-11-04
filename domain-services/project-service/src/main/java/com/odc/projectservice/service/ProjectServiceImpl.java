@@ -5,14 +5,17 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
+import com.odc.projectservice.client.UserServiceClient;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.ProjectResponse;
-import com.odc.projectservice.dto.response.SkillResponse;
+import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.Project;
+import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.Skill;
+import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
+import com.odc.userservice.dto.response.GetUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +39,8 @@ import java.util.stream.Collectors;
 public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final SkillRepository skillRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final UserServiceClient userServiceClient;
 
     @Override
     public ApiResponse<ProjectResponse> createProject(CreateProjectRequest request) {
@@ -194,6 +199,52 @@ public class ProjectServiceImpl implements ProjectService {
                 .map(this::convertToProjectResponse);
 
         return ApiResponse.success(PaginatedResult.from(page));
+    }
+
+    @Override
+    public ApiResponse<ProjectParticipantsResponse> getProjectParticipants(UUID projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        MentorInfoResponse mentorInfo = null;
+        if (project.getMentorId() != null) {
+            GetUserResponse mentorUser = userServiceClient.getUserById(project.getMentorId());
+            if (mentorUser != null) {
+                mentorInfo = MentorInfoResponse.builder()
+                        .id(mentorUser.getId())
+                        .fullName(mentorUser.getFullName())
+                        .build();
+            }
+        }
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+        List<ProjectMemberInfoResponse> talentInfos = members.stream()
+                .map(member -> {
+                    GetUserResponse user = userServiceClient.getUserById(member.getUserId());
+                    if (user != null) {
+                        return ProjectMemberInfoResponse.builder()
+                                .id(user.getId())
+                                .fullName(user.getFullName())
+                                .roleInProject(member.getRoleInProject())
+                                .isLeader(member.isLeader())
+                                .build();
+                    }
+                    return null;
+                })
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        ProjectParticipantsResponse responseData = ProjectParticipantsResponse.builder()
+                .mentor(mentorInfo)
+                .talents(talentInfos)
+                .build();
+
+        return ApiResponse.<ProjectParticipantsResponse>builder()
+                .success(true)
+                .message("Lấy thông tin người tham gia dự án thành công")
+                .timestamp(LocalDateTime.now())
+                .data(responseData)
+                .build();
+
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {
