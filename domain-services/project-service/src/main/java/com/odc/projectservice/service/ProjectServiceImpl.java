@@ -7,14 +7,18 @@ import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.*;
+import com.odc.projectservice.dto.response.ProjectResponse;
+import com.odc.projectservice.dto.response.SkillResponse;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.Skill;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
+import com.odc.userservice.v1.GetUserByIdRequest;
 import com.odc.userservice.v1.GetUserByIdResponse;
+import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -24,10 +28,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.odc.projectservice.dto.response.UserParticipantResponse;
-import com.odc.userservice.v1.UserServiceGrpc;
-import com.odc.userservice.v1.GetUserByIdRequest;
-
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -57,6 +57,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.projectMemberRepository = projectMemberRepository;
         this.userServiceChannel = userServiceChannel;
     }
+
     private GetUserByIdResponse getUserByIdViaGrpc(UUID userId) {
         try {
             return UserServiceGrpc
@@ -69,7 +70,6 @@ public class ProjectServiceImpl implements ProjectService {
             return null;
         }
     }
-
 
 
     @Override
@@ -91,13 +91,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = Project.builder()
                 .companyId(request.getCompanyId())
-                .mentorId(request.getMentorId())
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .status(request.getStatus())
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .budget(request.getBudget())
                 .skills(skills)
                 .build();
 
