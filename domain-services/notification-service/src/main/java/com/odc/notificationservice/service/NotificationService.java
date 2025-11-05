@@ -19,4 +19,6 @@ public interface NotificationService {
     ApiResponse<GetNotificationResponse> markAsRead(UUID userId, UUID notificationRecipientId);
 
     ApiResponse<List<GetNotificationResponse>> markAllAsRead(UUID userId);
+
+    ApiResponse<Void> deleteNotificationRecipient(UUID notificationRecipientId);
 }
