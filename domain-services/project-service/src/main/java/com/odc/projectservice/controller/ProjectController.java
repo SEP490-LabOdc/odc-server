@@ -28,7 +28,9 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(@Valid @RequestBody CreateProjectRequest request) {
-        ApiResponse<ProjectResponse> response = projectService.createProject(request);
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        ApiResponse<ProjectResponse> response = projectService.createProject(userId, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 

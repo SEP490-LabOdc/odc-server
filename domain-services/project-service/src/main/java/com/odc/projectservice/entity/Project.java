@@ -22,9 +22,6 @@ public class Project extends BaseEntity {
     @Column(name = "company_id", nullable = false)
     private UUID companyId;
 
-    @Column(name = "mentor_id")
-    private UUID mentorId;
-
     @Column(name = "title", nullable = false)
     private String title;
 

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ProjectService {
-    ApiResponse<ProjectResponse> createProject(CreateProjectRequest request);
+    ApiResponse<ProjectResponse> createProject(UUID userId, CreateProjectRequest request);
 
     ApiResponse<ProjectResponse> updateProject(UUID projectId, UpdateProjectRequest request);
 
@@ -27,7 +27,7 @@ public interface ProjectService {
 
     ApiResponse<List<UserParticipantResponse>> getProjectParticipants(UUID projectId);
 
-    ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize);
+//    ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize);
 
     ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
 
