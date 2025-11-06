@@ -93,4 +93,10 @@ public class CompanyController {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(companyService.getMyCompany(userId));
     }
+
+    @GetMapping("/by-user-id/{userId}")
+    public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyByUserId(@PathVariable UUID userId) {
+        ApiResponse<CompanyResponse> response = companyService.getCompanyByUserId(userId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

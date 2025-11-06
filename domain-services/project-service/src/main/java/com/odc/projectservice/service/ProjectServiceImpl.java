@@ -23,6 +23,7 @@ import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
 import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
+import com.odc.common.constant.Status;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -80,26 +81,35 @@ public class ProjectServiceImpl implements ProjectService {
 
 
     @Override
-    public ApiResponse<ProjectResponse> createProject(CreateProjectRequest request) {
-        if (projectRepository.existsByCompanyIdAndTitle(request.getCompanyId(), request.getTitle())) {
+    public ApiResponse<ProjectResponse> createProject(UUID userId, CreateProjectRequest request) {
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByUserIdRequest companyRequest = GetCompanyByUserIdRequest.newBuilder()
+                .setUserId(userId.toString())
+                .build();
+
+        GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
+
+        if (projectRepository.existsByCompanyIdAndTitle(UUID.fromString(companyResponse.getCompanyId()), request.getTitle())) {
             throw new BusinessException("Dự án với tiêu đề '" + request.getTitle() + "' đã tồn tại trong công ty này");
         }
+
         Set<Skill> skills = Set.of();
 
         if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            skills = skillRepository.findAllById(request.getSkillIds()).stream()
-                    .collect(Collectors.toSet());
+            skills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
 
-            // Kiểm tra xem tất cả skillIds có tồn tại không
             if (skills.size() != request.getSkillIds().size()) {
                 throw new BusinessException("Có một số kỹ năng không tồn tại");
             }
         }
 
         Project project = Project.builder()
-                .companyId(request.getCompanyId())
+                .companyId(UUID.fromString(companyResponse.getCompanyId()))
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .status(Status.PENDING.toString())
                 .skills(skills)
                 .build();
 

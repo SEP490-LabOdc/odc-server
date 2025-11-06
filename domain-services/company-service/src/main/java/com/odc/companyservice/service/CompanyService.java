@@ -39,4 +39,6 @@ public interface CompanyService {
     ApiResponse<PaginatedResult<CompanyResponse>> searchCompaniesWithPagination(SearchRequest request);
 
     ApiResponse<GetMyCompanyResponse> getMyCompany(UUID userId);
+
+    ApiResponse<CompanyResponse> getCompanyByUserId(UUID userId);
 }
