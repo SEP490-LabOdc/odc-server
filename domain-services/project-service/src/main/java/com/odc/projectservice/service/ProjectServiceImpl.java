@@ -345,7 +345,6 @@ public class ProjectServiceImpl implements ProjectService {
                     .description(project.getDescription())
                     .startDate(project.getStartDate())
                     .endDate(project.getEndDate())
-                    .budget(project.getBudget())
                     .currentApplicants(applicantsCount)
                     .mentors(mentors)
                     .skills(skills)

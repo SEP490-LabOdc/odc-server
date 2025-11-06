@@ -18,7 +18,6 @@ public class GetHiringProjectDetailResponse {
     private String description;
     private LocalDate startDate;
     private LocalDate endDate;
-    private BigDecimal budget;
     private int currentApplicants;
     private List<UserParticipantResponse> mentors;
     private List<SkillResponse> skills;
