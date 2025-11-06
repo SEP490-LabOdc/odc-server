@@ -4,6 +4,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
+import com.odc.projectservice.dto.response.GetProjectApplicationResponse;
 import com.odc.projectservice.dto.response.ProjectResponse;
 import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.service.ProjectService;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -70,5 +72,13 @@ public class ProjectController {
             @PathVariable UUID projectId) {
         ApiResponse<List<UserParticipantResponse>> response = projectService.getProjectParticipants(projectId);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('LAB_ADMIN')")
+    @GetMapping("/{projectId}/applicants")
+    public ResponseEntity<ApiResponse<List<GetProjectApplicationResponse>>> getProjectApplications(
+            @PathVariable UUID projectId
+    ) {
+        return ResponseEntity.ok(projectService.getProjectApplications(projectId));
     }
 }

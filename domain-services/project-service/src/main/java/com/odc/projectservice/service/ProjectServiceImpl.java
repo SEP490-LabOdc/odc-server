@@ -7,18 +7,16 @@ import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.ProjectResponse;
-import com.odc.projectservice.dto.response.SkillResponse;
-import com.odc.projectservice.dto.response.UserParticipantResponse;
+import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.Project;
+import com.odc.projectservice.entity.ProjectApplication;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.Skill;
+import com.odc.projectservice.repository.ProjectApplicationRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
-import com.odc.userservice.v1.GetUserByIdRequest;
-import com.odc.userservice.v1.GetUserByIdResponse;
-import com.odc.userservice.v1.UserServiceGrpc;
+import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -30,10 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -43,6 +38,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
 
     private final ManagedChannel userServiceChannel;
 
@@ -51,10 +47,13 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectRepository projectRepository,
             SkillRepository skillRepository,
             ProjectMemberRepository projectMemberRepository,
+            ProjectApplicationRepository projectApplicationRepository,
+
             @Qualifier("userServiceChannel") ManagedChannel userServiceChannel) {
         this.projectRepository = projectRepository;
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
+        this.projectApplicationRepository = projectApplicationRepository;
         this.userServiceChannel = userServiceChannel;
     }
 
@@ -275,6 +274,45 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
     }
 
+    @Override
+    public ApiResponse<PaginatedResult<GetStudentProjectResponse>> getHiringProjects(Integer page, Integer pageSize) {
+        return null;
+    }
+
+    @Override
+    public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {
+        List<ProjectApplication> projectApplicationList = projectApplicationRepository.findByProjectId(projectId);
+
+        if (projectApplicationList.isEmpty()) {
+            return ApiResponse.success(List.of()); // trả về list rỗng nếu không có
+        }
+
+        List<String> userIds = projectApplicationList.stream()
+                .map(pa -> pa.getUserId().toString())
+                .toList();
+
+        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+        GetNameResponse userNamesResponse = userStub.getName(
+                GetNameRequest.newBuilder()
+                        .addAllIds(userIds)
+                        .build());
+
+        Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
+
+        List<GetProjectApplicationResponse> responses = projectApplicationList.stream()
+                .map(pa -> GetProjectApplicationResponse.builder()
+                        .id(pa.getId())
+                        .userId(pa.getUserId())
+                        .name(userIdToNameMap.getOrDefault(pa.getUserId().toString(), "Unknown"))
+                        .cvUrl(pa.getCvUrl())
+                        .status(pa.getStatus())
+                        .appliedAt(pa.getAppliedAt())
+                        .build()
+                )
+                .toList();
+
+        return ApiResponse.success(responses);
+    }
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()

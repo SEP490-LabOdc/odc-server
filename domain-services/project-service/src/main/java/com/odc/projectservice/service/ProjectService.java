@@ -5,6 +5,8 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
+import com.odc.projectservice.dto.response.GetProjectApplicationResponse;
+import com.odc.projectservice.dto.response.GetStudentProjectResponse;
 import com.odc.projectservice.dto.response.ProjectResponse;
 import com.odc.projectservice.dto.response.UserParticipantResponse;
 
@@ -27,4 +29,8 @@ public interface ProjectService {
     ApiResponse<PaginatedResult<ProjectResponse>> searchProjectsWithPagination(SearchRequest request);
 
     ApiResponse<List<UserParticipantResponse>> getProjectParticipants(UUID projectId);
+
+    ApiResponse<PaginatedResult<GetStudentProjectResponse>> getHiringProjects(Integer page, Integer pageSize);
+
+    ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
 }
