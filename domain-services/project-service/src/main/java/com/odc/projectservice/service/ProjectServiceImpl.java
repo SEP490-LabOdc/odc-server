@@ -297,14 +297,36 @@ public class ProjectServiceImpl implements ProjectService {
 
         Page<GetHiringProjectDetailResponse> mappedPage = projectPage.map(project -> {
 
-            List<UserParticipantResponse> mentors = projectMemberRepository
-                    .findByProjectId(project.getId()).stream()
-                    .filter(pm -> pm.isLeader() || Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+            List<ProjectMember> mentorMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
+                    .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                    .toList();
+
+            List<String> mentorUserIds = mentorMembers.stream()
+                    .map(pm -> pm.getUserId().toString())
+                    .toList();
+
+            Map<String, String> userIdToNameMap;
+
+            if (!mentorUserIds.isEmpty()) {
+                UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+                GetNameResponse userNamesResponse = userStub.getName(
+                        GetNameRequest.newBuilder()
+                                .addAllIds(mentorUserIds)
+                                .build()
+                );
+                userIdToNameMap = userNamesResponse.getMapMap();
+            } else {
+                userIdToNameMap = Map.of();
+            }
+
+            List<UserParticipantResponse> mentors = mentorMembers.stream()
                     .map(pm -> UserParticipantResponse.builder()
                             .userId(pm.getUserId())
-                            .roleName(pm.getRoleInProject())
+                            .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                            .roleName(Role.MENTOR.toString())
                             .isLeader(pm.isLeader())
                             .build())
+                    .sorted(Comparator.comparing(p -> !p.isLeader()))
                     .toList();
 
             List<SkillResponse> skills = project.getSkills().stream()
@@ -333,12 +355,13 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success(PaginatedResult.from(mappedPage));
     }
 
+
     @Override
     public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {
         List<ProjectApplication> projectApplicationList = projectApplicationRepository.findByProjectId(projectId);
 
         if (projectApplicationList.isEmpty()) {
-            return ApiResponse.success(List.of()); // trả về list rỗng nếu không có
+            return ApiResponse.success(List.of());
         }
 
         List<String> userIds = projectApplicationList.stream()
