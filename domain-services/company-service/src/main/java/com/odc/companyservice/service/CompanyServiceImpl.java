@@ -539,15 +539,6 @@ public class CompanyServiceImpl implements CompanyService {
         return ApiResponse.success(PaginatedResult.from(page));
     }
 
-    @Override
-    public ApiResponse<CompanyResponse> getCompanyByUserId(UUID userId) {
-        Company company = companyRepository.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty cho người dùng với ID: " + userId));
-
-        CompanyResponse responseData = mapToResponse(company);
-        return ApiResponse.success("Lấy thông tin công ty thành công", responseData);
-    }
-
     private CompanyResponse mapToSearchResponse(Company company) {
         return CompanyResponse.builder()
                 .id(company.getId())

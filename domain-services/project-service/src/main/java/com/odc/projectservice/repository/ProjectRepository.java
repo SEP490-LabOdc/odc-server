@@ -11,6 +11,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
     boolean existsByCompanyIdAndTitle(UUID companyId, String title);
 
     boolean existsByCompanyIdAndTitleAndIdNot(UUID companyId, String title, UUID id);
-
+    
     List<Project> findByCompanyId(UUID companyId);
 }

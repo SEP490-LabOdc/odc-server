@@ -1,6 +1,5 @@
 package com.odc.projectservice.service;
 
-import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
@@ -77,37 +76,28 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+
     @Override
-    public ApiResponse<ProjectResponse> createProject(UUID userId, CreateProjectRequest request) {
-        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
-                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
-
-        GetCompanyByUserIdRequest companyRequest = GetCompanyByUserIdRequest.newBuilder()
-                .setUserId(userId.toString())
-                .build();
-
-        GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
-
-        if (projectRepository.existsByCompanyIdAndTitle(UUID.fromString(companyResponse.getCompanyId()), request.getTitle())) {
+    public ApiResponse<ProjectResponse> createProject(CreateProjectRequest request) {
+        if (projectRepository.existsByCompanyIdAndTitle(request.getCompanyId(), request.getTitle())) {
             throw new BusinessException("Dự án với tiêu đề '" + request.getTitle() + "' đã tồn tại trong công ty này");
         }
-
-        // ... rest of the code remains the same ...
         Set<Skill> skills = Set.of();
 
         if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            skills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
+            skills = skillRepository.findAllById(request.getSkillIds()).stream()
+                    .collect(Collectors.toSet());
 
+            // Kiểm tra xem tất cả skillIds có tồn tại không
             if (skills.size() != request.getSkillIds().size()) {
                 throw new BusinessException("Có một số kỹ năng không tồn tại");
             }
         }
 
         Project project = Project.builder()
-                .companyId(UUID.fromString(companyResponse.getCompanyId()))
+                .companyId(request.getCompanyId())
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .status(Status.PENDING.toString())
                 .skills(skills)
                 .build();
 
@@ -245,41 +235,41 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        // Get project members
-        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+        List<UserParticipantResponse> participants = new ArrayList<>();
 
-        if (members.isEmpty()) {
-            return ApiResponse.<List<UserParticipantResponse>>builder()
-                    .success(true)
-                    .message("Lấy thông tin người tham gia dự án thành công")
-                    .timestamp(LocalDateTime.now())
-                    .data(List.of())
-                    .build();
+        // Get mentor info và thêm vào list
+        if (project.getMentorId() != null) {
+            GetUserByIdResponse mentorResponse = getUserByIdViaGrpc(project.getMentorId());
+            if (mentorResponse != null) {
+                UserParticipantResponse mentorParticipant = UserParticipantResponse.builder()
+                        .id(UUID.fromString(mentorResponse.getId()))
+                        .name(mentorResponse.getFullName())
+                        .roleName("Mentor") // hoặc null nếu không có roleName cho mentor
+                        .isLeader(false) // mentor không phải leader theo mặc định
+                        .build();
+                participants.add(mentorParticipant);
+            }
         }
 
-        // Extract list userId từ project_members
-        List<String> userIds = members.stream()
-                .map(member -> member.getUserId().toString())
-                .toList();
-
-        // Batch call getName -> map<string, string> key: userId, value: name
-        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
-        GetNameResponse userNamesResponse = userStub.getName(
-                GetNameRequest.newBuilder()
-                        .addAllIds(userIds)
-                        .build());
-
-        Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
-
-        // Loop project_members -> map.getKey(userId) để lấy name
-        List<UserParticipantResponse> participants = members.stream()
-                .map(member -> UserParticipantResponse.builder()
-                        .id(member.getUserId())
-                        .name(userIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown"))
-                        .roleName(member.getRoleInProject())
-                        .isLeader(member.isLeader())
-                        .build())
+        // Get talents info và thêm vào list
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+        List<UserParticipantResponse> talentParticipants = members.stream()
+                .map(member -> {
+                    GetUserByIdResponse userResponse = getUserByIdViaGrpc(member.getUserId());
+                    if (userResponse != null) {
+                        return UserParticipantResponse.builder()
+                                .id(UUID.fromString(userResponse.getId()))
+                                .name(userResponse.getFullName())
+                                .roleName(member.getRoleInProject())
+                                .isLeader(member.isLeader())
+                                .build();
+                    }
+                    return null;
+                })
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
+
+        participants.addAll(talentParticipants);
 
         return ApiResponse.<List<UserParticipantResponse>>builder()
                 .success(true)
@@ -289,10 +279,10 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
     }
 
-//    @Override
-//    public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
-//        return null;
-//    }
+    @Override
+    public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
+        return null;
+    }
 
     @Override
     public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {

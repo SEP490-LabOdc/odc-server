@@ -17,8 +17,7 @@ public interface CompanyRepository extends JpaRepository<Company, UUID>, JpaSpec
 
     Optional<Company> findByIdAndUserId(UUID id, UUID userId);
 
-    Optional<Company> findByUserId(UUID userId);
-
     Optional<Object> findByPhone(@NotBlank(message = "Số điện thoại không được để trống") String phone);
 
+    Optional<Company> findByUserId(UUID userId);
 }
