@@ -24,7 +24,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/actuator/",
             "/project-service/",
             "/ws/",
-            "/api/v1/project-applications/apply"
+            "/api/v1/project-applications/apply",
+            "/api/v1/projects/hiring"
     };
     private final JwtUtil jwtUtil;
 
