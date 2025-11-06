@@ -1,6 +1,8 @@
 package com.odc.projectservice.repository;
 
 import com.odc.projectservice.entity.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -13,4 +15,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
     boolean existsByCompanyIdAndTitleAndIdNot(UUID companyId, String title, UUID id);
     
     List<Project> findByCompanyId(UUID companyId);
+
+    Page<Project> findByStatus(String status, Pageable pageable);
 }

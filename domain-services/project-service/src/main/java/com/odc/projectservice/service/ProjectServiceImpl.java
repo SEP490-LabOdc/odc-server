@@ -281,7 +281,46 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
-        return null;
+        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "updatedAt", "createdAt"));
+
+        Page<Project> projectPage = projectRepository.findByStatus("HIRING", pageable);
+
+        Page<GetHiringProjectDetailResponse> mappedPage = projectPage.map(project -> {
+
+            List<UserParticipantResponse> mentors = projectMemberRepository
+                    .findByProjectId(project.getId()).stream()
+                    .filter(pm -> pm.isLeader() || "MENTOR".equalsIgnoreCase(pm.getRoleInProject()))
+                    .map(pm -> UserParticipantResponse.builder()
+                            .userId(pm.getUserId())
+                            .roleName(pm.getRoleInProject())
+                            .isLeader(pm.isLeader())
+                            .build())
+                    .toList();
+
+            List<SkillResponse> skills = project.getSkills().stream()
+                    .map(skill -> SkillResponse.builder()
+                            .id(skill.getId())
+                            .name(skill.getName())
+                            .description(skill.getDescription())
+                            .build())
+                    .toList();
+
+            int applicantsCount = projectApplicationRepository.countByProjectId(project.getId());
+
+            return GetHiringProjectDetailResponse.builder()
+                    .projectId(project.getId())
+                    .projectName(project.getTitle())
+                    .description(project.getDescription())
+                    .startDate(project.getStartDate())
+                    .endDate(project.getEndDate())
+                    .budget(project.getBudget())
+                    .currentApplicants(applicantsCount)
+                    .mentors(mentors)
+                    .skills(skills)
+                    .build();
+        });
+
+        return ApiResponse.success(PaginatedResult.from(mappedPage));
     }
 
     @Override

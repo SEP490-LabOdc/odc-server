@@ -11,6 +11,7 @@ import java.util.UUID;
 @Builder
 public class UserParticipantResponse {
     private UUID id;
+    private UUID userId;
     private String name;
     private String roleName;
     private boolean isLeader;
