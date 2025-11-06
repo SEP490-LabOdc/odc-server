@@ -5,13 +5,16 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.*;
+import com.odc.projectservice.dto.response.GetCompanyProjectResponse;
+import com.odc.projectservice.dto.response.GetProjectApplicationResponse;
+import com.odc.projectservice.dto.response.ProjectResponse;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface ProjectService {
-    ApiResponse<ProjectResponse> createProject(CreateProjectRequest request);
+    ApiResponse<ProjectResponse> createProject(UUID userId, CreateProjectRequest request);
 
     ApiResponse<ProjectResponse> updateProject(UUID projectId, UpdateProjectRequest request);
 
@@ -27,7 +30,7 @@ public interface ProjectService {
 
     ApiResponse<List<UserParticipantResponse>> getProjectParticipants(UUID projectId);
 
-    ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize);
+//    ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize);
 
     ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
 

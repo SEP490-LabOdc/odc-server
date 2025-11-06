@@ -89,4 +89,10 @@ public class CompanyController {
 
         return ResponseEntity.ok(companyService.searchCompanies(request));
     }
+
+    @GetMapping("/by-user-id/{userId}")
+    public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyByUserId(@PathVariable UUID userId) {
+        ApiResponse<CompanyResponse> response = companyService.getCompanyByUserId(userId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
