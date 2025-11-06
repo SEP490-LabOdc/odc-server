@@ -90,14 +90,23 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public ApiResponse<Void> deleteNotificationRecipient(UUID notificationRecipientId) {
-        UUID currentUserId = (UUID) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new SecurityException("Người dùng chưa được xác thực.");
+        }
+
+        UUID currentUserId;
+        try {
+            currentUserId = (UUID) authentication.getPrincipal();
+        } catch (ClassCastException e) {
+            throw new SecurityException("Lỗi xác thực người dùng.");
+        }
+
         NotificationRecipient recipient = notificationRecipientRepository
                 .findById(notificationRecipientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo.)"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo."));
 
-        if (!recipient.getUserId().equals(currentUserId)){
+        if (!recipient.getUserId().equals(currentUserId)) {
             throw new SecurityException("Người dùng không có quyền xóa người nhận thông báo này.");
         }
         notificationRecipientRepository.delete(recipient);

@@ -25,7 +25,8 @@ public class NotificationRestController {
     public ResponseEntity<ApiResponse<List<GetNotificationResponse>>> getUnreadNotifications(@PathVariable UUID userId) {
         return ResponseEntity.ok(notificationService.getNotifications(userId, false));
     }
-    @DeleteMapping("/recipients/{notificationRecipientId} ")
+
+    @DeleteMapping("/recipients/{notificationRecipientId}")
     public ResponseEntity<ApiResponse<Void>> deleteNotificationRecipient(@PathVariable UUID notificationRecipientId) {
         return ResponseEntity.ok(notificationService.deleteNotificationRecipient(notificationRecipientId));
     }
