@@ -15,8 +15,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     @Query("SELECT pa FROM ProjectApplication pa WHERE pa.project.id = :projectId")
     List<ProjectApplication> findByProjectId(UUID projectId);
 
-    @Query("SELECT pa FROM ProjectApplication  pa WHERE pa.project.id = :projectId AND pa.userId = :userId")
-    boolean existsByProjectIdAndUserId(UUID projectId, @NotNull(message = "userId không được bỏ trống") UUID userId);
+    boolean existsByProject_IdAndUserId(UUID projectId, UUID userId);
 
-    int countByProjectId(UUID projectId);
+    Integer countByProjectId(UUID projectId);
 }
