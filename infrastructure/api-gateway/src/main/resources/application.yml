@@ -68,13 +68,13 @@ spring:
             - StripPrefix=0
 
         - id: notification-service-ws
-          uri: lb://notification-service/ws
+          uri: lb://notification-service
           predicates:
             - Path=/ws/**
           filters:
             - StripPrefix=0
 
-        - id: notification-service-ws
+        - id: notification-service-device
           uri: lb://notification-service
           predicates:
             - Path=/api/v1/device-tokens/**
@@ -151,6 +151,13 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
             maxAge: 3600
+
+  # Load balancer Configuration
+    loadbalancer:
+      clients:
+        notification-service:
+          sticky-session:
+            instance-id-cookie-name: NSC_STICKY
 
 # Eureka Configuration
 eureka:
