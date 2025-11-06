@@ -1,5 +1,7 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.Role;
+import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
@@ -235,41 +237,49 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        List<UserParticipantResponse> participants = new ArrayList<>();
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
 
-        // Get mentor info và thêm vào list
-        if (project.getMentorId() != null) {
-            GetUserByIdResponse mentorResponse = getUserByIdViaGrpc(project.getMentorId());
-            if (mentorResponse != null) {
-                UserParticipantResponse mentorParticipant = UserParticipantResponse.builder()
-                        .id(UUID.fromString(mentorResponse.getId()))
-                        .name(mentorResponse.getFullName())
-                        .roleName("Mentor") // hoặc null nếu không có roleName cho mentor
-                        .isLeader(false) // mentor không phải leader theo mặc định
-                        .build();
-                participants.add(mentorParticipant);
-            }
+        List<String> userIds = members.stream()
+                .map(member -> member.getUserId().toString())
+                .toList();
+
+        if (userIds.isEmpty()) {
+            return ApiResponse.<List<UserParticipantResponse>>builder()
+                    .success(true)
+                    .message("Không có người tham gia dự án")
+                    .timestamp(LocalDateTime.now())
+                    .data(Collections.emptyList())
+                    .build();
         }
 
-        // Get talents info và thêm vào list
-        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
-        List<UserParticipantResponse> talentParticipants = members.stream()
-                .map(member -> {
-                    GetUserByIdResponse userResponse = getUserByIdViaGrpc(member.getUserId());
-                    if (userResponse != null) {
-                        return UserParticipantResponse.builder()
-                                .id(UUID.fromString(userResponse.getId()))
-                                .name(userResponse.getFullName())
-                                .roleName(member.getRoleInProject())
-                                .isLeader(member.isLeader())
-                                .build();
-                    }
-                    return null;
-                })
-                .filter(java.util.Objects::nonNull)
-                .collect(Collectors.toList());
+        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+        GetNameResponse userNamesResponse = userStub.getName(
+                GetNameRequest.newBuilder()
+                        .addAllIds(userIds)
+                        .build());
 
-        participants.addAll(talentParticipants);
+        Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
+
+        List<UserParticipantResponse> participants = members.stream()
+                .map(member -> {
+                    String name = userIdToNameMap.get(member.getUserId().toString());
+                    if (name == null) return null;
+
+                    String roleName = Role.TALENT.toString();
+                    if (Role.MENTOR.toString().equalsIgnoreCase(member.getRoleInProject())) {
+                        roleName = Role.MENTOR.toString();
+                    }
+
+                    return UserParticipantResponse.builder()
+                            .id(member.getUserId())
+                            .name(name)
+                            .roleName(roleName)
+                            .isLeader(member.isLeader())
+                            .build();
+                })
+                .filter(Objects::nonNull).sorted(Comparator
+                        .comparing((UserParticipantResponse p) -> !p.getRoleName().equals("MENTOR"))
+                        .thenComparing(p -> !p.isLeader())).collect(Collectors.toList());
 
         return ApiResponse.<List<UserParticipantResponse>>builder()
                 .success(true)
@@ -283,13 +293,13 @@ public class ProjectServiceImpl implements ProjectService {
     public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
         Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "updatedAt", "createdAt"));
 
-        Page<Project> projectPage = projectRepository.findByStatus("HIRING", pageable);
+        Page<Project> projectPage = projectRepository.findByStatus(Status.HIRING.toString(), pageable);
 
         Page<GetHiringProjectDetailResponse> mappedPage = projectPage.map(project -> {
 
             List<UserParticipantResponse> mentors = projectMemberRepository
                     .findByProjectId(project.getId()).stream()
-                    .filter(pm -> pm.isLeader() || "MENTOR".equalsIgnoreCase(pm.getRoleInProject()))
+                    .filter(pm -> pm.isLeader() || Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
                     .map(pm -> UserParticipantResponse.builder()
                             .userId(pm.getUserId())
                             .roleName(pm.getRoleInProject())
