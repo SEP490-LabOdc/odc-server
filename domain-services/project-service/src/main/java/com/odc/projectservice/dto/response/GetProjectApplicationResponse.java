@@ -7,11 +7,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
 @Setter
+@Getter
 @Builder
-public class SkillResponse {
+public class GetProjectApplicationResponse {
     private UUID id;
-    private String name;
-    private String description;
+    private UUID userId;
+    private String name, cvUrl, status;
+    private LocalDateTime appliedAt;
 }

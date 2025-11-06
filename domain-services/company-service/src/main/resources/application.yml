@@ -98,6 +98,10 @@ logging:
 
 # gRPC Configuration
 grpc:
+  server:
+    address: 0.0.0.0
+    port: 9092
+
   client:
     user-service:
       address: ${USER-SERVICE-GRPC:0.0.0.0}

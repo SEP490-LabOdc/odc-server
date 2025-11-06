@@ -78,6 +78,9 @@ public class CompanyServiceImpl implements CompanyService {
         companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
             throw new BusinessException("Mã số thuế đã tồn tại");
         });
+        companyRepository.findByPhone(request.getPhone()).ifPresent(c -> {
+            throw new BusinessException("Số điện thoại đã tồn tại");
+        });
 
         if (UserServiceGrpc
                 .newBlockingStub(userServiceChannel)

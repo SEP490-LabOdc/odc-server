@@ -107,9 +107,16 @@ springdoc:
     path: /project-service/v3/api-docs
   swagger-ui:
     path: /project-service/swagger/index.html
+# REST Service Configuration
+grpc:
+  client:
+    user-service:
+      address: ${USER-SERVICE-GRPC:0.0.0.0}
+      port: 9091
+    company-service:
+      address: ${COMPANY-SERVICE-GRPC:0.0.0.0}
+      port: 9092
 
-## gRPC Configuration
-#grpc:
 #  server:
 #    address: 0.0.0.0
 #    port: 9094

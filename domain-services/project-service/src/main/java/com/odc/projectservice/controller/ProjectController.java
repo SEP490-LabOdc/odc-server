@@ -4,12 +4,17 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
+import com.odc.projectservice.dto.response.GetCompanyProjectResponse;
+import com.odc.projectservice.dto.response.GetProjectApplicationResponse;
 import com.odc.projectservice.dto.response.ProjectResponse;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -62,5 +67,34 @@ public class ProjectController {
         }
 
         return ResponseEntity.ok(projectService.searchProjects(request));
+    }
+
+    @GetMapping("/{projectId}/participants")
+    public ResponseEntity<ApiResponse<List<UserParticipantResponse>>> getProjectParticipants(
+            @PathVariable UUID projectId) {
+        ApiResponse<List<UserParticipantResponse>> response = projectService.getProjectParticipants(projectId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('LAB_ADMIN')")
+    @GetMapping("/{projectId}/applicants")
+    public ResponseEntity<ApiResponse<List<GetProjectApplicationResponse>>> getProjectApplications(
+            @PathVariable UUID projectId
+    ) {
+        return ResponseEntity.ok(projectService.getProjectApplications(projectId));
+    }
+
+    @GetMapping("/my-company-projects")
+    public ResponseEntity<ApiResponse<GetCompanyProjectResponse>> getCompanyProjects() {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectService.getProjectsByUserId(userId));
+    }
+
+    @GetMapping("/hiring")
+    public ResponseEntity<ApiResponse<?>> getHiringProjects(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize
+    ) {
+        return ResponseEntity.ok(projectService.getHiringProjects(page, pageSize));
     }
 }

@@ -5,7 +5,7 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.ProjectResponse;
+import com.odc.projectservice.dto.response.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,4 +24,12 @@ public interface ProjectService {
     ApiResponse<List<ProjectResponse>> searchProjects(SearchRequest request);
 
     ApiResponse<PaginatedResult<ProjectResponse>> searchProjectsWithPagination(SearchRequest request);
+
+    ApiResponse<List<UserParticipantResponse>> getProjectParticipants(UUID projectId);
+
+    ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize);
+
+    ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
+
+    ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId);
 }
