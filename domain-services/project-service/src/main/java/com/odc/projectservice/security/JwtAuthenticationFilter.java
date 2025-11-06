@@ -23,7 +23,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String[] EXCLUDED_PREFIXES = {
             "/actuator/",
             "/project-service/",
-            "/ws/"
+            "/ws/",
+            "/api/v1/project-applications/apply"
     };
     private final JwtUtil jwtUtil;
 
