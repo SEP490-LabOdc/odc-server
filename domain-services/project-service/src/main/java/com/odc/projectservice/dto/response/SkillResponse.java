@@ -14,6 +14,4 @@ public class SkillResponse {
     private UUID id;
     private String name;
     private String description;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

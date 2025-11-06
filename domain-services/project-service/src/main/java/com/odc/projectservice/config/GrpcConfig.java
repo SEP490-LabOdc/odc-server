@@ -15,10 +15,24 @@ public class GrpcConfig {
     @Value("${grpc.client.user-service.port:9091}")
     private int userServicePort;
 
+    @Value("${grpc.client.company-service.address:localhost}")
+    private String companyServiceAddress;
+
+    @Value("${grpc.client.company-service.port:9092}")
+    private int companyServicePort;
+
     @Bean(name = "userServiceChannel")
     public ManagedChannel userServiceChannel() {
         return ManagedChannelBuilder
                 .forAddress(userServiceAddress, userServicePort)
+                .usePlaintext()
+                .build();
+    }
+
+    @Bean
+    public ManagedChannel companyServiceChannel() {
+        return ManagedChannelBuilder
+                .forAddress(companyServiceAddress, companyServicePort)
                 .usePlaintext()
                 .build();
     }

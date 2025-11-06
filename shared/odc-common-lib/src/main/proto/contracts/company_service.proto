@@ -1,0 +1,19 @@
+syntax = "proto3";
+package com.odc.companyservice.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.companyservice.v1";
+option java_outer_classname = "CompanyServiceProto";
+
+service CompanyService {
+  rpc GetCompanyByUserId(GetCompanyByUserIdRequest) returns (GetCompanyByUserIdResponse);
+}
+
+message GetCompanyByUserIdRequest {
+  string userId = 1;
+}
+
+message GetCompanyByUserIdResponse {
+  string companyId = 1;
+  string companyName = 2;
+}

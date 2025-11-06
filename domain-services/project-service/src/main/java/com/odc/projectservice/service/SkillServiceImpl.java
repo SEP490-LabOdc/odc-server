@@ -46,8 +46,6 @@ public class SkillServiceImpl implements SkillService {
                 .id(savedSkill.getId())
                 .name(savedSkill.getName())
                 .description(savedSkill.getDescription())
-                .createdAt(savedSkill.getCreatedAt())
-                .updatedAt(savedSkill.getUpdatedAt())
                 .build();
 
         return ApiResponse.success("Tạo kỹ năng thành công", skillResponse);
@@ -69,8 +67,6 @@ public class SkillServiceImpl implements SkillService {
                 .id(updatedSkill.getId())
                 .name(updatedSkill.getName())
                 .description(updatedSkill.getDescription())
-                .createdAt(updatedSkill.getCreatedAt())
-                .updatedAt(updatedSkill.getUpdatedAt())
                 .build();
         return ApiResponse.success("Cập nhật kỹ năng thành công", skillResponse);
     }
@@ -153,8 +149,6 @@ public class SkillServiceImpl implements SkillService {
                 .id(skill.getId())
                 .name(skill.getName())
                 .description(skill.getDescription())
-                .createdAt(skill.getCreatedAt())
-                .updatedAt(skill.getUpdatedAt())
                 .build();
     }
 }
