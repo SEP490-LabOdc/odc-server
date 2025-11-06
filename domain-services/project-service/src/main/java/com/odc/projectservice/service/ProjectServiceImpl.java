@@ -5,6 +5,9 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
+import com.odc.companyservice.v1.CompanyServiceGrpc;
+import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
+import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
@@ -41,6 +44,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectApplicationRepository projectApplicationRepository;
 
     private final ManagedChannel userServiceChannel;
+    private final ManagedChannel companyServiceChannel;
 
     // Constructor với @Qualifier - THÊM CONSTRUCTOR NÀY
     public ProjectServiceImpl(
@@ -49,12 +53,14 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectMemberRepository projectMemberRepository,
             ProjectApplicationRepository projectApplicationRepository,
 
-            @Qualifier("userServiceChannel") ManagedChannel userServiceChannel) {
+            @Qualifier("userServiceChannel") ManagedChannel userServiceChannel,
+            @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
         this.projectRepository = projectRepository;
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectApplicationRepository = projectApplicationRepository;
         this.userServiceChannel = userServiceChannel;
+        this.companyServiceChannel = companyServiceChannel;
     }
 
     private GetUserByIdResponse getUserByIdViaGrpc(UUID userId) {
@@ -313,6 +319,61 @@ public class ProjectServiceImpl implements ProjectService {
 
         return ApiResponse.success(responses);
     }
+
+    @Override
+    public ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId) {
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByUserIdRequest companyRequest = GetCompanyByUserIdRequest.newBuilder()
+                .setUserId(userId.toString())
+                .build();
+
+        GetCompanyByUserIdResponse companyResponse;
+        try {
+            companyResponse = companyStub.getCompanyByUserId(companyRequest);
+        } catch (Exception e) {
+            throw new BusinessException("Không lấy được thông tin công ty từ company-service: " + e.getMessage());
+        }
+
+        List<Project> projectList = projectRepository.findByCompanyId(UUID.fromString(companyResponse.getCompanyId()));
+
+        List<GetCompanyProjectResponse.GetProjectResponse> projects = projectList.stream()
+                .map(this::convertToCompanyProjectResponse)
+                .collect(Collectors.toList());
+
+        GetCompanyProjectResponse response = GetCompanyProjectResponse.builder()
+                .companyId(UUID.fromString(companyResponse.getCompanyId()))
+                .companyName(companyResponse.getCompanyName())
+                .projectResponses(projects)
+                .build();
+
+        return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
+    }
+
+    private GetCompanyProjectResponse.GetProjectResponse convertToCompanyProjectResponse(Project project) {
+        Set<SkillResponse> skills = project.getSkills().stream()
+                .map(skill -> SkillResponse.builder()
+                        .id(skill.getId())
+                        .name(skill.getName())
+                        .description(skill.getDescription())
+                        .createdAt(skill.getCreatedAt())
+                        .updatedAt(skill.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toSet());
+
+        return GetCompanyProjectResponse.GetProjectResponse.builder()
+                .id(project.getId())
+                .title(project.getTitle())
+                .description(project.getDescription())
+                .status(project.getStatus())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .budget(project.getBudget())
+                .skills(skills)
+                .build();
+    }
+
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()
