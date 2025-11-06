@@ -27,7 +27,7 @@ public interface ProjectService {
 
     ApiResponse<List<UserParticipantResponse>> getProjectParticipants(UUID projectId);
 
-    ApiResponse<PaginatedResult<GetStudentProjectResponse>> getHiringProjects(Integer page, Integer pageSize);
+    ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize);
 
     ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
 

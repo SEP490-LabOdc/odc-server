@@ -127,7 +127,6 @@ public class ProjectServiceImpl implements ProjectService {
                 throw new BusinessException("Có một số kỹ năng không tồn tại");
             }
         }
-        existingProject.setMentorId(request.getMentorId());
         existingProject.setTitle(request.getTitle());
         existingProject.setDescription(request.getDescription());
         existingProject.setStatus(request.getStatus());
@@ -281,7 +280,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ApiResponse<PaginatedResult<GetStudentProjectResponse>> getHiringProjects(Integer page, Integer pageSize) {
+    public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
         return null;
     }
 
@@ -329,51 +328,43 @@ public class ProjectServiceImpl implements ProjectService {
                 .setUserId(userId.toString())
                 .build();
 
-        GetCompanyByUserIdResponse companyResponse;
-        try {
-            companyResponse = companyStub.getCompanyByUserId(companyRequest);
-        } catch (Exception e) {
-            throw new BusinessException("Không lấy được thông tin công ty từ company-service: " + e.getMessage());
-        }
+        GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
 
         List<Project> projectList = projectRepository.findByCompanyId(UUID.fromString(companyResponse.getCompanyId()));
 
-        List<GetCompanyProjectResponse.GetProjectResponse> projects = projectList.stream()
+        List<GetProjectResponse> projects = projectList.stream()
                 .map(this::convertToCompanyProjectResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         GetCompanyProjectResponse response = GetCompanyProjectResponse.builder()
                 .companyId(UUID.fromString(companyResponse.getCompanyId()))
                 .companyName(companyResponse.getCompanyName())
-                .projectResponses(projects)
+                .projectResponses(projects.isEmpty() ? List.of() : projects)
                 .build();
 
         return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
     }
 
-    private GetCompanyProjectResponse.GetProjectResponse convertToCompanyProjectResponse(Project project) {
+    private GetProjectResponse convertToCompanyProjectResponse(Project project) {
         Set<SkillResponse> skills = project.getSkills().stream()
                 .map(skill -> SkillResponse.builder()
                         .id(skill.getId())
                         .name(skill.getName())
                         .description(skill.getDescription())
-                        .createdAt(skill.getCreatedAt())
-                        .updatedAt(skill.getUpdatedAt())
                         .build())
                 .collect(Collectors.toSet());
 
-        return GetCompanyProjectResponse.GetProjectResponse.builder()
+        return GetProjectResponse.builder()
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
                 .status(project.getStatus())
-                .startDate(project.getStartDate())
-                .endDate(project.getEndDate())
-                .budget(project.getBudget())
+                .startDate(project.getStartDate().toString())
+                .endDate(project.getEndDate().toString())
+                .budget(project.getBudget().toString())
                 .skills(skills)
                 .build();
     }
-
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()
@@ -381,15 +372,12 @@ public class ProjectServiceImpl implements ProjectService {
                         .id(skill.getId())
                         .name(skill.getName())
                         .description(skill.getDescription())
-                        .createdAt(skill.getCreatedAt())
-                        .updatedAt(skill.getUpdatedAt())
                         .build())
                 .collect(Collectors.toSet());
 
         return ProjectResponse.builder()
                 .id(project.getId())
                 .companyId(project.getCompanyId())
-                .mentorId(project.getMentorId())
                 .title(project.getTitle())
                 .description(project.getDescription())
                 .status(project.getStatus())
