@@ -8,10 +8,7 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
-import com.odc.companyservice.dto.response.CompanyResponse;
-import com.odc.companyservice.dto.response.GetCompanyByIdResponse;
-import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
-import com.odc.companyservice.dto.response.GetCompanyEditResponse;
+import com.odc.companyservice.dto.response.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +37,8 @@ public interface CompanyService {
     ApiResponse<List<CompanyResponse>> searchCompanies(SearchRequest request);
 
     ApiResponse<PaginatedResult<CompanyResponse>> searchCompaniesWithPagination(SearchRequest request);
+
+    ApiResponse<GetMyCompanyResponse> getMyCompany(UUID userId);
 
     ApiResponse<CompanyResponse> getCompanyByUserId(UUID userId);
 }

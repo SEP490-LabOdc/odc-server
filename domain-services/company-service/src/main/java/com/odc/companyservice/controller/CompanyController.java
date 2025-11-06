@@ -6,15 +6,13 @@ import com.odc.companyservice.dto.request.CompanyRegisterRequest;
 import com.odc.companyservice.dto.request.ReviewCompanyInfoRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRegistrationRequest;
 import com.odc.companyservice.dto.request.UpdateCompanyRequest;
-import com.odc.companyservice.dto.response.CompanyResponse;
-import com.odc.companyservice.dto.response.GetCompanyByIdResponse;
-import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
-import com.odc.companyservice.dto.response.GetCompanyEditResponse;
+import com.odc.companyservice.dto.response.*;
 import com.odc.companyservice.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -89,6 +87,13 @@ public class CompanyController {
 
         return ResponseEntity.ok(companyService.searchCompanies(request));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<GetMyCompanyResponse>> getMyCompany() {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(companyService.getMyCompany(userId));
+    }
+
     @GetMapping("/by-user-id/{userId}")
     public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyByUserId(@PathVariable UUID userId) {
         ApiResponse<CompanyResponse> response = companyService.getCompanyByUserId(userId);

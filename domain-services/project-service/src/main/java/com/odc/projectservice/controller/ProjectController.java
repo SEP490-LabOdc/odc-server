@@ -91,4 +91,12 @@ public class ProjectController {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectService.getProjectsByUserId(userId));
     }
+
+    @GetMapping("/hiring")
+    public ResponseEntity<ApiResponse<?>> getHiringProjects(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize
+    ) {
+        return ResponseEntity.ok(projectService.getHiringProjects(page, pageSize));
+    }
 }

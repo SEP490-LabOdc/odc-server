@@ -10,3 +10,10 @@ message ContactUserCreatedEvent {
   string user_id = 1;
   string company_id = 2;
 }
+
+message UserWelcomeNotificationEvent {
+  string userId = 1;
+  string email = 2;
+  string fullName = 3;
+  string password = 4;
+}

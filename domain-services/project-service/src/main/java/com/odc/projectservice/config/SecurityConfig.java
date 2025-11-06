@@ -26,7 +26,8 @@ public class SecurityConfig {
             "/actuator/**",
             "/project-service/v3/api-docs/**",
             "/project-service/swagger/**",
-            "/api/v1/project-applications/apply"
+            "/api/v1/project-applications/apply",
+            "/api/v1/projects/hiring"
     };
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;

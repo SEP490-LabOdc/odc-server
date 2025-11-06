@@ -26,7 +26,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + request.getProjectId() + "' không tồn tại"));
 
         boolean alreadyApplied = projectApplicationRepository
-                .existsByProjectIdAndUserId(project.getId(), request.getUserId());
+                .existsByProject_IdAndUserId(project.getId(), request.getUserId());
         if (alreadyApplied) {
             throw new BusinessException("Sinh viên đã đăng ký tham gia dự án này");
         }

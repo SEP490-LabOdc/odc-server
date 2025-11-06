@@ -9,6 +9,7 @@ import com.odc.commonlib.event.EventPublisher;
 import com.odc.company.v1.CompanyApprovedEvent;
 import com.odc.company.v1.ContactUser;
 import com.odc.user.v1.ContactUserCreatedEvent;
+import com.odc.user.v1.UserWelcomeNotificationEvent;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
 import com.odc.userservice.repository.UserRepository;
@@ -42,11 +43,12 @@ public class ContactUserCreatedEventHandler implements EventHandler {
 
             ContactUser contactUser = event.getContactUser();
 
+            String rawPassword = StringUtil.generateRandomString(12);
             User user = User.builder()
                     .fullName(contactUser.getName())
                     .email(contactUser.getEmail())
                     .phone(contactUser.getPhone())
-                    .passwordHash(passwordEncoder.encode(StringUtil.generateRandomString(8)))
+                    .passwordHash(passwordEncoder.encode(rawPassword))
                     .role(companyRole)
                     .status(Status.ACTIVE)
                     .build();
@@ -61,6 +63,15 @@ public class ContactUserCreatedEventHandler implements EventHandler {
                     .build();
             eventPublisher.publish("contact.user.created.event", contactUserCreatedEvent);
             log.info("user has been created: {}", user);
+
+            UserWelcomeNotificationEvent welcomeEvent = UserWelcomeNotificationEvent.newBuilder()
+                    .setUserId(user.getId().toString())
+                    .setEmail(user.getEmail())
+                    .setFullName(user.getFullName())
+                    .setPassword(rawPassword)
+                    .build();
+            eventPublisher.publish("user.welcome.notification.event", welcomeEvent);
+            log.info("Published welcome notification event for {}", user.getEmail());
         } catch (InvalidProtocolBufferException e) {
             throw new RuntimeException(e);
         }

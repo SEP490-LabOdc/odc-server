@@ -1,5 +1,7 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.Role;
+import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
@@ -245,24 +247,21 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        // Get project members
         List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
 
-        if (members.isEmpty()) {
-            return ApiResponse.<List<UserParticipantResponse>>builder()
-                    .success(true)
-                    .message("Lấy thông tin người tham gia dự án thành công")
-                    .timestamp(LocalDateTime.now())
-                    .data(List.of())
-                    .build();
-        }
-
-        // Extract list userId từ project_members
         List<String> userIds = members.stream()
                 .map(member -> member.getUserId().toString())
                 .toList();
 
-        // Batch call getName -> map<string, string> key: userId, value: name
+        if (userIds.isEmpty()) {
+            return ApiResponse.<List<UserParticipantResponse>>builder()
+                    .success(true)
+                    .message("Không có người tham gia dự án")
+                    .timestamp(LocalDateTime.now())
+                    .data(Collections.emptyList())
+                    .build();
+        }
+
         UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
         GetNameResponse userNamesResponse = userStub.getName(
                 GetNameRequest.newBuilder()
@@ -271,15 +270,26 @@ public class ProjectServiceImpl implements ProjectService {
 
         Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
 
-        // Loop project_members -> map.getKey(userId) để lấy name
         List<UserParticipantResponse> participants = members.stream()
-                .map(member -> UserParticipantResponse.builder()
-                        .id(member.getUserId())
-                        .name(userIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown"))
-                        .roleName(member.getRoleInProject())
-                        .isLeader(member.isLeader())
-                        .build())
-                .collect(Collectors.toList());
+                .map(member -> {
+                    String name = userIdToNameMap.get(member.getUserId().toString());
+                    if (name == null) return null;
+
+                    String roleName = Role.TALENT.toString();
+                    if (Role.MENTOR.toString().equalsIgnoreCase(member.getRoleInProject())) {
+                        roleName = Role.MENTOR.toString();
+                    }
+
+                    return UserParticipantResponse.builder()
+                            .id(member.getUserId())
+                            .name(name)
+                            .roleName(roleName)
+                            .isLeader(member.isLeader())
+                            .build();
+                })
+                .filter(Objects::nonNull).sorted(Comparator
+                        .comparing((UserParticipantResponse p) -> !p.getRoleName().equals("MENTOR"))
+                        .thenComparing(p -> !p.isLeader())).collect(Collectors.toList());
 
         return ApiResponse.<List<UserParticipantResponse>>builder()
                 .success(true)
@@ -289,17 +299,78 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
     }
 
-//    @Override
-//    public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
-//        return null;
-//    }
+    @Override
+    public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "updatedAt", "createdAt"));
+
+        Page<Project> projectPage = projectRepository.findByStatus(Status.HIRING.toString(), pageable);
+
+        Page<GetHiringProjectDetailResponse> mappedPage = projectPage.map(project -> {
+
+            List<ProjectMember> mentorMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
+                    .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                    .toList();
+
+            List<String> mentorUserIds = mentorMembers.stream()
+                    .map(pm -> pm.getUserId().toString())
+                    .toList();
+
+            Map<String, String> userIdToNameMap;
+
+            if (!mentorUserIds.isEmpty()) {
+                UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+                GetNameResponse userNamesResponse = userStub.getName(
+                        GetNameRequest.newBuilder()
+                                .addAllIds(mentorUserIds)
+                                .build()
+                );
+                userIdToNameMap = userNamesResponse.getMapMap();
+            } else {
+                userIdToNameMap = Map.of();
+            }
+
+            List<UserParticipantResponse> mentors = mentorMembers.stream()
+                    .map(pm -> UserParticipantResponse.builder()
+                            .userId(pm.getUserId())
+                            .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                            .roleName(Role.MENTOR.toString())
+                            .isLeader(pm.isLeader())
+                            .build())
+                    .sorted(Comparator.comparing(p -> !p.isLeader()))
+                    .toList();
+
+            List<SkillResponse> skills = project.getSkills().stream()
+                    .map(skill -> SkillResponse.builder()
+                            .id(skill.getId())
+                            .name(skill.getName())
+                            .description(skill.getDescription())
+                            .build())
+                    .toList();
+
+            int applicantsCount = projectApplicationRepository.countByProjectId(project.getId());
+
+            return GetHiringProjectDetailResponse.builder()
+                    .projectId(project.getId())
+                    .projectName(project.getTitle())
+                    .description(project.getDescription())
+                    .startDate(project.getStartDate())
+                    .endDate(project.getEndDate())
+                    .currentApplicants(applicantsCount)
+                    .mentors(mentors)
+                    .skills(skills)
+                    .build();
+        });
+
+        return ApiResponse.success(PaginatedResult.from(mappedPage));
+    }
+
 
     @Override
     public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {
         List<ProjectApplication> projectApplicationList = projectApplicationRepository.findByProjectId(projectId);
 
         if (projectApplicationList.isEmpty()) {
-            return ApiResponse.success(List.of()); // trả về list rỗng nếu không có
+            return ApiResponse.success(List.of());
         }
 
         List<String> userIds = projectApplicationList.stream()

@@ -46,4 +46,7 @@ public class Project extends BaseEntity {
             joinColumns = @JoinColumn(name = "project_id"),
             inverseJoinColumns = @JoinColumn(name = "skill_id"))
     private Set<Skill> skills = new HashSet<>();
+
+    @OneToMany(mappedBy = "project")
+    private Set<ProjectApplication> applications = new HashSet<>();
 }

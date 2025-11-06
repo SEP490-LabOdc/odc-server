@@ -5,10 +5,14 @@ import com.odc.commonlib.event.EventHandler;
 import com.odc.company.v1.CompanyApprovedEvent;
 import com.odc.emailservice.constants.EmailTemplateConstant;
 import com.odc.emailservice.service.EmailService;
+import com.odc.userservice.v1.GetNameRequest;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -16,6 +20,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CompanyApprovedEventHandler implements EventHandler {
     private final EmailService emailService;
+    private final ManagedChannel userServiceChannel;
 
     @Override
     public String getTopic() {
@@ -36,7 +41,13 @@ public class CompanyApprovedEventHandler implements EventHandler {
                             "contactUserName", event.getContactUser().getName(),
                             "companyName", event.getCompanyName(),
                             "companyEmail", event.getEmail(),
-                            "approvedBy", event.getApprovedBy(),
+                            "approvedBy", UserServiceGrpc.newBlockingStub(userServiceChannel).getName(
+                                            GetNameRequest
+                                                    .newBuilder()
+                                                    .addAllIds(List.of(event.getApprovedBy()))
+                                                    .build()
+                                    ).getMapMap()
+                                    .getOrDefault(event.getApprovedBy(), "Unknown"),
                             "contactUserEmail", event.getContactUser().getEmail(),
                             "contactUserPhone", event.getContactUser().getPhone()
                     ));
