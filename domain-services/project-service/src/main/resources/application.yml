@@ -113,6 +113,10 @@ grpc:
     user-service:
       address: ${USER-SERVICE-GRPC:0.0.0.0}
       port: 9091
+    company-service:
+      address: ${COMPANY-SERVICE-GRPC:0.0.0.0}
+      port: 9092
+
 #  server:
 #    address: 0.0.0.0
 #    port: 9094

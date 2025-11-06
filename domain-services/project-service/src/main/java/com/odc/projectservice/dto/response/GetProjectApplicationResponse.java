@@ -4,15 +4,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
 @Setter
+@Getter
 @Builder
-public class UserParticipantResponse {
+public class GetProjectApplicationResponse {
     private UUID id;
     private UUID userId;
-    private String name;
-    private String roleName;
-    private boolean isLeader;
+    private String name, cvUrl, status;
+    private LocalDateTime appliedAt;
 }

@@ -5,20 +5,21 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
+import com.odc.companyservice.v1.CompanyServiceGrpc;
+import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
+import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.ProjectResponse;
-import com.odc.projectservice.dto.response.SkillResponse;
-import com.odc.projectservice.dto.response.UserParticipantResponse;
+import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.Project;
+import com.odc.projectservice.entity.ProjectApplication;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.Skill;
+import com.odc.projectservice.repository.ProjectApplicationRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
-import com.odc.userservice.v1.GetUserByIdRequest;
-import com.odc.userservice.v1.GetUserByIdResponse;
-import com.odc.userservice.v1.UserServiceGrpc;
+import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -30,10 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -43,19 +41,26 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
 
     private final ManagedChannel userServiceChannel;
+    private final ManagedChannel companyServiceChannel;
 
     // Constructor với @Qualifier - THÊM CONSTRUCTOR NÀY
     public ProjectServiceImpl(
             ProjectRepository projectRepository,
             SkillRepository skillRepository,
             ProjectMemberRepository projectMemberRepository,
-            @Qualifier("userServiceChannel") ManagedChannel userServiceChannel) {
+            ProjectApplicationRepository projectApplicationRepository,
+
+            @Qualifier("userServiceChannel") ManagedChannel userServiceChannel,
+            @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
         this.projectRepository = projectRepository;
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
+        this.projectApplicationRepository = projectApplicationRepository;
         this.userServiceChannel = userServiceChannel;
+        this.companyServiceChannel = companyServiceChannel;
     }
 
     private GetUserByIdResponse getUserByIdViaGrpc(UUID userId) {
@@ -122,7 +127,6 @@ public class ProjectServiceImpl implements ProjectService {
                 throw new BusinessException("Có một số kỹ năng không tồn tại");
             }
         }
-        existingProject.setMentorId(request.getMentorId());
         existingProject.setTitle(request.getTitle());
         existingProject.setDescription(request.getDescription());
         existingProject.setStatus(request.getStatus());
@@ -275,6 +279,131 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
     }
 
+    @Override
+    public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "updatedAt", "createdAt"));
+
+        Page<Project> projectPage = projectRepository.findByStatus("HIRING", pageable);
+
+        Page<GetHiringProjectDetailResponse> mappedPage = projectPage.map(project -> {
+
+            List<UserParticipantResponse> mentors = projectMemberRepository
+                    .findByProjectId(project.getId()).stream()
+                    .filter(pm -> pm.isLeader() || "MENTOR".equalsIgnoreCase(pm.getRoleInProject()))
+                    .map(pm -> UserParticipantResponse.builder()
+                            .userId(pm.getUserId())
+                            .roleName(pm.getRoleInProject())
+                            .isLeader(pm.isLeader())
+                            .build())
+                    .toList();
+
+            List<SkillResponse> skills = project.getSkills().stream()
+                    .map(skill -> SkillResponse.builder()
+                            .id(skill.getId())
+                            .name(skill.getName())
+                            .description(skill.getDescription())
+                            .build())
+                    .toList();
+
+            int applicantsCount = projectApplicationRepository.countByProjectId(project.getId());
+
+            return GetHiringProjectDetailResponse.builder()
+                    .projectId(project.getId())
+                    .projectName(project.getTitle())
+                    .description(project.getDescription())
+                    .startDate(project.getStartDate())
+                    .endDate(project.getEndDate())
+                    .budget(project.getBudget())
+                    .currentApplicants(applicantsCount)
+                    .mentors(mentors)
+                    .skills(skills)
+                    .build();
+        });
+
+        return ApiResponse.success(PaginatedResult.from(mappedPage));
+    }
+
+    @Override
+    public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {
+        List<ProjectApplication> projectApplicationList = projectApplicationRepository.findByProjectId(projectId);
+
+        if (projectApplicationList.isEmpty()) {
+            return ApiResponse.success(List.of()); // trả về list rỗng nếu không có
+        }
+
+        List<String> userIds = projectApplicationList.stream()
+                .map(pa -> pa.getUserId().toString())
+                .toList();
+
+        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+        GetNameResponse userNamesResponse = userStub.getName(
+                GetNameRequest.newBuilder()
+                        .addAllIds(userIds)
+                        .build());
+
+        Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
+
+        List<GetProjectApplicationResponse> responses = projectApplicationList.stream()
+                .map(pa -> GetProjectApplicationResponse.builder()
+                        .id(pa.getId())
+                        .userId(pa.getUserId())
+                        .name(userIdToNameMap.getOrDefault(pa.getUserId().toString(), "Unknown"))
+                        .cvUrl(pa.getCvUrl())
+                        .status(pa.getStatus())
+                        .appliedAt(pa.getAppliedAt())
+                        .build()
+                )
+                .toList();
+
+        return ApiResponse.success(responses);
+    }
+
+    @Override
+    public ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId) {
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByUserIdRequest companyRequest = GetCompanyByUserIdRequest.newBuilder()
+                .setUserId(userId.toString())
+                .build();
+
+        GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
+
+        List<Project> projectList = projectRepository.findByCompanyId(UUID.fromString(companyResponse.getCompanyId()));
+
+        List<GetProjectResponse> projects = projectList.stream()
+                .map(this::convertToCompanyProjectResponse)
+                .toList();
+
+        GetCompanyProjectResponse response = GetCompanyProjectResponse.builder()
+                .companyId(UUID.fromString(companyResponse.getCompanyId()))
+                .companyName(companyResponse.getCompanyName())
+                .projectResponses(projects.isEmpty() ? List.of() : projects)
+                .build();
+
+        return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
+    }
+
+    private GetProjectResponse convertToCompanyProjectResponse(Project project) {
+        Set<SkillResponse> skills = project.getSkills().stream()
+                .map(skill -> SkillResponse.builder()
+                        .id(skill.getId())
+                        .name(skill.getName())
+                        .description(skill.getDescription())
+                        .build())
+                .collect(Collectors.toSet());
+
+        return GetProjectResponse.builder()
+                .id(project.getId())
+                .title(project.getTitle())
+                .description(project.getDescription())
+                .status(project.getStatus())
+                .startDate(project.getStartDate().toString())
+                .endDate(project.getEndDate().toString())
+                .budget(project.getBudget().toString())
+                .skills(skills)
+                .build();
+    }
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()
@@ -282,15 +411,12 @@ public class ProjectServiceImpl implements ProjectService {
                         .id(skill.getId())
                         .name(skill.getName())
                         .description(skill.getDescription())
-                        .createdAt(skill.getCreatedAt())
-                        .updatedAt(skill.getUpdatedAt())
                         .build())
                 .collect(Collectors.toSet());
 
         return ProjectResponse.builder()
                 .id(project.getId())
                 .companyId(project.getCompanyId())
-                .mentorId(project.getMentorId())
                 .title(project.getTitle())
                 .description(project.getDescription())
                 .status(project.getStatus())
