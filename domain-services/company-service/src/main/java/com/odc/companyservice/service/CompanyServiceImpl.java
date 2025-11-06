@@ -3,6 +3,7 @@ package com.odc.companyservice.service;
 import com.odc.checklist.v1.ChecklistServiceGrpc;
 import com.odc.checklist.v1.GetChecklistItemsByTemplateTypeAndEntityIdRequest;
 import com.odc.common.constant.Constants;
+import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.constant.Template;
 import com.odc.common.dto.ApiResponse;
@@ -17,16 +18,14 @@ import com.odc.company.v1.CompanyUpdateRequestEmailEvent;
 import com.odc.company.v1.ContactUser;
 import com.odc.company.v1.ReviewCompanyInfoEvent;
 import com.odc.companyservice.dto.request.*;
-import com.odc.companyservice.dto.response.CompanyResponse;
-import com.odc.companyservice.dto.response.GetCompanyByIdResponse;
-import com.odc.companyservice.dto.response.GetCompanyChecklistResponse;
-import com.odc.companyservice.dto.response.GetCompanyEditResponse;
+import com.odc.companyservice.dto.response.*;
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.entity.CompanyDocument;
 import com.odc.companyservice.event.producer.CompanyProducer;
 import com.odc.companyservice.repository.CompanyRepository;
 import com.odc.notification.v1.*;
 import com.odc.userservice.v1.CheckEmailRequest;
+import com.odc.userservice.v1.CheckRoleByUserIdRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -537,6 +536,39 @@ public class CompanyServiceImpl implements CompanyService {
                 .map(this::mapToSearchResponse); // Sử dụng mapper riêng không có documents
 
         return ApiResponse.success(PaginatedResult.from(page));
+    }
+
+    @Override
+    public ApiResponse<GetMyCompanyResponse> getMyCompany(UUID userId) {
+        if (!UserServiceGrpc
+                .newBlockingStub(userServiceChannel)
+                .checkRoleByUserId(CheckRoleByUserIdRequest
+                        .newBuilder()
+                        .setUserId(userId.toString())
+                        .setRoleName(Role.COMPANY.toString())
+                        .build())
+                .getResult()) {
+            throw new BusinessException("Bạn không có quyền truy cập vào tài nguyên hiện tại.");
+        }
+
+        Company company = companyRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty với userId: " + userId));
+
+        return ApiResponse.success(
+                GetMyCompanyResponse
+                        .builder()
+                        .id(company.getId())
+                        .name(company.getName())
+                        .email(company.getEmail())
+                        .phone(company.getPhone())
+                        .taxCode(company.getTaxCode())
+                        .address(company.getAddress())
+                        .description(company.getDescription())
+                        .website(company.getWebsite())
+                        .status(company.getStatus())
+                        .domain(company.getDomain())
+                        .build()
+        );
     }
 
     private CompanyResponse mapToSearchResponse(Company company) {

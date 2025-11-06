@@ -2,9 +2,7 @@ package com.odc.userservice.grpc;
 
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.userservice.entity.User;
-import com.odc.userservice.v1.GetNameRequest;
-import com.odc.userservice.v1.GetNameResponse;
-import com.odc.userservice.v1.UserServiceGrpc;
+import com.odc.userservice.v1.*;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,5 +74,31 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
+    }
+
+    @Override
+    public void checkRoleByUserId(CheckRoleByUserIdRequest request, StreamObserver<CheckRoleByUserIdResponse> responseObserver) {
+        try {
+            UUID userId = UUID.fromString(request.getUserId());
+            String roleName = request.getRoleName();
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+            boolean result = user.getRole() != null && user.getRole().getName().equalsIgnoreCase(roleName);
+
+            CheckRoleByUserIdResponse response = CheckRoleByUserIdResponse.newBuilder()
+                    .setResult(result)
+                    .build();
+
+            log.info("CheckRoleByUserId -> userId: {}, roleName: {}, result: {}", userId, roleName, result);
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("Error checking role for userId {}: {}", request.getUserId(), e.getMessage());
+            responseObserver.onError(e);
+        }
     }
 }

@@ -9,7 +9,7 @@ service UserService {
   rpc CheckEmailExists(CheckEmailRequest) returns (CheckEmailResponse);
   rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
   rpc GetName(GetNameRequest) returns (GetNameResponse);
-
+  rpc CheckRoleByUserId(CheckRoleByUserIdRequest) returns (CheckRoleByUserIdResponse);
 }
 
 message CheckEmailRequest {
@@ -19,9 +19,11 @@ message CheckEmailRequest {
 message CheckEmailResponse {
   bool result = 1;
 }
+
 message GetUserByIdRequest {
   string user_id = 1;
 }
+
 message GetUserByIdResponse {
   string id = 1;
   string full_name = 2;
@@ -37,4 +39,13 @@ message GetNameRequest {
 
 message GetNameResponse {
   map<string, string> map = 1;
+}
+
+message CheckRoleByUserIdRequest {
+  string user_id = 1;
+  string role_name = 2;
+}
+
+message CheckRoleByUserIdResponse {
+  bool result = 1;
 }
