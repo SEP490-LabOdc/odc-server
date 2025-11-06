@@ -5,5 +5,7 @@ public enum Role {
     LAB_ADMIN,
     SUPERVISOR,
     USER,
-    COMPANY
+    COMPANY,
+    MENTOR,
+    TALENT
 }

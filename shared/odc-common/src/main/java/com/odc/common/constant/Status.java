@@ -10,5 +10,6 @@ public enum Status {
     REVIEWING,
     UPDATE_REQUIRED,
     DISABLED,
-    APPROVED
+    APPROVED,
+    HIRING
 }
