@@ -10,17 +10,13 @@ import com.odc.common.specification.GenericSpecification;
 import com.odc.companyservice.v1.CompanyServiceGrpc;
 import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
 import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
+import com.odc.projectservice.dto.request.CreateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
-import com.odc.projectservice.entity.Project;
-import com.odc.projectservice.entity.ProjectApplication;
-import com.odc.projectservice.entity.ProjectMember;
-import com.odc.projectservice.entity.Skill;
-import com.odc.projectservice.repository.ProjectApplicationRepository;
-import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.repository.ProjectRepository;
-import com.odc.projectservice.repository.SkillRepository;
+import com.odc.projectservice.entity.*;
+import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetNameRequest;
 import com.odc.userservice.v1.GetNameResponse;
 import com.odc.userservice.v1.UserServiceGrpc;
@@ -46,6 +42,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final SkillRepository skillRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
+    private final ProjectDocumentRepository projectDocumentRepository;
 
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
@@ -56,6 +53,7 @@ public class ProjectServiceImpl implements ProjectService {
             SkillRepository skillRepository,
             ProjectMemberRepository projectMemberRepository,
             ProjectApplicationRepository projectApplicationRepository,
+            ProjectDocumentRepository projectDocumentRepository,
 
             @Qualifier("userServiceChannel") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
@@ -63,6 +61,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectApplicationRepository = projectApplicationRepository;
+        this.projectDocumentRepository = projectDocumentRepository;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }
@@ -411,6 +410,110 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
 
         return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
+    }
+
+    @Override
+    public ApiResponse<ProjectDocumentResponse> createProjectDocument(CreateProjectDocumentRequest request) {
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + request.getProjectId() + "' không tồn tại"));
+
+        ProjectDocument projectDocument = ProjectDocument.builder()
+                .documentName(request.getDocumentName())
+                .documentUrl(request.getDocumentUrl())
+                .documentType(request.getDocumentType())
+                .uploadedAt(LocalDateTime.now())
+                .project(project)
+                .build();
+
+        ProjectDocument savedDocument = projectDocumentRepository.save(projectDocument);
+
+        ProjectDocumentResponse responseData = ProjectDocumentResponse.builder()
+                .id(savedDocument.getId())
+                .projectId(savedDocument.getProject().getId())
+                .documentName(savedDocument.getDocumentName())
+                .documentUrl(savedDocument.getDocumentUrl())
+                .documentType(savedDocument.getDocumentType())
+                .uploadedAt(savedDocument.getUploadedAt())
+                .createdAt(savedDocument.getCreatedAt())
+                .updatedAt(savedDocument.getUpdatedAt())
+                .build();
+        return ApiResponse.success("Tạo tài liệu dự án thành công", responseData);
+    }
+
+    @Override
+    public ApiResponse<ProjectDocumentResponse> updateProjectDocument(UUID documentId, UpdateProjectDocumentRequest request) {
+        ProjectDocument existingDocument = projectDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new BusinessException("Tài liệu dự án với ID '" + documentId + "' không tồn tại"));
+
+        existingDocument.setDocumentName(request.getDocumentName());
+        existingDocument.setDocumentUrl(request.getDocumentUrl());
+        existingDocument.setDocumentType(request.getDocumentType());
+
+        ProjectDocument updatedDocument = projectDocumentRepository.save(existingDocument);
+
+        ProjectDocumentResponse responseData = ProjectDocumentResponse.builder()
+                .id(updatedDocument.getId())
+                .projectId(updatedDocument.getProject().getId())
+                .documentName(updatedDocument.getDocumentName())
+                .documentUrl(updatedDocument.getDocumentUrl())
+                .documentType(updatedDocument.getDocumentType())
+                .uploadedAt(updatedDocument.getUploadedAt())
+                .createdAt(updatedDocument.getCreatedAt())
+                .updatedAt(updatedDocument.getUpdatedAt())
+                .build();
+        return ApiResponse.success("Cập nhật tài liệu dự án thành công", responseData);
+    }
+
+    @Override
+    public ApiResponse<Void> deleteProjectDocument(UUID documentId) {
+        ProjectDocument existingDocument = projectDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new BusinessException("Tài liệu dự án với ID '" + documentId + "' không tồn tại"));
+
+        projectDocumentRepository.delete(existingDocument);
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("Xóa tài liệu dự án thành công")
+                .timestamp(LocalDateTime.now())
+                .data(null)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<ProjectDocumentResponse> getProjectDocumentById(UUID documentId) {
+        ProjectDocument document = projectDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new BusinessException("Tài liệu dự án với ID '" + documentId + "' không tồn tại"));
+
+        ProjectDocumentResponse responseData = ProjectDocumentResponse.builder()
+                .id(document.getId())
+                .projectId(document.getProject().getId())
+                .documentName(document.getDocumentName())
+                .documentUrl(document.getDocumentUrl())
+                .documentType(document.getDocumentType())
+                .uploadedAt(document.getUploadedAt())
+                .createdAt(document.getCreatedAt())
+                .updatedAt(document.getUpdatedAt())
+                .build();
+
+        return ApiResponse.success("Lấy thông tin tài liệu dự án thành công", responseData);
+    }
+
+    @Override
+    public ApiResponse<List<ProjectDocumentResponse>> getAllProjectDocuments() {
+        List<ProjectDocumentResponse> documents = projectDocumentRepository.findAll()
+                .stream()
+                .map(document -> ProjectDocumentResponse.builder()
+                        .id(document.getId())
+                        .projectId(document.getProject().getId())
+                        .documentName(document.getDocumentName())
+                        .documentUrl(document.getDocumentUrl())
+                        .documentType(document.getDocumentType())
+                        .uploadedAt(document.getUploadedAt())
+                        .createdAt(document.getCreatedAt())
+                        .updatedAt(document.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("Lấy danh sách tài liệu dự án thành công", documents);
     }
 
     private GetProjectResponse convertToCompanyProjectResponse(Project project) {

@@ -3,7 +3,9 @@ package com.odc.projectservice.service;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
+import com.odc.projectservice.dto.request.CreateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
 
@@ -32,4 +34,14 @@ public interface ProjectService {
     ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
 
     ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId);
+
+    ApiResponse<ProjectDocumentResponse> createProjectDocument(CreateProjectDocumentRequest request);
+
+    ApiResponse<ProjectDocumentResponse> updateProjectDocument(UUID documentId, UpdateProjectDocumentRequest request);
+
+    ApiResponse<Void> deleteProjectDocument(UUID documentId);
+
+    ApiResponse<ProjectDocumentResponse> getProjectDocumentById(UUID documentId);
+
+    ApiResponse<List<ProjectDocumentResponse>> getAllProjectDocuments();
 }
