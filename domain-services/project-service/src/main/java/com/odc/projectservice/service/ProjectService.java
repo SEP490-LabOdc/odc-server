@@ -3,9 +3,7 @@ package com.odc.projectservice.service;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
-import com.odc.projectservice.dto.request.CreateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
 

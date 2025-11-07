@@ -1,6 +1,8 @@
 package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
+import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectDocumentRequest;
 import com.odc.projectservice.dto.response.ProjectDocumentResponse;
@@ -18,4 +20,8 @@ public interface ProjectDocumentService {
     ApiResponse<ProjectDocumentResponse> getProjectDocumentById(UUID documentId);
 
     ApiResponse<List<ProjectDocumentResponse>> getAllProjectDocuments();
+
+    ApiResponse<List<ProjectDocumentResponse>> searchProjectDocuments(SearchRequest request);
+
+    ApiResponse<PaginatedResult<ProjectDocumentResponse>> searchProjectDocumentsWithPagination(SearchRequest request);
 }

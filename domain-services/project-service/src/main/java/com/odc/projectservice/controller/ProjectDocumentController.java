@@ -1,6 +1,7 @@
 package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectDocumentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectDocumentRequest;
 import com.odc.projectservice.dto.response.ProjectDocumentResponse;
@@ -51,6 +52,17 @@ public class ProjectDocumentController {
     public ResponseEntity<ApiResponse<List<ProjectDocumentResponse>>> getAllProjectDocuments() {
         ApiResponse<List<ProjectDocumentResponse>> response = projectDocumentService.getAllProjectDocuments();
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<?>> searchProjectDocuments(@RequestBody SearchRequest request) {
+        boolean isPaginated = request.getPage() != null && request.getSize() != null;
+
+        if (isPaginated) {
+            return ResponseEntity.ok(projectDocumentService.searchProjectDocumentsWithPagination(request));
+        }
+
+        return ResponseEntity.ok(projectDocumentService.searchProjectDocuments(request));
     }
 
 }
