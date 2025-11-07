@@ -7,6 +7,7 @@ import com.odc.notificationservice.entity.NotificationRecipient;
 import com.odc.notificationservice.repository.NotificationRecipientRepository;
 import com.odc.notificationservice.util.NotificationServiceUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,5 +85,32 @@ public class NotificationServiceImpl implements NotificationService {
                 .collect(Collectors.toList());
 
         return ApiResponse.success("Tất cả thông báo đã được đánh dấu là đã đọc.", responseData);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> deleteNotificationRecipient(UUID notificationRecipientId) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new SecurityException("Người dùng chưa được xác thực.");
+        }
+
+        UUID currentUserId;
+        try {
+            currentUserId = (UUID) authentication.getPrincipal();
+        } catch (ClassCastException e) {
+            throw new SecurityException("Lỗi xác thực người dùng.");
+        }
+
+        NotificationRecipient recipient = notificationRecipientRepository
+                .findById(notificationRecipientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo."));
+
+        if (!recipient.getUserId().equals(currentUserId)) {
+            throw new SecurityException("Người dùng không có quyền xóa người nhận thông báo này.");
+        }
+        notificationRecipientRepository.delete(recipient);
+
+        return ApiResponse.success("Xóa thông báo thành công.", null);
     }
 }
