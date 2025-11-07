@@ -21,9 +21,10 @@ import com.odc.projectservice.repository.ProjectApplicationRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.SkillRepository;
-import com.odc.userservice.v1.*;
+import com.odc.userservice.v1.GetNameRequest;
+import com.odc.userservice.v1.GetNameResponse;
+import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
-import com.odc.common.constant.Status;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -65,20 +66,6 @@ public class ProjectServiceImpl implements ProjectService {
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }
-
-    private GetUserByIdResponse getUserByIdViaGrpc(UUID userId) {
-        try {
-            return UserServiceGrpc
-                    .newBlockingStub(userServiceChannel)
-                    .getUserById(GetUserByIdRequest.newBuilder()
-                            .setUserId(userId.toString())
-                            .build());
-        } catch (Exception e) {
-            // Log error nếu cần
-            return null;
-        }
-    }
-
 
     @Override
     public ApiResponse<ProjectResponse> createProject(UUID userId, CreateProjectRequest request) {
