@@ -17,6 +17,4 @@ public class ProjectDocumentResponse {
     private String documentUrl;
     private String documentType;
     private LocalDateTime uploadedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

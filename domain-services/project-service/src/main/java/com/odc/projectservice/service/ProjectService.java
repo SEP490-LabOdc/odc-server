@@ -35,13 +35,4 @@ public interface ProjectService {
 
     ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId);
 
-    ApiResponse<ProjectDocumentResponse> createProjectDocument(CreateProjectDocumentRequest request);
-
-    ApiResponse<ProjectDocumentResponse> updateProjectDocument(UUID documentId, UpdateProjectDocumentRequest request);
-
-    ApiResponse<Void> deleteProjectDocument(UUID documentId);
-
-    ApiResponse<ProjectDocumentResponse> getProjectDocumentById(UUID documentId);
-
-    ApiResponse<List<ProjectDocumentResponse>> getAllProjectDocuments();
 }
