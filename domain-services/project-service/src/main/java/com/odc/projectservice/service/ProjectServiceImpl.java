@@ -17,10 +17,7 @@ import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectApplication;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.Skill;
-import com.odc.projectservice.repository.ProjectApplicationRepository;
-import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.repository.ProjectRepository;
-import com.odc.projectservice.repository.SkillRepository;
+import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetNameRequest;
 import com.odc.userservice.v1.GetNameResponse;
 import com.odc.userservice.v1.UserServiceGrpc;
@@ -46,6 +43,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final SkillRepository skillRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
+    private final ProjectDocumentRepository projectDocumentRepository;
 
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
@@ -56,6 +54,7 @@ public class ProjectServiceImpl implements ProjectService {
             SkillRepository skillRepository,
             ProjectMemberRepository projectMemberRepository,
             ProjectApplicationRepository projectApplicationRepository,
+            ProjectDocumentRepository projectDocumentRepository,
 
             @Qualifier("userServiceChannel") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
@@ -63,6 +62,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectApplicationRepository = projectApplicationRepository;
+        this.projectDocumentRepository = projectDocumentRepository;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }

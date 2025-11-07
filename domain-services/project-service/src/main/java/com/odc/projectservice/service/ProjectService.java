@@ -32,4 +32,5 @@ public interface ProjectService {
     ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId);
 
     ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId);
+
 }
