@@ -1,10 +1,7 @@
 package com.odc.userservice.controller;
 
 import com.odc.common.dto.ApiResponse;
-import com.odc.userservice.dto.request.GoogleLoginRequest;
-import com.odc.userservice.dto.request.RefreshTokenRequest;
-import com.odc.userservice.dto.request.UserLoginRequest;
-import com.odc.userservice.dto.request.UserRegisterRequest;
+import com.odc.userservice.dto.request.*;
 import com.odc.userservice.dto.response.RefreshTokenResponse;
 import com.odc.userservice.dto.response.UserLoginResponse;
 import com.odc.userservice.dto.response.UserRegisterResponse;
@@ -41,5 +38,10 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<ApiResponse<UserLoginResponse>> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
         return ResponseEntity.ok(authService.loginWithGoogle(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 }

@@ -56,6 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         return path.startsWith("/actuator/") ||
                 path.startsWith("/email-service/") ||
-                path.startsWith("/api/v1/otp");
+                path.startsWith("/api/v1/otp") ||
+                path.equals("/api/v1/otp/send") ||
+                path.equals("/api/v1/otp/verify");
     }
 }

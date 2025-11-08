@@ -44,17 +44,26 @@
     <div class="header">Thông báo duyệt công ty</div>
     <div class="content">
         <p>Kính gửi <strong th:text="${contactUserName}">[Tên người liên hệ]</strong>,</p>
-        <p>Chúng tôi xin thông báo rằng công ty của bạn, <strong><span th:text="${companyName}">[Tên công ty]</span></strong>, đã được duyệt thành công.</p>
+        <p>Chúng tôi xin thông báo rằng công ty của bạn, <strong><span
+                th:text="${companyName}">[Tên công ty]</span></strong>, đã được duyệt thành công.</p>
         <p>Thông tin chi tiết:</p>
         <ul>
-            <li style="text-align: left;"><strong>Tên công ty:</strong> <span th:text="${companyName}">[Tên công ty]</span></li>
-            <li style="text-align: left;"><strong>Email công ty:</strong> <span th:text="${companyEmail}">[Email công ty]</span></li>
-            <li style="text-align: left;"><strong>Người duyệt:</strong> <span th:text="${approvedBy}">[Người duyệt]</span></li>
-            <li style="text-align: left;"><strong>Người liên hệ:</strong> <span th:text="${contactUserName}">[Tên người liên hệ]</span></li>
-            <li style="text-align: left;"><strong>Email người liên hệ:</strong> <span th:text="${contactUserEmail}">[Email người liên hệ]</span></li>
-            <li style="text-align: left;"><strong>Số điện thoại người liên hệ:</strong> <span th:text="${contactUserPhone}">[Số điện thoại người liên hệ]</span></li>
+            <li style="text-align: left;"><strong>Tên công ty:</strong> <span
+                    th:text="${companyName}">[Tên công ty]</span></li>
+            <li style="text-align: left;"><strong>Email công ty:</strong> <span th:text="${companyEmail}">[Email công ty]</span>
+            </li>
+            <li style="text-align: left;"><strong>Người duyệt:</strong> <span
+                    th:text="${approvedBy}">[Người duyệt]</span></li>
+            <li style="text-align: left;"><strong>Người liên hệ:</strong> <span th:text="${contactUserName}">[Tên người liên hệ]</span>
+            </li>
+            <li style="text-align: left;"><strong>Email người liên hệ:</strong> <span th:text="${contactUserEmail}">[Email người liên hệ]</span>
+            </li>
+            <li style="text-align: left;"><strong>Số điện thoại người liên hệ:</strong> <span
+                    th:text="${contactUserPhone}">[Số điện thoại người liên hệ]</span></li>
         </ul>
-        <p>Chúng tôi sẽ tạo một tài khoản cho bạn (người liên hệ) và thông tin đăng nhập (bao gồm mật khẩu) sẽ được gửi đến email của bạn (<strong th:text="${contactUserEmail}">[Email người liên hệ]</strong>) trong một email riêng biệt.</p>
+        <p>Chúng tôi sẽ tạo một tài khoản cho bạn (người liên hệ) và thông tin đăng nhập (bao gồm mật khẩu) sẽ được gửi
+            đến email của bạn (<strong th:text="${contactUserEmail}">[Email người liên hệ]</strong>) trong một email
+            riêng biệt.</p>
         <p>Nếu bạn có bất kỳ câu hỏi nào, xin vui lòng liên hệ với chúng tôi.</p>
         <p>Trân trọng,</p>
         <p>Đội ngũ LabOdc</p>
