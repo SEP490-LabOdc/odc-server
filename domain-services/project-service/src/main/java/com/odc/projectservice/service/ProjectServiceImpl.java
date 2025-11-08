@@ -427,9 +427,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .title(project.getTitle())
                 .description(project.getDescription())
                 .status(project.getStatus())
-                .startDate(project.getStartDate().toString())
-                .endDate(project.getEndDate().toString())
-                .budget(project.getBudget().toString())
+                .startDate(project.getStartDate() == null ? "" : project.getStartDate().toString())
+                .endDate(project.getEndDate() == null ? "" : project.getEndDate().toString())
+                .budget(project.getBudget() == null ? "" : project.getBudget().toString())
                 .skills(skills)
                 .build();
     }
