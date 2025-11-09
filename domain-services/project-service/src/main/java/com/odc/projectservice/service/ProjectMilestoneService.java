@@ -15,7 +15,10 @@ public interface ProjectMilestoneService {
 
     ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestones();
 
+    ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestonesByProjectId(UUID projectId);
+
     ApiResponse<ProjectMilestoneResponse> getProjectMilestoneById(UUID milestoneId);
 
     ApiResponse<Void> deleteProjectMilestone(UUID milestoneId);
+
 }

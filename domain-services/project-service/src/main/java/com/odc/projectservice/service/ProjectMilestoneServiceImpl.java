@@ -111,6 +111,25 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     }
 
     @Override
+    public ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestonesByProjectId(UUID projectId) {
+        projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(projectId);
+
+        List<ProjectMilestoneResponse> milestoneResponses = milestones.stream()
+                .map(this::convertToProjectMilestoneResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<ProjectMilestoneResponse>>builder()
+                .success(true)
+                .message("Lấy danh sách milestone dự án thành công")
+                .timestamp(LocalDateTime.now())
+                .data(milestoneResponses)
+                .build();
+    }
+
+    @Override
     public ApiResponse<ProjectMilestoneResponse> getProjectMilestoneById(UUID milestoneId) {
         ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
