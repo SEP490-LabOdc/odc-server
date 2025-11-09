@@ -32,10 +32,6 @@ public class PasswordResetEventHandler implements EventHandler {
         try {
             PasswordResetRequestEvent event = PasswordResetRequestEvent.parseFrom(payload);
 
-            // Lấy fullName từ email (có thể cần query từ user-service nếu cần)
-            // Tạm thời dùng email làm fullName, hoặc có thể lấy từ event nếu thêm vào
-            String fullName = event.getEmail().split("@")[0]; // Tạm thời
-
             emailService.sendEmailWithHtmlTemplate(
                     event.getEmail(),
                     "[LabOdc] Đặt lại mật khẩu thành công",
