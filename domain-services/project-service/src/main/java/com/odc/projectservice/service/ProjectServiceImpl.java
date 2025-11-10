@@ -190,7 +190,7 @@ public class ProjectServiceImpl implements ProjectService {
                         .roleName(Role.MENTOR.toString())
                         .isLeader(pm.isLeader())
                         .build())
-                .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader())) // Leader lên đầu
+                .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
                 .toList();
 
 
@@ -354,7 +354,7 @@ public class ProjectServiceImpl implements ProjectService {
 
             List<UserParticipantResponse> mentors = mentorMembers.stream()
                     .map(pm -> UserParticipantResponse.builder()
-                            .userId(pm.getUserId())
+                            .id(pm.getUserId())
                             .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                             .roleName(Role.MENTOR.toString())
                             .isLeader(pm.isLeader())
