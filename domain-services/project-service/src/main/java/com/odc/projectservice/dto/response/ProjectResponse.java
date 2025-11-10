@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +25,7 @@ public class ProjectResponse {
     private LocalDate endDate;
     private BigDecimal budget;
     private Set<SkillResponse> skills;
+    private List<UserParticipantResponse> mentors;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
