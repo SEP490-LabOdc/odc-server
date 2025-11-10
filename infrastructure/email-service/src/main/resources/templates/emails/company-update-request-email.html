@@ -61,19 +61,24 @@
     <div class="header">Yêu cầu cập nhật thông tin công ty</div>
     <div class="content">
         <p>Kính gửi <strong><span th:text="${companyName}">[Tên công ty]</span></strong>,</p>
-        <p>Chúng tôi nhận thấy rằng có một số thông tin của công ty bạn trên LabOdc chưa được hoàn thành hoặc cần cập nhật. Để đảm bảo hồ sơ của bạn được đầy đủ và chính xác, vui lòng xem xét các mục dưới đây:</p>
+        <p>Chúng tôi nhận thấy rằng có một số thông tin của công ty bạn trên LabOdc chưa được hoàn thành hoặc cần cập
+            nhật. Để đảm bảo hồ sơ của bạn được đầy đủ và chính xác, vui lòng xem xét các mục dưới đây:</p>
 
         <p><strong>Các mục cần cập nhật:</strong></p>
         <ul th:if="${!incompleteChecklists.isEmpty()}">
-            <li th:each="item : ${incompleteChecklists}" class="checklist-item" th:text="${item}">[Tên checklist chưa hoàn thành]</li>
+            <li class="checklist-item" th:each="item : ${incompleteChecklists}" th:text="${item}">[Tên checklist chưa
+                hoàn thành]
+            </li>
         </ul>
-        <p th:if="${incompleteChecklists.isEmpty()}">Không có mục cụ thể nào được liệt kê, vui lòng kiểm tra lại hồ sơ của bạn.</p>
+        <p th:if="${incompleteChecklists.isEmpty()}">Không có mục cụ thể nào được liệt kê, vui lòng kiểm tra lại hồ sơ
+            của bạn.</p>
 
-        <p th:if="${notes != null and notes != ''}"><strong>Ghi chú từ LabOdc:</strong> <span th:text="${notes}">[Ghi chú bổ sung]</span></p>
+        <p th:if="${notes != null and notes != ''}"><strong>Ghi chú từ LabOdc:</strong> <span th:text="${notes}">[Ghi chú bổ sung]</span>
+        </p>
 
         <p>Vui lòng nhấp vào liên kết dưới đây để truy cập và cập nhật thông tin của bạn:</p>
         <p style="text-align: center;">
-            <a th:href="${updateLink}" class="button">Cập nhật thông tin ngay</a>
+            <a class="button" th:href="${updateLink}">Cập nhật thông tin ngay</a>
         </p>
         <p>Nếu bạn có bất kỳ câu hỏi nào, xin vui lòng liên hệ với chúng tôi.</p>
         <p>Trân trọng,</p>

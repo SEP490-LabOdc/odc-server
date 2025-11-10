@@ -4,10 +4,8 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.response.GetCompanyProjectResponse;
-import com.odc.projectservice.dto.response.GetProjectApplicationResponse;
-import com.odc.projectservice.dto.response.ProjectResponse;
-import com.odc.projectservice.dto.response.UserParticipantResponse;
+import com.odc.projectservice.dto.response.*;
+import com.odc.projectservice.service.ProjectMilestoneService;
 import com.odc.projectservice.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProjectController {
     private final ProjectService projectService;
+    private final ProjectMilestoneService projectMilestoneService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(@Valid @RequestBody CreateProjectRequest request) {
@@ -98,5 +97,13 @@ public class ProjectController {
             @RequestParam(defaultValue = "10") Integer pageSize
     ) {
         return ResponseEntity.ok(projectService.getHiringProjects(page, pageSize));
+    }
+
+    @GetMapping("/{projectId}/milestones")
+    public ResponseEntity<ApiResponse<List<ProjectMilestoneResponse>>> getProjectMilestones(
+            @PathVariable UUID projectId) {
+        ApiResponse<List<ProjectMilestoneResponse>> response =
+                projectMilestoneService.getAllProjectMilestonesByProjectId(projectId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

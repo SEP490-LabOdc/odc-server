@@ -10,16 +10,17 @@ import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.common.exception.UnauthenticatedException;
 import com.odc.common.util.JwtUtil;
-import com.odc.userservice.dto.request.GoogleLoginRequest;
-import com.odc.userservice.dto.request.RefreshTokenRequest;
-import com.odc.userservice.dto.request.UserLoginRequest;
-import com.odc.userservice.dto.request.UserRegisterRequest;
+import com.odc.common.util.StringUtil;
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.user.v1.PasswordResetRequestEvent;
+import com.odc.userservice.dto.request.*;
 import com.odc.userservice.dto.response.RefreshTokenResponse;
 import com.odc.userservice.dto.response.UserLoginResponse;
 import com.odc.userservice.dto.response.UserRegisterResponse;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
 import com.odc.userservice.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,18 +29,21 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 public class AuthServiceImpl implements AuthService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
     private JwtUtil jwtUtil;
     private StringRedisTemplate stringRedisTemplate;
+    private EventPublisher eventPublisher;
 
     @Value("${refresh-expiration:7}")
     private int refreshExpiration;
@@ -48,12 +52,13 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Autowired
-    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, JwtUtil jwtUtil, StringRedisTemplate stringRedisTemplate) {
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, JwtUtil jwtUtil, StringRedisTemplate stringRedisTemplate, EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.jwtUtil = jwtUtil;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -153,6 +158,53 @@ public class AuthServiceImpl implements AuthService {
         // Ví dụ: throw new BusinessException("Email already exists with password login!");
 
         return generateTokenResponse(user);
+    }
+
+    @Override
+    public ApiResponse<Void> resetPassword(ResetPasswordRequest request) {
+        // Tìm user theo email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Email không tồn tại trong hệ thống"));
+
+        // Verify OTP từ Redis
+        String redisKey = String.format("user-%s-otp", request.getEmail());
+        String cachedOtp = stringRedisTemplate.opsForValue().get(redisKey);
+
+        if (cachedOtp == null || cachedOtp.isEmpty()) {
+            throw new BusinessException("OTP đã hết hạn hoặc không tồn tại. Vui lòng yêu cầu mã OTP mới.");
+        }
+
+        if (!cachedOtp.equals(request.getOtp())) {
+            throw new BusinessException("OTP không đúng. Vui lòng kiểm tra lại.");
+        }
+
+        // Generate password mới (server-side)
+        String newPassword = StringUtil.generateRandomString(12);
+
+        // Update password trong database
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Xóa OTP khỏi Redis sau khi verify thành công
+        stringRedisTemplate.delete(redisKey);
+
+        // Publish event với password đã generate
+        PasswordResetRequestEvent event = PasswordResetRequestEvent.newBuilder()
+                .setEmail(user.getEmail())
+                .setOtp(request.getOtp())
+                .setNewPassword(newPassword) // Password được generate bởi server
+                .setFullName(user.getFullName())
+                .build();
+
+        eventPublisher.publish("user.password.reset.event", event);
+
+        log.info("Password reset successful for user: {}", user.getEmail());
+
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("Đặt lại mật khẩu thành công! Vui lòng kiểm tra email để nhận mật khẩu mới.")
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     private void validateFptEmail(String email) {
