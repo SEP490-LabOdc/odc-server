@@ -11,6 +11,7 @@ import com.odc.companyservice.v1.CompanyServiceGrpc;
 import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
 import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.Project;
@@ -326,7 +327,7 @@ public class ProjectServiceImpl implements ProjectService {
     public ApiResponse<PaginatedResult<GetHiringProjectDetailResponse>> getHiringProjects(Integer page, Integer pageSize) {
         Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "updatedAt", "createdAt"));
 
-        Page<Project> projectPage = projectRepository.findByStatus(Status.HIRING.toString(), pageable);
+        Page<Project> projectPage = projectRepository.findByIsOpenForApplications(true, pageable);
 
         Page<GetHiringProjectDetailResponse> mappedPage = projectPage.map(project -> {
 
@@ -447,6 +448,17 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
 
         return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
+    }
+
+    @Override
+    public ApiResponse<Void> updateIsOpenForApplications(UUID projectId, UpdateProjectOpenStatusRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        project.setIsOpenForApplications(request.getIsOpenForApplications());
+        projectRepository.save(project);
+
+        return ApiResponse.success("Cập nhật trạng thái tuyển thành viên thành công.", null);
     }
 
     private GetProjectResponse convertToCompanyProjectResponse(Project project) {

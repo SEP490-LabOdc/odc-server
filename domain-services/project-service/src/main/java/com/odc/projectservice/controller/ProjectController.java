@@ -3,6 +3,7 @@ package com.odc.projectservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.service.ProjectMilestoneService;
@@ -105,5 +106,13 @@ public class ProjectController {
         ApiResponse<List<ProjectMilestoneResponse>> response =
                 projectMilestoneService.getAllProjectMilestonesByProjectId(projectId);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{projectId}/open-for-applications")
+    public ResponseEntity<ApiResponse<Void>> openForApplications(
+            @PathVariable UUID projectId,
+            @RequestBody UpdateProjectOpenStatusRequest request
+    ) {
+        return ResponseEntity.ok(projectService.updateIsOpenForApplications(projectId, request));
     }
 }
