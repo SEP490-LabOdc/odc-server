@@ -53,12 +53,4 @@ public class ProjectMilestoneController {
         ApiResponse<Void> response = projectMilestoneService.deleteProjectMilestone(milestoneId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-    @GetMapping("/{projectId}/milestones")
-    public ResponseEntity<ApiResponse<List<ProjectMilestoneResponse>>> getProjectMilestones(
-            @PathVariable UUID projectId) {
-        ApiResponse<List<ProjectMilestoneResponse>> response =
-                projectMilestoneService.getAllProjectMilestonesByProjectId(projectId);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
 }
