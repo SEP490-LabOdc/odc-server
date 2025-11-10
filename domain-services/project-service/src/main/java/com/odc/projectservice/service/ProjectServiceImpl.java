@@ -158,7 +158,43 @@ public class ProjectServiceImpl implements ProjectService {
         Project existingProject = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        ProjectResponse responseData = convertToProjectResponse(existingProject);
+
+        List<ProjectMember> mentorMembers = projectMemberRepository.findByProjectId(projectId).stream()
+                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .toList();
+
+
+        List<String> mentorUserIds = mentorMembers.stream()
+                .map(pm -> pm.getUserId().toString())
+                .toList();
+
+        // Gọi gRPC getName để lấy tên của mentors
+        Map<String, String> userIdToNameMap;
+        if (!mentorUserIds.isEmpty()) {
+            UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+            GetNameResponse userNamesResponse = userStub.getName(
+                    GetNameRequest.newBuilder()
+                            .addAllIds(mentorUserIds)
+                            .build()
+            );
+            userIdToNameMap = userNamesResponse.getMapMap();
+        } else {
+            userIdToNameMap = Map.of();
+        }
+
+
+        List<UserParticipantResponse> mentors = mentorMembers.stream()
+                .map(pm -> UserParticipantResponse.builder()
+                        .id(pm.getUserId())
+                        .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                        .roleName(Role.MENTOR.toString())
+                        .isLeader(pm.isLeader())
+                        .build())
+                .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader())) // Leader lên đầu
+                .toList();
+
+
+        ProjectResponse responseData = convertToProjectResponse(existingProject, mentors);
 
         return ApiResponse.<ProjectResponse>builder()
                 .success(true)
@@ -453,6 +489,32 @@ public class ProjectServiceImpl implements ProjectService {
                 .endDate(project.getEndDate())
                 .budget(project.getBudget())
                 .skills(skillResponses)
+                .mentors(List.of())
+                .createdAt(project.getCreatedAt())
+                .updatedAt(project.getUpdatedAt())
+                .build();
+    }
+
+    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors) {
+        Set<SkillResponse> skillResponses = project.getSkills().stream()
+                .map(skill -> SkillResponse.builder()
+                        .id(skill.getId())
+                        .name(skill.getName())
+                        .description(skill.getDescription())
+                        .build())
+                .collect(Collectors.toSet());
+
+        return ProjectResponse.builder()
+                .id(project.getId())
+                .companyId(project.getCompanyId())
+                .title(project.getTitle())
+                .description(project.getDescription())
+                .status(project.getStatus())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .budget(project.getBudget())
+                .skills(skillResponses)
+                .mentors(mentors)
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
                 .build();
