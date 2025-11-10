@@ -17,4 +17,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
     List<Project> findByCompanyId(UUID companyId);
 
     Page<Project> findByStatus(String status, Pageable pageable);
+
+    Page<Project> findByIsOpenForApplications(Boolean isOpenForApplications, Pageable pageable);
 }

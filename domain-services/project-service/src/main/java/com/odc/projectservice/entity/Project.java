@@ -40,6 +40,9 @@ public class Project extends BaseEntity {
     @Column(name = "budget")
     private BigDecimal budget;
 
+    @Column(name = "is_open_for_applications", nullable = false)
+    private Boolean isOpenForApplications = false;
+
     @ManyToMany
     @JoinTable(
             name = "project_skills",
