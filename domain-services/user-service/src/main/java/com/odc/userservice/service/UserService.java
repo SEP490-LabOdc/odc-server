@@ -9,6 +9,7 @@ import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
 import com.odc.userservice.dto.request.UpdateUserRequest;
 import com.odc.userservice.dto.response.GetUserResponse;
+import com.odc.userservice.dto.response.MentorResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,4 +34,6 @@ public interface UserService {
     ApiResponse<List<GetUserResponse>> searchUsers(SearchRequest request);
 
     ApiResponse<PaginatedResult<GetUserResponse>> searchUsersWithPagination(SearchRequest request);
+
+    ApiResponse<List<MentorResponse>> getMentorsWithProjectCount();
 }

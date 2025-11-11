@@ -10,6 +10,7 @@ service UserService {
   rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
   rpc GetName(GetNameRequest) returns (GetNameResponse);
   rpc CheckRoleByUserId(CheckRoleByUserIdRequest) returns (CheckRoleByUserIdResponse);
+  rpc GetMentorsWithProjectCount(GetMentorsWithProjectCountRequest) returns (GetMentorsWithProjectCountResponse);
 }
 
 message CheckEmailRequest {
@@ -48,4 +49,17 @@ message CheckRoleByUserIdRequest {
 
 message CheckRoleByUserIdResponse {
   bool result = 1;
+}
+message GetMentorsWithProjectCountRequest {
+
+}
+
+message MentorInfo {
+  string id = 1;
+  string name = 2;
+  int32 project_count = 3;
+}
+
+message GetMentorsWithProjectCountResponse {
+  repeated MentorInfo mentors = 1;
 }
