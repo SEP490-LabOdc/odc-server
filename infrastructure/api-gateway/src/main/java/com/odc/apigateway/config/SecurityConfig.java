@@ -36,7 +36,8 @@ public class SecurityConfig {
             "/swagger/**",
             "/user-service/v3/api-docs/**",
             "/company-service/v3/api-docs/**",
-            "/ws/**"
+            "/ws/**",
+            "/ws-native/**"
     };
     private static final String[] AUTHENTICATED_PATHS = {
             "/api/v1/users/**", // Other user endpoints still need auth
