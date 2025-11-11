@@ -107,6 +107,10 @@ grpc:
   server:
     address: 0.0.0.0
     port: 9091
+  client:
+    project-service:
+      address: ${PROJECT-SERVICE-GRPC:0.0.0.0}
+      port: 9094
 
 # Custom properties
 refresh-expiration: ${JWT_REFRESH_EXPIRATION:7} # 7 days
@@ -117,3 +121,4 @@ google:
 
 allowed-email-domains:
   - fpt.edu.vn
+

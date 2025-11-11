@@ -115,4 +115,9 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(projectService.updateIsOpenForApplications(projectId, request));
     }
+
+    @GetMapping("/mentors")
+    public ResponseEntity<ApiResponse<List<MentorListResponse>>> getMentorList() {
+        return ResponseEntity.ok(projectService.getMentorList());
+    }
 }

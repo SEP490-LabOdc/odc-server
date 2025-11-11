@@ -35,4 +35,6 @@ public interface ProjectService {
     ApiResponse<GetCompanyProjectResponse> getProjectsByUserId(UUID userId);
 
     ApiResponse<Void> updateIsOpenForApplications(UUID projectId, UpdateProjectOpenStatusRequest request);
+
+    ApiResponse<List<MentorListResponse>> getMentorList();
 }
