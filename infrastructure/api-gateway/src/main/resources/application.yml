@@ -74,6 +74,15 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: notification-service-ws-native
+          uri: lb://notification-service
+          predicates:
+            - Path=/ws-native/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            websocket: true
+
         - id: notification-service-device
           uri: lb://notification-service
           predicates:
