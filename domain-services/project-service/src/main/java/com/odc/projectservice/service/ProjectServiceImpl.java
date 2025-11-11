@@ -463,43 +463,6 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success("Cập nhật trạng thái tuyển thành viên thành công.", null);
     }
 
-    @Override
-    public ApiResponse<List<MentorListResponse>> getMentorList() {
-        List<UUID> mentorUserIds = projectMemberRepository.findAllMentorUserIds();
-
-        if (mentorUserIds.isEmpty()) {
-            return ApiResponse.success("Không có mentor nào", Collections.emptyList());
-        }
-
-        List<String> mentorUserIdsString = mentorUserIds.stream()
-                .map(UUID::toString)
-                .toList();
-
-        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
-        GetNameResponse userNamesResponse = userStub.getName(
-                GetNameRequest.newBuilder()
-                        .addAllIds(mentorUserIdsString)
-                        .build()
-        );
-        Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
-
-        List<MentorListResponse> mentorList = mentorUserIds.stream()
-                .map(mentorId -> {
-                    String name = userIdToNameMap.getOrDefault(mentorId.toString(), "Unknown");
-                    Long projectCount = projectMemberRepository.countProjectsByMentorId(mentorId);
-
-                    return MentorListResponse.builder()
-                            .id(mentorId)
-                            .name(name)
-                            .projectCount(projectCount != null ? projectCount : 0L)
-                            .build();
-                })
-                .filter(mentor -> !"Unknown".equals(mentor.getName()))
-                .sorted(Comparator.comparing(MentorListResponse::getName))
-                .collect(Collectors.toList());
-
-        return ApiResponse.success("Lấy danh sách mentor thành công", mentorList);
-    }
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()
