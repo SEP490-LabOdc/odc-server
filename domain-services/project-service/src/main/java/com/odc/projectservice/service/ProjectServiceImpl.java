@@ -100,6 +100,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .status(Status.PENDING.toString())
+                .budget(request.getBudget())
                 .skills(skills)
                 .build();
 

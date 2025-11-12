@@ -1,9 +1,11 @@
 package com.odc.projectservice.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,6 +17,9 @@ public class CreateProjectRequest {
     private String title;
 
     private String description;
+
+    @Positive(message = "Ngân sách phải là một số dương")
+    private BigDecimal budget;
 
     private Set<UUID> skillIds;
 }
