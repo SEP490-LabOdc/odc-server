@@ -8,6 +8,7 @@ import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
 import com.odc.userservice.dto.request.UpdateUserRequest;
 import com.odc.userservice.dto.response.GetUserResponse;
+import com.odc.userservice.dto.response.MentorResponse;
 import com.odc.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -92,5 +93,10 @@ public class UserController {
         }
 
         return ResponseEntity.ok(userService.searchUsers(request));
+    }
+
+    @GetMapping("/mentors")
+    public ResponseEntity<ApiResponse<List<MentorResponse>>> getMentors() {
+        return ResponseEntity.ok(userService.getMentorsWithProjectCount());
     }
 }

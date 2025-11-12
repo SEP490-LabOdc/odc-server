@@ -5,6 +5,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.dto.SortRequest;
+import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.common.specification.GenericSpecification;
 import com.odc.userservice.dto.request.CreateUserRequest;
@@ -12,11 +13,18 @@ import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
 import com.odc.userservice.dto.request.UpdateUserRequest;
 import com.odc.userservice.dto.response.GetUserResponse;
+import com.odc.userservice.dto.response.MentorResponse;
 import com.odc.userservice.entity.Role;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
 import com.odc.userservice.repository.UserRepository;
+import com.odc.userservice.v1.GetMentorsWithProjectCountRequest;
+import com.odc.userservice.v1.GetMentorsWithProjectCountResponse;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,11 +42,13 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final @Qualifier("userServiceGrpcChannel") ManagedChannel userServiceGrpcChannel;
 
     @Override
     public ApiResponse<GetUserResponse> getUserById(UUID id) {
@@ -290,5 +300,36 @@ public class UserServiceImpl implements UserService {
                 .map(this::toGetUserResponse);
 
         return ApiResponse.success(PaginatedResult.from(page));
+    }
+
+    @Override
+    public ApiResponse<List<MentorResponse>> getMentorsWithProjectCount() {
+        try {
+            UserServiceGrpc.UserServiceBlockingStub stub =
+                    UserServiceGrpc.newBlockingStub(userServiceGrpcChannel);
+
+            GetMentorsWithProjectCountRequest request = GetMentorsWithProjectCountRequest.newBuilder()
+                    .build();
+
+            GetMentorsWithProjectCountResponse response = stub.getMentorsWithProjectCount(request);
+
+            List<MentorResponse> mentors = response.getMentorsList().stream()
+                    .map(mentorInfo -> MentorResponse.builder()
+                            .id(UUID.fromString(mentorInfo.getId()))
+                            .name(mentorInfo.getName())
+                            .projectCount(mentorInfo.getProjectCount())
+                            .build())
+                    .toList();
+
+            return ApiResponse.<List<MentorResponse>>builder()
+                    .success(true)
+                    .message("Lấy danh sách mentor thành công")
+                    .timestamp(LocalDateTime.now())
+                    .data(mentors)
+                    .build();
+        } catch (Exception e) {
+            log.error("Error getting mentors with project count: {}", e.getMessage(), e);
+            throw new BusinessException("Lỗi khi lấy danh sách mentor: " + e.getMessage());
+        }
     }
 }

@@ -1,12 +1,17 @@
 package com.odc.userservice.grpc;
 
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.projectservice.v1.GetProjectCountByMentorIdsRequest;
+import com.odc.projectservice.v1.GetProjectCountByMentorIdsResponse;
+import com.odc.projectservice.v1.ProjectServiceGrpc;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.v1.*;
+import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.List;
 import java.util.Map;
@@ -16,8 +21,11 @@ import java.util.stream.Collectors;
 @GrpcService
 @Slf4j
 @RequiredArgsConstructor
+
 public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
     private final com.odc.userservice.repository.UserRepository userRepository;
+    private final @Qualifier("projectServiceChannel") ManagedChannel projectServiceChannel;
+
 
     @Override
     public void checkEmailExists(com.odc.userservice.v1.CheckEmailRequest request, io.grpc.stub.StreamObserver<com.odc.userservice.v1.CheckEmailResponse> responseObserver) {
@@ -98,6 +106,67 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
         } catch (Exception e) {
             log.error("Error checking role for userId {}: {}", request.getUserId(), e.getMessage());
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void getMentorsWithProjectCount(
+            GetMentorsWithProjectCountRequest request,
+            StreamObserver<GetMentorsWithProjectCountResponse> responseObserver) {
+        try {
+
+            List<User> mentors = userRepository.findAll().stream()
+                    .filter(user -> user.getRole() != null &&
+                            "MENTOR".equalsIgnoreCase(user.getRole().getName()))
+                    .toList();
+
+            if (mentors.isEmpty()) {
+                GetMentorsWithProjectCountResponse response = GetMentorsWithProjectCountResponse.newBuilder()
+                        .build();
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+                return;
+            }
+
+
+            List<String> mentorIds = mentors.stream()
+                    .map(u -> u.getId().toString())
+                    .toList();
+
+
+            ProjectServiceGrpc.ProjectServiceBlockingStub projectStub =
+                    ProjectServiceGrpc.newBlockingStub(projectServiceChannel);
+
+            GetProjectCountByMentorIdsRequest projectRequest = GetProjectCountByMentorIdsRequest.newBuilder()
+                    .addAllMentorIds(mentorIds)
+                    .build();
+
+            GetProjectCountByMentorIdsResponse projectResponse = projectStub.getProjectCountByMentorIds(projectRequest);
+            Map<String, Integer> projectCounts = projectResponse.getMentorProjectCountsMap();
+
+            // Build response
+            GetMentorsWithProjectCountResponse.Builder responseBuilder =
+                    GetMentorsWithProjectCountResponse.newBuilder();
+
+            for (User mentor : mentors) {
+                String mentorId = mentor.getId().toString();
+                int projectCount = projectCounts.getOrDefault(mentorId, 0);
+
+                MentorInfo mentorInfo = MentorInfo.newBuilder()
+                        .setId(mentorId)
+                        .setName(mentor.getFullName())
+                        .setProjectCount(projectCount)
+                        .build();
+
+                responseBuilder.addMentors(mentorInfo);
+            }
+
+            log.info("GetMentorsWithProjectCount response: {} mentors", responseBuilder.getMentorsCount());
+            responseObserver.onNext(responseBuilder.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("Error in getMentorsWithProjectCount: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

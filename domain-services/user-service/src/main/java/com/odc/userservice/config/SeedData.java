@@ -42,6 +42,10 @@ public class SeedData implements CommandLineRunner {
                 "Company role for managing job postings and reviewing candidates",
                 createPermissionsForCompany());
 
+        seedRole(com.odc.common.constant.Role.MENTOR.toString(),
+                "Mentor role for managing talents and projects",
+                createPermissionsForMentor());
+
         log.info("Role seeding completed!");
     }
 
@@ -80,6 +84,14 @@ public class SeedData implements CommandLineRunner {
     }
 
     private Map<String, Set<String>> createPermissionsForSupervisor() {
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("users", Set.of("read"));
+        permissions.put("reports", Set.of("create", "read", "update"));
+        permissions.put("tasks", Set.of("read", "update"));
+        return permissions;
+    }
+
+    private Map<String, Set<String>> createPermissionsForMentor() {
         Map<String, Set<String>> permissions = new HashMap<>();
         permissions.put("users", Set.of("read"));
         permissions.put("reports", Set.of("create", "read", "update"));

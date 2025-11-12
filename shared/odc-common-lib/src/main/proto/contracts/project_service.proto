@@ -1,0 +1,18 @@
+syntax = "proto3";
+package com.odc.projectservice.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.projectservice.v1";
+option java_outer_classname = "ProjectServiceProto";
+
+service ProjectService {
+  rpc GetProjectCountByMentorIds(GetProjectCountByMentorIdsRequest) returns (GetProjectCountByMentorIdsResponse);
+}
+
+message GetProjectCountByMentorIdsRequest {
+  repeated string mentor_ids = 1;
+}
+
+message GetProjectCountByMentorIdsResponse {
+  map<string, int32> mentor_project_counts = 1;
+}

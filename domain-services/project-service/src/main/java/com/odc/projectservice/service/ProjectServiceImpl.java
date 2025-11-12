@@ -23,6 +23,7 @@ import com.odc.userservice.v1.GetNameRequest;
 import com.odc.userservice.v1.GetNameResponse;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final SkillRepository skillRepository;
@@ -461,26 +463,6 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success("Cập nhật trạng thái tuyển thành viên thành công.", null);
     }
 
-    private GetProjectResponse convertToCompanyProjectResponse(Project project) {
-        Set<SkillResponse> skills = project.getSkills().stream()
-                .map(skill -> SkillResponse.builder()
-                        .id(skill.getId())
-                        .name(skill.getName())
-                        .description(skill.getDescription())
-                        .build())
-                .collect(Collectors.toSet());
-
-        return GetProjectResponse.builder()
-                .id(project.getId())
-                .title(project.getTitle())
-                .description(project.getDescription())
-                .status(project.getStatus())
-                .startDate(project.getStartDate() == null ? "" : project.getStartDate().toString())
-                .endDate(project.getEndDate() == null ? "" : project.getEndDate().toString())
-                .budget(project.getBudget() == null ? "" : project.getBudget().toString())
-                .skills(skills)
-                .build();
-    }
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()
@@ -529,6 +511,27 @@ public class ProjectServiceImpl implements ProjectService {
                 .mentors(mentors)
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
+                .build();
+    }
+
+    private GetProjectResponse convertToCompanyProjectResponse(Project project) {
+        Set<SkillResponse> skillResponses = project.getSkills().stream()
+                .map(skill -> SkillResponse.builder()
+                        .id(skill.getId())
+                        .name(skill.getName())
+                        .description(skill.getDescription())
+                        .build())
+                .collect(Collectors.toSet());
+
+        return GetProjectResponse.builder()
+                .id(project.getId())
+                .title(project.getTitle())
+                .description(project.getDescription())
+                .status(project.getStatus())
+                .startDate(project.getStartDate() != null ? project.getStartDate().toString() : null)
+                .endDate(project.getEndDate() != null ? project.getEndDate().toString() : null)
+                .budget(project.getBudget() != null ? project.getBudget().toString() : null)
+                .skills(skillResponses)
                 .build();
     }
 }
