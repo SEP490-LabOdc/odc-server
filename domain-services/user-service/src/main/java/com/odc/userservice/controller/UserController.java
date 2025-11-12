@@ -94,6 +94,7 @@ public class UserController {
 
         return ResponseEntity.ok(userService.searchUsers(request));
     }
+
     @GetMapping("/mentors")
     public ResponseEntity<ApiResponse<List<MentorResponse>>> getMentors() {
         return ResponseEntity.ok(userService.getMentorsWithProjectCount());

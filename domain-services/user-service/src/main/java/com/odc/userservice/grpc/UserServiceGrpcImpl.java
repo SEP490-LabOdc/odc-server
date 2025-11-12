@@ -8,11 +8,10 @@ import com.odc.userservice.entity.User;
 import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
-import org.springframework.beans.factory.annotation.Qualifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
-
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.List;
 import java.util.Map;
@@ -110,6 +109,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onError(e);
         }
     }
+
     @Override
     public void getMentorsWithProjectCount(
             GetMentorsWithProjectCountRequest request,
