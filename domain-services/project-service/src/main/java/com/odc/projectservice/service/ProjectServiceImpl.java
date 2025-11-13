@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
@@ -7,12 +8,14 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
+import com.odc.common.util.EnumUtil;
 import com.odc.companyservice.v1.CompanyServiceGrpc;
 import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
 import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectApplication;
@@ -464,6 +467,20 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success("Cập nhật trạng thái tuyển thành viên thành công.", null);
     }
 
+    @Override
+    public ApiResponse<Void> updateProjectStatus(UUID projectId, UpdateProjectStatusRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        if (!EnumUtil.isEnumValueExist(request.getStatus(), ProjectStatus.class)) {
+            throw new BusinessException("Trạng thái dự án không hợp lệ.");
+        }
+
+        project.setStatus(request.getStatus());
+        projectRepository.save(project);
+
+        return ApiResponse.success("Cập nhật thành công trạng thái dự án.", null);
+    }
 
     private ProjectResponse convertToProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()

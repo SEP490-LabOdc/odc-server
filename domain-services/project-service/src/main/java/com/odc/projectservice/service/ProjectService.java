@@ -6,6 +6,7 @@ import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
 import com.odc.projectservice.dto.response.*;
 
 import java.util.List;
@@ -36,4 +37,5 @@ public interface ProjectService {
 
     ApiResponse<Void> updateIsOpenForApplications(UUID projectId, UpdateProjectOpenStatusRequest request);
 
+    ApiResponse<Void> updateProjectStatus(UUID projectId, UpdateProjectStatusRequest request);
 }

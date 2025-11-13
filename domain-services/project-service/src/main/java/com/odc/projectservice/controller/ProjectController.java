@@ -5,6 +5,7 @@ import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
+import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import com.odc.projectservice.service.ProjectService;
@@ -116,4 +117,11 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.updateIsOpenForApplications(projectId, request));
     }
 
+    @PatchMapping("/{projectId}/status")
+    public ResponseEntity<ApiResponse<Void>> updateProjectStatus(
+            @PathVariable UUID projectId,
+            @RequestBody UpdateProjectStatusRequest request
+    ) {
+        return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request));
+    }
 }
