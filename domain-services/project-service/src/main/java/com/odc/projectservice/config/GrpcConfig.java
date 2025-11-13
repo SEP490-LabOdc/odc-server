@@ -21,7 +21,7 @@ public class GrpcConfig {
     @Value("${grpc.client.company-service.port:9092}")
     private int companyServicePort;
 
-    @Bean(name = "userServiceChannel")
+    @Bean(name = "userServiceChannel1")
     public ManagedChannel userServiceChannel() {
         return ManagedChannelBuilder
                 .forAddress(userServiceAddress, userServicePort)

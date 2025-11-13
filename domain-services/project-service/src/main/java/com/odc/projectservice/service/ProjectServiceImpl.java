@@ -62,7 +62,7 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectApplicationRepository projectApplicationRepository,
             ProjectDocumentRepository projectDocumentRepository,
             EventPublisher eventPublisher,
-            @Qualifier("userServiceChannel") ManagedChannel userServiceChannel,
+            @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
         this.projectRepository = projectRepository;
         this.skillRepository = skillRepository;
@@ -477,13 +477,13 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BusinessException("Trạng thái dự án không hợp lệ.");
         }
 
-         GetCompanyByIdResponse getCompanyByIdResponse = CompanyServiceGrpc
-                 .newBlockingStub(companyServiceChannel)
-                 .getCompanyById(
-                         GetCompanyByIdRequest.newBuilder()
-                                 .setCompanyId(project.getCompanyId().toString())
-                                 .build()
-                 );
+        GetCompanyByIdResponse getCompanyByIdResponse = CompanyServiceGrpc
+                .newBlockingStub(companyServiceChannel)
+                .getCompanyById(
+                        GetCompanyByIdRequest.newBuilder()
+                                .setCompanyId(project.getCompanyId().toString())
+                                .build()
+                );
 
         if (request.getStatus().toUpperCase().equals(ProjectStatus.UPDATE_REQUIRED.toString())) {
             eventPublisher.publish("project.update-required",
@@ -491,10 +491,10 @@ public class ProjectServiceImpl implements ProjectService {
                             .setProjectId(project.getId().toString())
                             .setProjectTitle(project.getTitle())
                             .setCompanyId(project.getCompanyId().toString())
-                            .setCompanyName(getCompanyByIdResponse != null ?  getCompanyByIdResponse.getCompanyName() : "")
+                            .setCompanyName(getCompanyByIdResponse != null ? getCompanyByIdResponse.getCompanyName() : "")
                             .setContactPersonEmail(getCompanyByIdResponse != null ? getCompanyByIdResponse.getContactPersonEmail() : "")
                             .build()
-                    );
+            );
         }
 
         project.setStatus(request.getStatus());

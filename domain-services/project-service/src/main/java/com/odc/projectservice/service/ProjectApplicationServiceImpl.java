@@ -13,17 +13,24 @@ import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.userservice.v1.CheckRoleByUserIdRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
-@RequiredArgsConstructor
 public class ProjectApplicationServiceImpl implements ProjectApplicationService {
     private final ProjectRepository projectRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final ManagedChannel userServiceChannel;
+
+    public ProjectApplicationServiceImpl(ProjectRepository projectRepository,
+                                         ProjectApplicationRepository projectApplicationRepository,
+                                         @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel1) {
+        this.projectRepository = projectRepository;
+        this.projectApplicationRepository = projectApplicationRepository;
+        this.userServiceChannel = userServiceChannel1;
+    }
 
     @Override
     public ApiResponse<ApplyProjectResponse> applyProject(ApplyProjectRequest request) {
