@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông báo yêu cầu cập nhật dự án</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 25px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            font-size: 22px;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .content p {
+            font-size: 15px;
+            line-height: 1.6;
+            text-align: left;
+            margin-bottom: 12px;
+        }
+
+        .content strong {
+            color: #dc3545;
+        }
+
+        .info-box {
+            background-color: #f1f8ff;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 25px;
+            background-color: #007bff;
+            color: #fff !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+
+        .notes {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">Yêu cầu cập nhật thông tin dự án</div>
+
+    <div class="content">
+        <p>Kính gửi <strong th:text="${companyName}">[Tên công ty]</strong>,</p>
+
+        <p>Dự án <strong th:text="${projectTitle}">[Tên dự án]</strong> của công ty bạn trên nền tảng LabOdc
+            cần được cập nhật thêm thông tin để hoàn tất quy trình quản lý và phê duyệt.</p>
+
+        <div class="info-box">
+            <p><strong>Mã dự án:</strong> <span th:text="${projectId}">[ID dự án]</span></p>
+            <p><strong>Công ty:</strong> <span th:text="${companyName}">[Tên công ty]</span></p>
+            <p><strong>Email liên hệ:</strong> <span th:text="${contactPersonEmail}">[Email người liên hệ]</span></p>
+        </div>
+
+        <div th:if="${notes != null and notes != ''}" class="notes">
+            <strong>Ghi chú từ LabOdc:</strong>
+            <p th:text="${notes}">[Ghi chú cụ thể]</p>
+        </div>
+
+        <p>Vui lòng truy cập hệ thống để xem chi tiết và cập nhật thông tin dự án của bạn:</p>
+
+        <p>Nếu bạn cần hỗ trợ thêm, xin vui lòng liên hệ lại với đội ngũ LabOdc qua email này.</p>
+
+        <p>Trân trọng,</p>
+        <p><strong>Đội ngũ LabOdc</strong></p>
+    </div>
+
+    <div class="footer">
+        © 2025 LabOdc. Mọi quyền được bảo lưu.
+    </div>
+</div>
+</body>
+</html>

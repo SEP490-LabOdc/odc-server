@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.odc.projectservice.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.projectservice.v1";
+option java_outer_classname = "ProjectUpdateRequiredEventProto";
+
+message ProjectUpdateRequiredEvent {
+  string project_id = 1;
+  string project_title = 2;
+  string company_id = 3;
+  string company_name = 4;
+  string notes = 5;
+  string contact_person_email = 6;
+}
