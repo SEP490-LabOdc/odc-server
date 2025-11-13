@@ -9,9 +9,8 @@ import com.odc.common.dto.SearchRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.specification.GenericSpecification;
 import com.odc.common.util.EnumUtil;
-import com.odc.companyservice.v1.CompanyServiceGrpc;
-import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
-import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.companyservice.v1.*;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
@@ -22,6 +21,7 @@ import com.odc.projectservice.entity.ProjectApplication;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.Skill;
 import com.odc.projectservice.repository.*;
+import com.odc.projectservice.v1.ProjectUpdateRequiredEvent;
 import com.odc.userservice.v1.GetNameRequest;
 import com.odc.userservice.v1.GetNameResponse;
 import com.odc.userservice.v1.UserServiceGrpc;
@@ -50,7 +50,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final ProjectDocumentRepository projectDocumentRepository;
-
+    private final EventPublisher eventPublisher;
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
 
@@ -61,7 +61,7 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectMemberRepository projectMemberRepository,
             ProjectApplicationRepository projectApplicationRepository,
             ProjectDocumentRepository projectDocumentRepository,
-
+            EventPublisher eventPublisher,
             @Qualifier("userServiceChannel") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
         this.projectRepository = projectRepository;
@@ -69,6 +69,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.projectMemberRepository = projectMemberRepository;
         this.projectApplicationRepository = projectApplicationRepository;
         this.projectDocumentRepository = projectDocumentRepository;
+        this.eventPublisher = eventPublisher;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }
@@ -472,8 +473,28 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        if (!EnumUtil.isEnumValueExist(request.getStatus(), ProjectStatus.class)) {
+        if (!EnumUtil.isEnumValueExist(request.getStatus().toUpperCase(), ProjectStatus.class)) {
             throw new BusinessException("Trạng thái dự án không hợp lệ.");
+        }
+
+         GetCompanyByIdResponse getCompanyByIdResponse = CompanyServiceGrpc
+                 .newBlockingStub(companyServiceChannel)
+                 .getCompanyById(
+                         GetCompanyByIdRequest.newBuilder()
+                                 .setCompanyId(project.getCompanyId().toString())
+                                 .build()
+                 );
+
+        if (request.getStatus().toUpperCase().equals(ProjectStatus.UPDATE_REQUIRED.toString())) {
+            eventPublisher.publish("project.update-required",
+                    ProjectUpdateRequiredEvent.newBuilder()
+                            .setProjectId(project.getId().toString())
+                            .setProjectTitle(project.getTitle())
+                            .setCompanyId(project.getCompanyId().toString())
+                            .setCompanyName(getCompanyByIdResponse != null ?  getCompanyByIdResponse.getCompanyName() : "")
+                            .setContactPersonEmail(getCompanyByIdResponse != null ? getCompanyByIdResponse.getContactPersonEmail() : "")
+                            .build()
+                    );
         }
 
         project.setStatus(request.getStatus());

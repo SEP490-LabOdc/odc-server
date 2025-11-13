@@ -8,7 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(
         basePackages = {
                 "com.odc.common",
-                "com.odc.projectservice"
+                "com.odc.projectservice",
+                "com.odc.commonlib"
         }
 )
 public class ProjectServiceApplication {

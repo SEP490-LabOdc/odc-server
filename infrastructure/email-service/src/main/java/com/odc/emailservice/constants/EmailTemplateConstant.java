@@ -6,4 +6,5 @@ public class EmailTemplateConstant {
     public static final String SEND_COMPANY_UPDATE_TEMPLATE = "emails/company-update-request-email";
     public static final String SEND_ACCOUNT_CREDENTIAL_TEMPLATE = "emails/account-credential-email";
     public static final String SEND_PASSWORD_RESET_TEMPLATE = "emails/password-reset-email";
+    public static final String SEND_PROJECT_UPDATE_TEMPLATE = "emails/project-update-required-email";
 }

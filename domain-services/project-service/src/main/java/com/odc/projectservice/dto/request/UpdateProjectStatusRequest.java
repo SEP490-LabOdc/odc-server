@@ -8,4 +8,7 @@ public class UpdateProjectStatusRequest {
 
     @NotBlank(message = "Trạng thái dự án không được để trống.")
     private String status;
+
+    @NotBlank(message = "Thông tin ghi chú không được để trống.")
+    private String notes;
 }

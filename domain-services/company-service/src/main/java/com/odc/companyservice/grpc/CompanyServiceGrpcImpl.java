@@ -2,9 +2,7 @@ package com.odc.companyservice.grpc;
 
 import com.odc.companyservice.entity.Company;
 import com.odc.companyservice.repository.CompanyRepository;
-import com.odc.companyservice.v1.CompanyServiceGrpc;
-import com.odc.companyservice.v1.GetCompanyByUserIdRequest;
-import com.odc.companyservice.v1.GetCompanyByUserIdResponse;
+import com.odc.companyservice.v1.*;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +33,26 @@ public class CompanyServiceGrpcImpl extends CompanyServiceGrpc.CompanyServiceImp
             responseObserver.onCompleted();
         } catch (Exception e) {
             log.error("error: {}", e.getMessage());
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void getCompanyById(GetCompanyByIdRequest request, StreamObserver<GetCompanyByIdResponse> responseObserver) {
+        try {
+            Company company = companyRepository.findById(UUID.fromString(request.getCompanyId()))
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công ty cho id: " +  request.getCompanyId()));
+
+            GetCompanyByIdResponse response = GetCompanyByIdResponse
+                    .newBuilder()
+                    .setCompanyName(company.getName())
+                    .setContactPersonEmail(company.getContactPersonEmail())
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.info("error: {}", e.getMessage());
             responseObserver.onError(e);
         }
     }
