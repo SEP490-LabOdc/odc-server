@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
     private final com.odc.userservice.repository.UserRepository userRepository;
     private final @Qualifier("projectServiceChannel") ManagedChannel projectServiceChannel;
+    private final com.odc.userservice.repository.RoleRepository roleRepository;
 
 
     @Override
@@ -167,6 +168,52 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onCompleted();
         } catch (Exception e) {
             log.error("Error in getMentorsWithProjectCount: {}", e.getMessage(), e);
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void getRoleIdByUserId(
+            GetRoleIdByUserIdRequest request,
+            StreamObserver<GetRoleIdByUserIdResponse> responseObserver) {
+        try {
+            UUID userId = UUID.fromString(request.getUserId());
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+            if (user.getRole() == null) {
+                responseObserver.onError(new RuntimeException("User does not have a role"));
+                return;
+            }
+
+            GetRoleIdByUserIdResponse response = GetRoleIdByUserIdResponse.newBuilder()
+                    .setRoleId(user.getRole().getId().toString())
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("Error getting roleId for userId {}: {}", request.getUserId(), e.getMessage());
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void checkRoleIdExists(
+            CheckRoleIdExistsRequest request,
+            StreamObserver<CheckRoleIdExistsResponse> responseObserver) {
+        try {
+            UUID roleId = UUID.fromString(request.getRoleId());
+            boolean exists = roleRepository.existsById(roleId);
+
+            CheckRoleIdExistsResponse response = CheckRoleIdExistsResponse.newBuilder()
+                    .setExists(exists)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("Error checking roleId {}: {}", request.getRoleId(), e.getMessage());
             responseObserver.onError(e);
         }
     }
