@@ -45,11 +45,13 @@ public class SecurityConfig {
     };
     private static final String[] GET_PERMIT_PATHS = {
             "/api/v1/companies",
-            "/api/v1/projects/hiring"
+            "/api/v1/projects/hiring",
+            "/api/v1/skills/**"
     };
     private static final String[] POST_PERMIT_PATHS = {
             "/api/v1/files/upload",
-            "/api/v1/project-applications/apply"
+            "/api/v1/project-applications/apply",
+            "/api/v1/skills/search"
     };
     private static final String[] OPTIONS_ANY_PATH = {"/**"};
     private final JwtAuthenticationManager authenticationManager;

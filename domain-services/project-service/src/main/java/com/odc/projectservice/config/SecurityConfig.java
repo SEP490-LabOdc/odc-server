@@ -6,6 +6,7 @@ import com.odc.projectservice.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,6 +30,13 @@ public class SecurityConfig {
             "/api/v1/project-applications/apply",
             "/api/v1/projects/hiring"
     };
+
+    private static final String[] GET_ALL_PATHS = {
+            "/api/v1/skills/**"
+    };
+    private static final String[] POST_ALL_PATHS = {
+            "/api/v1/skills/search"
+    };
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
@@ -38,6 +46,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> authorize
 //                        .requestMatchers(PERMIT_ALL_PATHS).permitAll()
+                                .requestMatchers(HttpMethod.GET, GET_ALL_PATHS).permitAll()
+                                .requestMatchers(HttpMethod.POST, POST_ALL_PATHS).permitAll()
                                 .anyRequest().permitAll()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
