@@ -13,4 +13,8 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
     @Query("SELECT pm FROM ProjectMember pm WHERE pm.roleInProject = 'MENTOR' AND pm.userId IN :userIds")
     List<ProjectMember> findMentorMembersByUserIds(List<UUID> userIds);
 
+    long countByUserId(UUID userId);
+
+    boolean existsByUserIdAndProjectId(UUID userId, UUID projectId);
+
 }
