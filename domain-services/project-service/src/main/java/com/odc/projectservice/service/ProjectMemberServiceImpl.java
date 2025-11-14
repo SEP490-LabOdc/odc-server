@@ -84,22 +84,15 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 throw new BusinessException("Mentor với ID:  " + userId + " đã là thành viên của dự án này");
             }
 
-            for (UUID requestUserId : userIds) {
-                try {
-                    ProjectMember projectMember = ProjectMember.builder()
-                            .userId(requestUserId)
-                            .project(project)
-                            .roleInProject(Role.MENTOR.toString())
-                            .isLeader(false)
-                            .build();
+            ProjectMember projectMember = ProjectMember.builder()
+                    .userId(userId)
+                    .project(project)
+                    .roleInProject(Role.MENTOR.toString())
+                    .isLeader(false)
+                    .build();
 
-                    projectMemberList.add(projectMember);
-                    log.info("Đã thêm mentor {} vào dự án {}", userId, projectId);
-                } catch (Exception e) {
-                    log.error("Lỗi khi thêm mentor {} vào dự án: {}", userId, e.getMessage());
-                    throw new BusinessException("Lỗi khi thêm mentor " + userId + " vào dự án: " + e.getMessage());
-                }
-            }
+            projectMemberList.add(projectMember);
+            log.info("Đã thêm mentor {} vào dự án {}", userId, projectId);
         }
 
         projectMemberRepository.saveAll(projectMemberList);
