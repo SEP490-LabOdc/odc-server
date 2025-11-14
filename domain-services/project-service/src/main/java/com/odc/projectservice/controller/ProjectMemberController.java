@@ -2,9 +2,8 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
-import com.odc.projectservice.dto.response.AddBatchProjectMembersResponse;
+import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.service.ProjectMemberService;
-import com.odc.userservice.dto.response.MentorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,9 +21,9 @@ public class ProjectMemberController {
     private final ProjectMemberService projectMemberService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<AddBatchProjectMembersResponse>> addBatchProjectMembers(
+    public ResponseEntity<ApiResponse<Void>> addBatchProjectMembers(
             @Valid @RequestBody AddBatchProjectMembersRequest request) {
-        ApiResponse<AddBatchProjectMembersResponse> response = projectMemberService.addBatchProjectMembers(request);
+        ApiResponse<Void> response = projectMemberService.addBatchProjectMembers(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 

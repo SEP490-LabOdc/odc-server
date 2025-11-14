@@ -199,21 +199,30 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
     }
 
     @Override
-    public void checkRoleIdExists(
-            CheckRoleIdExistsRequest request,
-            StreamObserver<CheckRoleIdExistsResponse> responseObserver) {
+    public void checkUsersInRole(CheckUsersInRoleRequest request, StreamObserver<CheckUsersInRoleResponse> responseObserver) {
         try {
-            UUID roleId = UUID.fromString(request.getRoleId());
-            boolean exists = roleRepository.existsById(roleId);
+            List<UUID> userIds = request.getUserIdsList().stream()
+                    .map(UUID::fromString)
+                    .collect(Collectors.toList());
+            String roleName = request.getRoleName();
 
-            CheckRoleIdExistsResponse response = CheckRoleIdExistsResponse.newBuilder()
-                    .setExists(exists)
+            List<User> users = userRepository.findAllById(userIds);
+
+            Map<String, Boolean> result = users.stream()
+                    .collect(Collectors.toMap(
+                            u -> u.getId().toString(),
+                            u -> u.getRole() != null && u.getRole().getName().equalsIgnoreCase(roleName)
+                    ));
+
+            CheckUsersInRoleResponse response = CheckUsersInRoleResponse.newBuilder()
+                    .putAllResults(result)
                     .build();
 
+            log.info("checkUsersInRole response: {}", result);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (Exception e) {
-            log.error("Error checking roleId {}: {}", request.getRoleId(), e.getMessage());
+            log.error("Error in checkUsersInRole: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

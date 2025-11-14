@@ -12,7 +12,7 @@ service UserService {
   rpc CheckRoleByUserId(CheckRoleByUserIdRequest) returns (CheckRoleByUserIdResponse);
   rpc GetMentorsWithProjectCount(GetMentorsWithProjectCountRequest) returns (GetMentorsWithProjectCountResponse);
   rpc GetRoleIdByUserId(GetRoleIdByUserIdRequest) returns (GetRoleIdByUserIdResponse);
-  rpc CheckRoleIdExists(CheckRoleIdExistsRequest) returns (CheckRoleIdExistsResponse);
+  rpc CheckUsersInRole(CheckUsersInRoleRequest) returns (CheckUsersInRoleResponse);
 }
 
 message CheckEmailRequest {
@@ -74,10 +74,11 @@ message GetRoleIdByUserIdResponse {
   string role_id = 1;
 }
 
-message CheckRoleIdExistsRequest {
-  string role_id = 1;
+message CheckUsersInRoleRequest {
+  string roleName = 1;
+  repeated string user_ids = 2;
 }
 
-message CheckRoleIdExistsResponse {
-  bool exists = 1;
+message CheckUsersInRoleResponse {
+  map<string, bool> results = 1;
 }

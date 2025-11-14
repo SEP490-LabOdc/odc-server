@@ -4,13 +4,15 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
-import com.odc.projectservice.dto.response.AddBatchProjectMembersResponse;
+import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
-import com.odc.userservice.dto.response.MentorResponse;
-import com.odc.userservice.v1.*;
+import com.odc.userservice.v1.CheckUsersInRoleRequest;
+import com.odc.userservice.v1.GetMentorsWithProjectCountRequest;
+import com.odc.userservice.v1.GetMentorsWithProjectCountResponse;
+import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -38,114 +40,69 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
-    public ApiResponse<AddBatchProjectMembersResponse> addBatchProjectMembers(AddBatchProjectMembersRequest request) {
+    public ApiResponse<Void> addBatchProjectMembers(AddBatchProjectMembersRequest request) {
         UUID projectId = request.getProjectId();
         List<UUID> userIds = request.getUserIds();
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
-
 
         if (userIds == null || userIds.size() != 2) {
             throw new BusinessException("Chỉ được phép thêm đúng 2 mentor vào dự án. Số lượng userIds hiện tại: " +
                     (userIds == null ? 0 : userIds.size()));
         }
 
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
         UserServiceGrpc.UserServiceBlockingStub userStub =
                 UserServiceGrpc.newBlockingStub(userServiceChannel);
 
+        CheckUsersInRoleRequest checkRoleByUserIdRequest = CheckUsersInRoleRequest
+                .newBuilder()
+                .addAllUserIds(userIds
+                        .stream()
+                        .map(UUID::toString)
+                        .toList())
+                .setRoleName(Role.MENTOR.toString())
+                .build();
 
-        List<UUID> invalidUserIds = new ArrayList<>();
-        List<String> errorMessages = new ArrayList<>();
+        userStub.checkUsersInRole(checkRoleByUserIdRequest)
+                .getResultsMap()
+                .forEach((id, isMentor) -> {
+                    if (!isMentor) {
+                        throw new BusinessException("User " + id + " không phải mentor");
+                    }
+                });
 
         for (UUID userId : userIds) {
-            List<String> userErrors = new ArrayList<>();
-
-            CheckRoleByUserIdRequest checkRoleRequest = CheckRoleByUserIdRequest.newBuilder()
-                    .setUserId(userId.toString())
-                    .setRoleName(Role.MENTOR.toString())
-                    .build();
-
-            CheckRoleByUserIdResponse checkRoleResponse = userStub.checkRoleByUserId(checkRoleRequest);
-            if (!checkRoleResponse.getResult()) {
-                userErrors.add("User " + userId + " không có role MENTOR");
-            }
-
             long projectCount = projectMemberRepository.countByUserId(userId);
             if (projectCount >= 2) {
-                userErrors.add("Mentor " + userId + " đã có " + projectCount + " dự án (tối đa 2)");
+                throw new BusinessException("Mentor " + userId + " đã có " + projectCount + " dự án (tối đa 2)");
             }
 
             boolean alreadyMember = projectMemberRepository.existsByUserIdAndProjectId(userId, projectId);
             if (alreadyMember) {
-                userErrors.add("User " + userId + " đã là thành viên của dự án này");
+                throw new BusinessException("User " + userId + " đã là thành viên của dự án này");
             }
 
+            List<ProjectMember> projectMemberList = new ArrayList<>();
+            for (UUID requestUserId : userIds) {
+                try {
+                    ProjectMember projectMember = ProjectMember.builder()
+                            .userId(requestUserId)
+                            .project(project)
+                            .roleInProject(Role.MENTOR.toString())
+                            .isLeader(false)
+                            .build();
 
-            try {
-                GetRoleIdByUserIdRequest getRoleIdRequest = GetRoleIdByUserIdRequest.newBuilder()
-                        .setUserId(userId.toString())
-                        .build();
-
-                GetRoleIdByUserIdResponse roleIdResponse = userStub.getRoleIdByUserId(getRoleIdRequest);
-                UUID roleId = UUID.fromString(roleIdResponse.getRoleId());
-
-                CheckRoleIdExistsRequest checkRoleIdExistsRequest = CheckRoleIdExistsRequest.newBuilder()
-                        .setRoleId(roleId.toString())
-                        .build();
-
-                CheckRoleIdExistsResponse checkRoleIdResponse = userStub.checkRoleIdExists(checkRoleIdExistsRequest);
-                if (!checkRoleIdResponse.getExists()) {
-                    userErrors.add("RoleId không tồn tại cho user " + userId);
+                    projectMemberList.add(projectMember);
+                    log.info("Đã thêm mentor {} vào dự án {}", userId, projectId);
+                } catch (Exception e) {
+                    log.error("Lỗi khi thêm mentor {} vào dự án: {}", userId, e.getMessage());
+                    throw new BusinessException("Lỗi khi thêm mentor " + userId + " vào dự án: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                userErrors.add("Không thể lấy roleId cho user " + userId + ": " + e.getMessage());
             }
-
-            if (!userErrors.isEmpty()) {
-                invalidUserIds.add(userId);
-                errorMessages.addAll(userErrors);
-            }
+            projectMemberRepository.saveAll(projectMemberList);
         }
-
-        if (!invalidUserIds.isEmpty()) {
-            String errorMessage = String.format(
-                    "Không thể thêm mentor vào dự án. Các userId không hợp lệ: %s. Chi tiết lỗi: %s",
-                    invalidUserIds,
-                    String.join("; ", errorMessages)
-            );
-            throw new BusinessException(errorMessage);
-        }
-
-        List<UUID> addedUserIds = new ArrayList<>();
-        for (UUID userId : userIds) {
-            try {
-                ProjectMember projectMember = ProjectMember.builder()
-                        .userId(userId)
-                        .project(project)
-                        .roleInProject(Role.MENTOR.toString())
-                        .isLeader(false)
-                        .build();
-
-                projectMemberRepository.save(projectMember);
-                addedUserIds.add(userId);
-                log.info("Đã thêm mentor {} vào dự án {}", userId, projectId);
-            } catch (Exception e) {
-                log.error("Lỗi khi thêm mentor {} vào dự án: {}", userId, e.getMessage());
-                throw new BusinessException("Lỗi khi thêm mentor " + userId + " vào dự án: " + e.getMessage());
-            }
-        }
-
-        AddBatchProjectMembersResponse response = AddBatchProjectMembersResponse.builder()
-                .addedUserIds(addedUserIds)
-                .skippedUserIds(new ArrayList<>())
-                .totalAdded(addedUserIds.size())
-                .totalSkipped(0)
-                .build();
-
-        String message = String.format("Đã thêm %d mentor vào dự án thành công.", addedUserIds.size());
-
-        return ApiResponse.success(message, response);
+        return ApiResponse.success("Đã thêm thành công mentor vào dự án.", null);
     }
 
     @Override
