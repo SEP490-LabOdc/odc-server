@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
@@ -43,7 +44,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .description(request.getDescription())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .status(request.getStatus())
+                .status(Status.PENDING.toString())
                 .project(project)
                 .build();
 
