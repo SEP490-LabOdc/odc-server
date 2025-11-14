@@ -50,7 +50,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+                .orElseThrow(() -> new BusinessException("Dự án với ID: '" + projectId + "' không tồn tại"));
 
         UserServiceGrpc.UserServiceBlockingStub userStub =
                 UserServiceGrpc.newBlockingStub(userServiceChannel);
@@ -68,22 +68,22 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .getResultsMap()
                 .forEach((id, isMentor) -> {
                     if (!isMentor) {
-                        throw new BusinessException("User " + id + " không phải mentor");
+                        throw new BusinessException("User với ID: " + id + " không phải mentor");
                     }
                 });
 
+        List<ProjectMember> projectMemberList = new ArrayList<>();
         for (UUID userId : userIds) {
             long projectCount = projectMemberRepository.countByUserId(userId);
             if (projectCount >= 2) {
-                throw new BusinessException("Mentor " + userId + " đã có " + projectCount + " dự án (tối đa 2)");
+                throw new BusinessException("Mentor với ID: " + userId + " đã có " + projectCount + " dự án (tối đa 2)");
             }
 
             boolean alreadyMember = projectMemberRepository.existsByUserIdAndProjectId(userId, projectId);
             if (alreadyMember) {
-                throw new BusinessException("User " + userId + " đã là thành viên của dự án này");
+                throw new BusinessException("Mentor với ID:  " + userId + " đã là thành viên của dự án này");
             }
 
-            List<ProjectMember> projectMemberList = new ArrayList<>();
             for (UUID requestUserId : userIds) {
                 try {
                     ProjectMember projectMember = ProjectMember.builder()
@@ -100,8 +100,9 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                     throw new BusinessException("Lỗi khi thêm mentor " + userId + " vào dự án: " + e.getMessage());
                 }
             }
-            projectMemberRepository.saveAll(projectMemberList);
         }
+
+        projectMemberRepository.saveAll(projectMemberList);
         return ApiResponse.success("Đã thêm thành công mentor vào dự án.", null);
     }
 
