@@ -49,6 +49,10 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                     (userIds == null ? 0 : userIds.size()));
         }
 
+        if(projectMemberRepository.countMentorsInProject(request.getProjectId(), Role.MENTOR.toString()) > 2) {
+            throw new BusinessException("Dự án chỉ được phép có tối đa 2 mentor.");
+        }
+
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID: '" + projectId + "' không tồn tại"));
 
