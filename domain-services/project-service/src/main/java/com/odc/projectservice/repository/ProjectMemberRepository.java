@@ -17,4 +17,6 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
 
     boolean existsByUserIdAndProjectId(UUID userId, UUID projectId);
 
+    @Query("SELECT COUNT(pm) FROM ProjectMember pm WHERE pm.project.id = :projectId AND pm.roleInProject = :role")
+    long countMentorsInProject(UUID projectId, String role);
 }
