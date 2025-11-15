@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
@@ -104,6 +105,13 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }
 
         projectMemberRepository.saveAll(projectMemberList);
+
+        long totalMentorCount = projectMemberRepository.countMentorsInProject(projectId, Role.MENTOR.toString());
+        if (totalMentorCount >= 1 && totalMentorCount <= 2) {
+            project.setStatus(ProjectStatus.PLANNING.toString());
+            projectRepository.save(project);
+            log.info("Đã cập nhật trạng thái dự án {} sang PLANNING vì có {} mentor", projectId, totalMentorCount);
+        }
         return ApiResponse.success("Đã thêm thành công mentor vào dự án.", null);
     }
 
