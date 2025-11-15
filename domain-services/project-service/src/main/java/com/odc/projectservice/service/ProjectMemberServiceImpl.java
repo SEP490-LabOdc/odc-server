@@ -45,13 +45,16 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         UUID projectId = request.getProjectId();
         List<UUID> userIds = request.getUserIds();
 
-        if (userIds == null || userIds.size() != 2) {
-            throw new BusinessException("Chỉ được phép thêm đúng 2 mentor vào dự án. Số lượng userIds hiện tại: " +
+        if (userIds == null || userIds.isEmpty() || userIds.size() > 2) {
+            throw new BusinessException("Chỉ được phép thêm từ 1 đến 2 mentor vào dự án. Số lượng userIds hiện tại: " +
                     (userIds == null ? 0 : userIds.size()));
         }
 
-        if(projectMemberRepository.countMentorsInProject(request.getProjectId(), Role.MENTOR.toString()) > 2) {
-            throw new BusinessException("Dự án chỉ được phép có tối đa 2 mentor.");
+        long currentMentorCount = projectMemberRepository.countMentorsInProject(request.getProjectId(), Role.MENTOR.toString());
+        long newMentorCount = userIds.size();
+        if (currentMentorCount + newMentorCount > 2) {
+            throw new BusinessException("Dự án chỉ được phép có tối đa 2 mentor. Hiện tại có " + currentMentorCount +
+                    " mentor, không thể thêm " + newMentorCount + " mentor mới.");
         }
 
         Project project = projectRepository.findById(projectId)
