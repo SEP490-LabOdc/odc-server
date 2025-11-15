@@ -1,5 +1,6 @@
 package com.odc.userservice.grpc;
 
+import com.odc.common.constant.Role;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.projectservice.v1.GetProjectCountByMentorIdsRequest;
 import com.odc.projectservice.v1.GetProjectCountByMentorIdsResponse;
@@ -119,7 +120,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
 
             List<User> mentors = userRepository.findAll().stream()
                     .filter(user -> user.getRole() != null &&
-                            "MENTOR".equalsIgnoreCase(user.getRole().getName()))
+                            Role.MENTOR.toString().equalsIgnoreCase(user.getRole().getName()))
                     .toList();
 
             if (mentors.isEmpty()) {
@@ -129,7 +130,6 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
                 responseObserver.onCompleted();
                 return;
             }
-
 
             List<String> mentorIds = mentors.stream()
                     .map(u -> u.getId().toString())
@@ -157,6 +157,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
                 MentorInfo mentorInfo = MentorInfo.newBuilder()
                         .setId(mentorId)
                         .setName(mentor.getFullName())
+                        .setEmail(mentor.getEmail())
                         .setProjectCount(projectCount)
                         .build();
 
