@@ -14,5 +14,6 @@ import java.util.UUID;
 public class MentorResponse {
     private UUID id;
     private String name;
+    private String email;
     private Integer projectCount;
 }

@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -133,8 +134,12 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .map(mentorInfo -> MentorResponse.builder()
                         .id(UUID.fromString(mentorInfo.getId()))
                         .name(mentorInfo.getName())
+                        .email(mentorInfo.getEmail())
                         .projectCount(mentorInfo.getProjectCount())
                         .build())
+                .sorted(Comparator
+                        .comparingInt(MentorResponse::getProjectCount)
+                        .thenComparing(MentorResponse::getName))
                 .toList();
 
         return ApiResponse.success("Lấy danh sách mentor khả dụng thành công", availableMentors);
