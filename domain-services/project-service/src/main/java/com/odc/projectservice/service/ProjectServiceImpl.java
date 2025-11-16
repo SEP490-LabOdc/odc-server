@@ -16,15 +16,10 @@ import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
 import com.odc.projectservice.dto.response.*;
-import com.odc.projectservice.entity.Project;
-import com.odc.projectservice.entity.ProjectApplication;
-import com.odc.projectservice.entity.ProjectMember;
-import com.odc.projectservice.entity.Skill;
+import com.odc.projectservice.entity.*;
 import com.odc.projectservice.repository.*;
 import com.odc.projectservice.v1.ProjectUpdateRequiredEvent;
-import com.odc.userservice.v1.GetNameRequest;
-import com.odc.userservice.v1.GetNameResponse;
-import com.odc.userservice.v1.UserServiceGrpc;
+import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -50,6 +45,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final ProjectDocumentRepository projectDocumentRepository;
+    private final ProjectMilestoneRepository projectMilestoneRepository;
     private final EventPublisher eventPublisher;
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
@@ -61,6 +57,7 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectMemberRepository projectMemberRepository,
             ProjectApplicationRepository projectApplicationRepository,
             ProjectDocumentRepository projectDocumentRepository,
+            ProjectMilestoneRepository projectMilestoneRepository,
             EventPublisher eventPublisher,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
@@ -72,6 +69,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.eventPublisher = eventPublisher;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
+        this.projectMilestoneRepository = projectMilestoneRepository;
     }
 
     @Override
@@ -129,7 +127,6 @@ public class ProjectServiceImpl implements ProjectService {
             skills = skillRepository.findAllById(request.getSkillIds()).stream()
                     .collect(Collectors.toSet());
 
-            // Kiểm tra xem tất cả skillIds có tồn tại không
             if (skills.size() != request.getSkillIds().size()) {
                 throw new BusinessException("Có một số kỹ năng không tồn tại");
             }
@@ -171,12 +168,10 @@ public class ProjectServiceImpl implements ProjectService {
                 .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
                 .toList();
 
-
         List<String> mentorUserIds = mentorMembers.stream()
                 .map(pm -> pm.getUserId().toString())
                 .toList();
 
-        // Gọi gRPC getName để lấy tên của mentors
         Map<String, String> userIdToNameMap;
         if (!mentorUserIds.isEmpty()) {
             UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
@@ -190,7 +185,6 @@ public class ProjectServiceImpl implements ProjectService {
             userIdToNameMap = Map.of();
         }
 
-
         List<UserParticipantResponse> mentors = mentorMembers.stream()
                 .map(pm -> UserParticipantResponse.builder()
                         .id(pm.getUserId())
@@ -202,30 +196,108 @@ public class ProjectServiceImpl implements ProjectService {
                 .toList();
 
 
-        ProjectResponse responseData = convertToProjectResponse(existingProject, mentors);
+        UUID createdByUserId = null;
+        String createdByName = null;
+        String createdByAvatar = null;
+        if (existingProject.getCreatedBy() != null && !existingProject.getCreatedBy().isEmpty()) {
+            try {
+                createdByUserId = UUID.fromString(existingProject.getCreatedBy());
+                UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+                GetUserByIdResponse userResponse = userStub.getUserById(
+                        GetUserByIdRequest.newBuilder()
+                                .setUserId(existingProject.getCreatedBy())
+                                .build()
+                );
+                createdByName = userResponse.getFullName();
+                createdByAvatar = userResponse.getAvatarUrl();
+            } catch (Exception e) {
+                log.warn("Không thể lấy thông tin người tạo project: {}", e.getMessage());
+            }
+        }
 
-        return ApiResponse.<ProjectResponse>builder()
-                .success(true)
-                .message("Lấy thông tin dự án thành công")
-                .timestamp(LocalDateTime.now())
-                .data(responseData)
-                .build();
+
+        UUID currentMilestoneId = null;
+        String currentMilestoneName = null;
+        List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(projectId);
+        if (milestones != null && !milestones.isEmpty()) {
+            // Tìm milestone có status ACTIVE hoặc IN_PROGRESS (nếu có)
+            // Hoặc milestone chưa hoàn thành và đang trong khoảng thời gian
+            ProjectMilestone currentMilestone = milestones.stream()
+                    .filter(m -> Status.ACTIVE.toString().equalsIgnoreCase(m.getStatus()) ||
+                            (!Status.COMPLETED.toString().equalsIgnoreCase(m.getStatus()) &&
+                                    !Status.CANCELED.toString().equalsIgnoreCase(m.getStatus())))
+                    .min(Comparator.comparing(ProjectMilestone::getStartDate,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
+                    .orElse(null);
+
+            if (currentMilestone != null) {
+                currentMilestoneId = currentMilestone.getId();
+                currentMilestoneName = currentMilestone.getTitle();
+            }
+        }
+
+        String companyName = null;
+        if (existingProject.getCompanyId() != null) {
+            try {
+                CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                        CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+                GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(
+                        GetCompanyByIdRequest.newBuilder()
+                                .setCompanyId(existingProject.getCompanyId().toString())
+                                .build()
+                );
+                companyName = companyResponse.getCompanyName();
+            } catch (Exception e) {
+                log.warn("Không thể lấy thông tin công ty với ID {}: {}", existingProject.getCompanyId(), e.getMessage());
+            }
+        }
+
+        ProjectResponse responseData = convertToProjectResponse(existingProject, mentors,
+                createdByUserId, createdByName, createdByAvatar,
+                currentMilestoneId, currentMilestoneName, companyName);
+
+        return ApiResponse.success("Lấy thông tin dự án thành công", responseData);
     }
 
     @Override
     public ApiResponse<List<ProjectResponse>> getAllProjects() {
+        List<Project> projects = projectRepository.findAll();
 
-        List<ProjectResponse> projects = projectRepository.findAll()
-                .stream()
-                .map(this::convertToProjectResponse)
+
+        Set<UUID> companyIds = projects.stream()
+                .map(Project::getCompanyId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+
+        Map<UUID, String> companyIdToNameMap = new HashMap<>();
+        if (!companyIds.isEmpty()) {
+            CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                    CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+            for (UUID companyId : companyIds) {
+                try {
+                    GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(
+                            GetCompanyByIdRequest.newBuilder()
+                                    .setCompanyId(companyId.toString())
+                                    .build()
+                    );
+                    companyIdToNameMap.put(companyId, companyResponse.getCompanyName());
+                } catch (Exception e) {
+                    log.warn("Không thể lấy thông tin công ty với ID {}: {}", companyId, e.getMessage());
+                }
+            }
+        }
+
+        List<ProjectResponse> projectResponses = projects.stream()
+                .map(project -> {
+                    String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
+                    return convertToProjectResponse(project, List.of(), null, null, null,
+                            null, null, companyName);
+                })
                 .collect(Collectors.toList());
 
-        return ApiResponse.<List<ProjectResponse>>builder()
-                .success(true)
-                .message("Lấy danh sách dự án thành công")
-                .timestamp(LocalDateTime.now())
-                .data(projects)
-                .build();
+        return ApiResponse.success("Lấy danh sách dự án thành công", projectResponses);
     }
 
     @Override
@@ -504,31 +576,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {
-        Set<SkillResponse> skillResponses = project.getSkills().stream()
-                .map(skill -> SkillResponse.builder()
-                        .id(skill.getId())
-                        .name(skill.getName())
-                        .description(skill.getDescription())
-                        .build())
-                .collect(Collectors.toSet());
-
-        return ProjectResponse.builder()
-                .id(project.getId())
-                .companyId(project.getCompanyId())
-                .title(project.getTitle())
-                .description(project.getDescription())
-                .status(project.getStatus())
-                .startDate(project.getStartDate())
-                .endDate(project.getEndDate())
-                .budget(project.getBudget())
-                .skills(skillResponses)
-                .mentors(List.of())
-                .createdAt(project.getCreatedAt())
-                .updatedAt(project.getUpdatedAt())
-                .build();
+        return convertToProjectResponse(project, List.of(), null, null, null, null, null, null);
     }
 
-    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors) {
+
+    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors,
+                                                     UUID createdBy, String createdByName, String createdByAvatar,
+                                                     UUID currentMilestoneId, String currentMilestoneName,
+                                                     String companyName) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()
                 .map(skill -> SkillResponse.builder()
                         .id(skill.getId())
@@ -550,8 +605,15 @@ public class ProjectServiceImpl implements ProjectService {
                 .mentors(mentors)
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
+                .createdBy(createdBy)
+                .createdByName(createdByName)
+                .createdByAvatar(createdByAvatar)
+                .currentMilestoneId(currentMilestoneId)
+                .currentMilestoneName(currentMilestoneName)
+                .companyName(companyName)
                 .build();
     }
+
 
     private GetProjectResponse convertToCompanyProjectResponse(Project project) {
         Set<SkillResponse> skillResponses = project.getSkills().stream()

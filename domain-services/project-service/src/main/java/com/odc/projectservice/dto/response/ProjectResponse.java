@@ -28,4 +28,11 @@ public class ProjectResponse {
     private List<UserParticipantResponse> mentors;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private UUID createdBy;
+    private String createdByName;
+    private String createdByAvatar;
+    private UUID currentMilestoneId;
+    private String currentMilestoneName;
+    private String companyName;
 }
