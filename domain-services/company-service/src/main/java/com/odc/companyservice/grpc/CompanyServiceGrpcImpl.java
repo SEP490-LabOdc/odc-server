@@ -56,4 +56,35 @@ public class CompanyServiceGrpcImpl extends CompanyServiceGrpc.CompanyServiceImp
             responseObserver.onError(e);
         }
     }
+
+    @Override
+    public void getCompaniesByIds(GetCompaniesByIdsRequest request, StreamObserver<GetCompaniesByIdsResponse> responseObserver) {
+        try {
+            var companyIds = request.getCompanyIdsList();
+
+            log.info("Received request to get companies by IDs: {}", companyIds);
+
+            var uuidList = companyIds.stream()
+                    .map(UUID::fromString)
+                    .toList();
+
+            var companies = companyRepository.findAllById(uuidList);
+
+            GetCompaniesByIdsResponse.Builder responseBuilder = GetCompaniesByIdsResponse.newBuilder();
+
+            companies.forEach(company ->
+                    responseBuilder.putCompanyNames(
+                            company.getId().toString(),
+                            company.getName()
+                    )
+            );
+
+            responseObserver.onNext(responseBuilder.build());
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("Error in getCompaniesByIds: {}", e.getMessage(), e);
+            responseObserver.onError(e);
+        }
+    }
 }
