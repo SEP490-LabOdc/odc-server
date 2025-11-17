@@ -8,6 +8,7 @@ option java_outer_classname = "CompanyServiceProto";
 service CompanyService {
   rpc GetCompanyByUserId(GetCompanyByUserIdRequest) returns (GetCompanyByUserIdResponse);
   rpc GetCompanyById(GetCompanyByIdRequest) returns (GetCompanyByIdResponse);
+  rpc GetCompaniesByIds(GetCompaniesByIdsRequest) returns (GetCompaniesByIdsResponse);
 }
 
 message GetCompanyByUserIdRequest {
@@ -26,4 +27,12 @@ message GetCompanyByIdRequest {
 message GetCompanyByIdResponse {
   string company_name = 1;
   string contact_person_email = 2;
+}
+
+message GetCompaniesByIdsRequest {
+  repeated string company_ids = 1;
+}
+
+message GetCompaniesByIdsResponse {
+  map<string, string> company_names = 1;
 }
