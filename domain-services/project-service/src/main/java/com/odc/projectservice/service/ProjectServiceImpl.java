@@ -275,17 +275,27 @@ public class ProjectServiceImpl implements ProjectService {
             CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
                     CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
 
-            for (UUID companyId : companyIds) {
-                try {
-                    GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(
-                            GetCompanyByIdRequest.newBuilder()
-                                    .setCompanyId(companyId.toString())
-                                    .build()
-                    );
-                    companyIdToNameMap.put(companyId, companyResponse.getCompanyName());
-                } catch (Exception e) {
-                    log.warn("Không thể lấy thông tin công ty với ID {}: {}", companyId, e.getMessage());
-                }
+            try {
+                GetCompaniesByIdsRequest request = GetCompaniesByIdsRequest.newBuilder()
+                        .addAllCompanyIds(
+                                companyIds.stream()
+                                        .map(UUID::toString)
+                                        .toList()
+                        )
+                        .build();
+
+                GetCompaniesByIdsResponse response = companyStub.getCompaniesByIds(request);
+
+                response.getCompanyNamesMap().forEach((id, name) -> {
+                    try {
+                        companyIdToNameMap.put(UUID.fromString(id), name);
+                    } catch (Exception e) {
+                        log.warn("Lỗi khi convert companyId {}: {}", id, e.getMessage());
+                    }
+                });
+
+            } catch (Exception e) {
+                log.error("Không thể lấy danh sách công ty qua gRPC: {}", e.getMessage(), e);
             }
         }
 
