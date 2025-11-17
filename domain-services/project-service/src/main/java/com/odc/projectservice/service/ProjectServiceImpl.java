@@ -220,8 +220,7 @@ public class ProjectServiceImpl implements ProjectService {
         String currentMilestoneName = null;
         List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(projectId);
         if (milestones != null && !milestones.isEmpty()) {
-            // Tìm milestone có status ACTIVE hoặc IN_PROGRESS (nếu có)
-            // Hoặc milestone chưa hoàn thành và đang trong khoảng thời gian
+
             ProjectMilestone currentMilestone = milestones.stream()
                     .filter(m -> Status.ACTIVE.toString().equalsIgnoreCase(m.getStatus()) ||
                             (!Status.COMPLETED.toString().equalsIgnoreCase(m.getStatus()) &&
@@ -241,14 +240,17 @@ public class ProjectServiceImpl implements ProjectService {
             try {
                 CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
                         CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
-                GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(
-                        GetCompanyByIdRequest.newBuilder()
-                                .setCompanyId(existingProject.getCompanyId().toString())
-                                .build()
-                );
-                companyName = companyResponse.getCompanyName();
+
+                GetCompaniesByIdsRequest request = GetCompaniesByIdsRequest.newBuilder()
+                        .addCompanyIds(existingProject.getCompanyId().toString())
+                        .build();
+
+                GetCompaniesByIdsResponse response = companyStub.getCompaniesByIds(request);
+
+                companyName = response.getCompanyNamesMap().get(existingProject.getCompanyId().toString());
+
             } catch (Exception e) {
-                log.warn("Không thể lấy thông tin công ty với ID {}: {}", existingProject.getCompanyId(), e.getMessage());
+                log.error("Không thể lấy thông tin công ty với ID {}: {}", existingProject.getCompanyId(), e.getMessage(), e);
             }
         }
 
