@@ -5,24 +5,20 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
+import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
-import com.odc.userservice.v1.CheckUsersInRoleRequest;
-import com.odc.userservice.v1.GetMentorsWithProjectCountRequest;
-import com.odc.userservice.v1.GetMentorsWithProjectCountResponse;
-import com.odc.userservice.v1.UserServiceGrpc;
+import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -154,5 +150,58 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .toList();
 
         return ApiResponse.success("Lấy danh sách mentor khả dụng thành công", availableMentors);
+    }
+
+    @Override
+    public ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId) {
+        List<ProjectMember> projectMemberList = projectMemberRepository.findByProjectId(projectId);
+
+        if (projectMemberList.isEmpty()) {
+            return ApiResponse.success(List.of());
+        }
+
+        List<String> userIds = projectMemberList.stream()
+                .map(pm -> pm.getUserId().toString())
+                .toList();
+
+        UserServiceGrpc.UserServiceBlockingStub stub =
+                UserServiceGrpc.newBlockingStub(userServiceChannel);
+
+        GetUsersByIdsResponse usersResponse = stub.getUsersByIds(
+                GetUsersByIdsRequest.newBuilder()
+                        .addAllUserId(userIds)
+                        .build()
+        );
+
+        Map<UUID, UserInfo> userMap = usersResponse.getUsersList().stream()
+                .collect(Collectors.toMap(
+                        u -> UUID.fromString(u.getUserId()),
+                        u -> u
+                ));
+
+        List<GetProjectMemberByProjectIdResponse> result = projectMemberList.stream().map(pm -> {
+
+            UserInfo userInfo = userMap.get(pm.getUserId());
+
+            GetProjectMemberByProjectIdResponse dto = new GetProjectMemberByProjectIdResponse();
+            dto.setProjectMemberId(pm.getId());
+            dto.setUserId(pm.getUserId());
+
+            if (userInfo != null) {
+                dto.setFullName(userInfo.getFullName());
+                dto.setEmail(userInfo.getEmail());
+                dto.setPhone(userInfo.getPhone());
+                dto.setAvatarUrl(userInfo.getAvatarUrl());
+            }
+
+            dto.setIsLeader(pm.isLeader());
+            dto.setJoinedAt(pm.getJoinedAt());
+            dto.setLeftAt(pm.getLeftAt());
+            dto.setIsActive(pm.getLeftAt() == null);
+
+            return dto;
+        }).toList();
+
+        return ApiResponse.success(result);
     }
 }
