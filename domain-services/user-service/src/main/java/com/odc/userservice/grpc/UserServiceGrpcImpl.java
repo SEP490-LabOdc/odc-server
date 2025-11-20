@@ -227,4 +227,38 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onError(e);
         }
     }
+
+    @Override
+    public void getUsersByIds(
+            GetUsersByIdsRequest request,
+            StreamObserver<GetUsersByIdsResponse> responseObserver) {
+
+        try {
+            List<UUID> userIds = request.getUserIdList().stream()
+                    .map(UUID::fromString)
+                    .toList();
+
+            List<User> users = userRepository.findByIdIn(userIds);
+
+            List<com.odc.userservice.v1.UserInfo> userInfoList = users.stream()
+                    .map(user -> com.odc.userservice.v1.UserInfo.newBuilder()
+                            .setUserId(user.getId().toString())
+                            .setFullName(user.getFullName())
+                            .setEmail(user.getEmail())
+                            .setPhone(user.getPhone() != null ? user.getPhone() : "")
+                            .setAvatarUrl(user.getAvatarUrl() != null ? user.getAvatarUrl() : "")
+                            .build())
+                    .toList();
+
+            GetUsersByIdsResponse response = GetUsersByIdsResponse.newBuilder()
+                    .addAllUsers(userInfoList)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(e);
+        }
+    }
+
 }
