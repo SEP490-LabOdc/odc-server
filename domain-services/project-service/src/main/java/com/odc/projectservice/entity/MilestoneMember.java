@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "milestone_members")
@@ -24,9 +23,9 @@ public class MilestoneMember extends BaseEntity {
     @JoinColumn(name = "project_member_id", nullable = false)
     private ProjectMember projectMember;
 
-    @Column(name = "assigned_at", nullable = false)
-    private LocalDateTime assignedAt;
+    @Column(name = "joined_at")
+    private LocalDateTime joinedAt;
 
-    @Column(name = "removed_at")
-    private LocalDateTime removedAt;
+    @Column(name = "left_at")
+    private LocalDateTime leftAt;
 }
