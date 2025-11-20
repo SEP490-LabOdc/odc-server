@@ -264,8 +264,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<List<ProjectResponse>> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-
+        List<Project> projects = projectRepository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt"));
 
         Set<UUID> companyIds = projects.stream()
                 .map(Project::getCompanyId)
@@ -322,6 +321,8 @@ public class ProjectServiceImpl implements ProjectService {
             for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
                 orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
             }
+        } else {
+            orders.add(new Sort.Order(Sort.Direction.DESC, "updatedAt"));
         }
         Sort sort = Sort.by(orders);
 
@@ -347,6 +348,8 @@ public class ProjectServiceImpl implements ProjectService {
             for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
                 orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
             }
+        } else {
+            orders.add(new Sort.Order(Sort.Direction.DESC, "updatedAt"));
         }
         Sort sort = Sort.by(orders);
 
@@ -483,7 +486,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {
-        List<ProjectApplication> projectApplicationList = projectApplicationRepository.findByProjectId(projectId);
+        List<ProjectApplication> projectApplicationList = projectApplicationRepository
+                .findByProjectId(projectId)
+                .stream()
+                .sorted(Comparator.comparing(ProjectApplication::getUpdatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
 
         if (projectApplicationList.isEmpty()) {
             return ApiResponse.success(List.of());
@@ -527,7 +535,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
 
-        List<Project> projectList = projectRepository.findByCompanyId(UUID.fromString(companyResponse.getCompanyId()));
+        List<Project> projectList = projectRepository
+                .findByCompanyIdOrderByUpdatedAtDesc(UUID.fromString(companyResponse.getCompanyId()));
 
         List<GetProjectResponse> projects = projectList.stream()
                 .map(this::convertToCompanyProjectResponse)

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -63,7 +64,11 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public ApiResponse<List<GetNotificationResponse>> markAllAsRead(UUID userId) {
         List<NotificationRecipient> recipientsToUpdate = notificationRecipientRepository
-                .findAllByUserIdAndReadStatus(userId, false);
+                .findAllByUserIdAndReadStatus(userId, false)
+                .stream()
+                .sorted(Comparator.comparing(NotificationRecipient::getUpdatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
 
         if (recipientsToUpdate.isEmpty()) {
             return ApiResponse.success("Không có thông báo chưa đọc nào.", List.of());
