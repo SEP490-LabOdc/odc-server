@@ -4,8 +4,10 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
-import com.odc.projectservice.dto.response.TalentInMilestoneResponse;
+import com.odc.projectservice.dto.response.GetMilestoneMember;
+import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.service.MilestoneMemberService;
+import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,12 +39,13 @@ public class MilestoneMemberController {
         );
     }
 
-    @GetMapping("/project-milestones/{milestoneId}/milestone-members/talents")
-    public ResponseEntity<ApiResponse<List<TalentInMilestoneResponse>>> getActiveTalents(
-            @PathVariable UUID milestoneId
+    @GetMapping("/project-milestones/{milestoneId}/milestone-members")
+    public ResponseEntity<ApiResponse<GetMilestoneMemberResponse>> getMilestoneMembers(
+            @PathVariable UUID milestoneId,
+            @QueryParam("isActive") Boolean isActive
     ) {
         return ResponseEntity.ok(
-                milestoneMemberService.getActiveTalentsInMilestone(milestoneId)
+                milestoneMemberService.getMilestoneMembers(milestoneId, isActive)
         );
     }
 }
