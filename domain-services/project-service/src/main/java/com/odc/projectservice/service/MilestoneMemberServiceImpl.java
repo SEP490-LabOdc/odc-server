@@ -6,7 +6,8 @@ import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
-import com.odc.projectservice.dto.response.TalentInMilestoneResponse;
+import com.odc.projectservice.dto.response.GetMilestoneMember;
+import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.entity.MilestoneMember;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
@@ -156,11 +157,16 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     }
 
     @Override
-    public ApiResponse<List<TalentInMilestoneResponse>> getActiveTalentsInMilestone(UUID milestoneId) {
-        List<MilestoneMember> milestoneMembers = milestoneMemberRepository
-                .findByProjectMilestone_IdAndProjectMember_RoleInProjectAndLeftAtIsNull(
-                        milestoneId, "TALENT");        if (milestoneMembers.isEmpty()) {
-            return ApiResponse.success(List.of());
+    public ApiResponse<GetMilestoneMemberResponse> getMilestoneMembers(UUID milestoneId, Boolean isActive) {
+        List<MilestoneMember> milestoneMembers;
+        if (isActive != null && isActive) {
+            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_IdAndLeftAtIsNull(milestoneId);
+        } else {
+            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+        }
+
+        if (milestoneMembers.isEmpty()) {
+            return ApiResponse.success(new GetMilestoneMemberResponse());
         }
 
         List<String> userIds = milestoneMembers.stream()
@@ -182,13 +188,18 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                         u -> u
                 ));
 
-        List<TalentInMilestoneResponse> result = milestoneMembers.stream().map(mm -> {
+        List<GetMilestoneMember> talents = new ArrayList<>();
+        List<GetMilestoneMember> mentors = new ArrayList<>();
+
+        for (MilestoneMember mm : milestoneMembers) {
             ProjectMember pm = mm.getProjectMember();
             UserInfo userInfo = userMap.get(pm.getUserId());
 
-            TalentInMilestoneResponse dto = new TalentInMilestoneResponse();
+            GetMilestoneMember dto = new GetMilestoneMember();
             dto.setProjectMemberId(pm.getId());
             dto.setUserId(pm.getUserId());
+            dto.setJoinedAt(mm.getJoinedAt());
+            dto.setLeftAt(mm.getLeftAt());
 
             if (userInfo != null) {
                 dto.setFullName(userInfo.getFullName());
@@ -197,11 +208,18 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 dto.setAvatarUrl(userInfo.getAvatarUrl());
             }
 
-            dto.setJoinedAt(mm.getJoinedAt());
+            if (Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject())) {
+                talents.add(dto);
+            } else if (Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject())) {
+                mentors.add(dto);
+            }
+        }
 
-            return dto;
-        }).toList();
+        GetMilestoneMemberResponse response = new GetMilestoneMemberResponse();
+        response.setTalents(talents);
+        response.setMentors(mentors);
 
-        return ApiResponse.success(result);
+        return ApiResponse.success(response);
     }
+
 }
