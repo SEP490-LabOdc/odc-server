@@ -1,21 +1,33 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
+import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
 import com.odc.projectservice.entity.Project;
+import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
+import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectMilestoneRepository;
 import com.odc.projectservice.repository.ProjectRepository;
+import com.odc.userservice.v1.GetUsersByIdsRequest;
+import com.odc.userservice.v1.GetUsersByIdsResponse;
+import com.odc.userservice.v1.UserInfo;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,6 +37,8 @@ import java.util.stream.Collectors;
 public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -134,7 +148,103 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
 
-        ProjectMilestoneResponse responseData = convertToProjectMilestoneResponse(milestone);
+        Project project = milestone.getProject();
+
+        String projectName = project.getTitle();
+
+        List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(project.getId());
+
+        List<ProjectMember> talentMembers = projectMembers.stream()
+                .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .collect(Collectors.toList());
+
+        List<ProjectMember> mentorMembers = projectMembers.stream()
+                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .collect(Collectors.toList());
+
+        List<String> allUserIds = projectMembers.stream()
+                .map(pm -> pm.getUserId().toString())
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<UUID, UserInfo> userMap = new HashMap<>();
+        if (!allUserIds.isEmpty()) {
+            try {
+                UserServiceGrpc.UserServiceBlockingStub userStub =
+                        UserServiceGrpc.newBlockingStub(userServiceChannel);
+                GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                        GetUsersByIdsRequest.newBuilder()
+                                .addAllUserId(allUserIds)
+                                .build()
+                );
+
+                userMap = usersResponse.getUsersList().stream()
+                        .collect(Collectors.toMap(
+                                u -> UUID.fromString(u.getUserId()),
+                                u -> u
+                        ));
+            } catch (Exception e) {
+                System.err.println("Lỗi khi lấy thông tin user: " + e.getMessage());
+            }
+        }
+
+        final Map<UUID, UserInfo> finalUserMap = userMap;
+        List<TalentMentorInfoResponse> talents = talentMembers.stream()
+                .map(pm -> {
+                    UserInfo userInfo = finalUserMap.get(pm.getUserId());
+                    if (userInfo != null) {
+                        return TalentMentorInfoResponse.builder()
+                                .userId(pm.getUserId())
+                                .name(userInfo.getFullName())
+                                .avatar(userInfo.getAvatarUrl())
+                                .email(userInfo.getEmail())
+                                .phone(userInfo.getPhone())
+                                .build();
+                    }
+                    return TalentMentorInfoResponse.builder()
+                            .userId(pm.getUserId())
+                            .name("Unknown")
+                            .avatar("")
+                            .email("")
+                            .phone("")
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        List<TalentMentorInfoResponse> mentors = mentorMembers.stream()
+                .map(pm -> {
+                    UserInfo userInfo = finalUserMap.get(pm.getUserId());
+                    if (userInfo != null) {
+                        return TalentMentorInfoResponse.builder()
+                                .userId(pm.getUserId())
+                                .name(userInfo.getFullName())
+                                .avatar(userInfo.getAvatarUrl())
+                                .email(userInfo.getEmail())
+                                .phone(userInfo.getPhone())
+                                .build();
+                    }
+                    return TalentMentorInfoResponse.builder()
+                            .userId(pm.getUserId())
+                            .name("Unknown")
+                            .avatar("")
+                            .email("")
+                            .phone("")
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
+                .id(milestone.getId())
+                .projectId(milestone.getProject().getId())
+                .projectName(projectName)
+                .title(milestone.getTitle())
+                .description(milestone.getDescription())
+                .startDate(milestone.getStartDate())
+                .endDate(milestone.getEndDate())
+                .status(milestone.getStatus())
+                .talents(talents)
+                .mentors(mentors)
+                .build();
 
         return ApiResponse.<ProjectMilestoneResponse>builder()
                 .success(true)
