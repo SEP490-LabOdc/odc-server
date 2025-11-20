@@ -38,4 +38,6 @@ public interface ProjectService {
     ApiResponse<Void> updateIsOpenForApplications(UUID projectId, UpdateProjectOpenStatusRequest request);
 
     ApiResponse<Void> updateProjectStatus(UUID projectId, UpdateProjectStatusRequest request);
+
+    ApiResponse<List<ProjectResponse>> getMyProjects(UUID userId, String status);
 }
