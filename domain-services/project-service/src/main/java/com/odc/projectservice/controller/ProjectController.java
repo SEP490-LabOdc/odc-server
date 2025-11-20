@@ -93,6 +93,13 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getProjectsByUserId(userId));
     }
 
+    @GetMapping("/my-projects")
+    public ResponseEntity<ApiResponse<List<ProjectResponse>>> getMyProjects(
+            @RequestParam(required = false) String status) {  // Thêm query parameter
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectService.getMyProjects(userId, status));
+    }
+
     @GetMapping("/hiring")
     public ResponseEntity<ApiResponse<?>> getHiringProjects(
             @RequestParam(defaultValue = "1") Integer page,
@@ -124,4 +131,5 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request));
     }
+
 }
