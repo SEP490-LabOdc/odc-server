@@ -37,7 +37,7 @@ public class MilestoneMemberController {
         );
     }
 
-    @GetMapping("/milestones/{milestoneId}/milestone-members/talents")
+    @GetMapping("/project-milestones/{milestoneId}/milestone-members/talents")
     public ResponseEntity<ApiResponse<List<TalentInMilestoneResponse>>> getActiveTalents(
             @PathVariable UUID milestoneId
     ) {

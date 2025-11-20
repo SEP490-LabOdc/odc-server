@@ -195,6 +195,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 dto.setAvatarUrl(userInfo.getAvatarUrl());
             }
 
+            dto.setRoleName(pm.getRoleInProject());
             dto.setIsLeader(pm.isLeader());
             dto.setJoinedAt(pm.getJoinedAt());
             dto.setLeftAt(pm.getLeftAt());
