@@ -49,9 +49,9 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
     @Override
     public ApiResponse<Void> addProjectMembers(AddProjectMemberRequest request, Role allowedRole) {
-
         ProjectMilestone milestone = projectMilestoneRepository.findById(request.getMilestoneId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy milestone"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy milestone với ID: " + request.getMilestoneId()));
 
         UUID projectId = milestone.getProject().getId();
         List<UUID> projectMemberIds = request.getProjectMemberIds();
@@ -61,37 +61,51 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
         }
 
         List<ProjectMember> projectMembers = projectMemberRepository.findByIdIn(projectMemberIds);
-
         Map<UUID, ProjectMember> projectMemberMap = projectMembers.stream()
                 .collect(Collectors.toMap(ProjectMember::getId, pm -> pm));
 
         List<String> errors = new ArrayList<>();
 
         for (UUID pmId : projectMemberIds) {
-
             ProjectMember pm = projectMemberMap.get(pmId);
-
             if (pm == null) {
-                errors.add("Không tìm thấy thành viên dự án với ID: " + pmId);
+                errors.add("Không tìm thấy thành viên với projectMemberId: " + pmId);
                 continue;
             }
 
             if (!pm.getProject().getId().equals(projectId)) {
-                errors.add("Thành viên " + pmId + " không thuộc dự án này");
+                errors.add("Thành viên với projectMemberId " + pmId + " không thuộc dự án này");
                 continue;
             }
-
-            if (!pm.getRoleInProject().equals(allowedRole.toString())) {
-                errors.add("Thành viên " + pmId + " không có vai trò hợp lệ để thêm vào milestone");
+            if (!pm.getRoleInProject().equalsIgnoreCase(allowedRole.toString())) {
+                errors.add("Thành viên với projectMemberId " + pmId + " không có vai trò " + allowedRole + " để thêm vào milestone");
             }
 
-            boolean alreadyJoined = milestoneMemberRepository
-                    .existsMemberInMilestone(milestone.getId(), pm.getId());
+            MilestoneMember existing = milestoneMemberRepository
+                    .findByProjectMilestone_IdAndProjectMember_Id(milestone.getId(), pm.getId())
+                    .orElse(null);
 
-            if (alreadyJoined) {
-                errors.add("Thành viên " + pm.getUserId() + " đã tham gia milestone này trước đó");
+            if (existing != null) {
+                if (existing.isActive()) {
+                    errors.add("Thành viên với userId " + pm.getUserId() + " đã tham gia milestone này trước đó");
+                    continue;
+                }
+
+                existing.setActive(true);
+                existing.setJoinedAt(LocalDateTime.now());
+                existing.setLeftAt(null);
+                milestoneMemberRepository.save(existing);
+            } else {
+                MilestoneMember mm = MilestoneMember.builder()
+                        .projectMilestone(milestone)
+                        .projectMember(pm)
+                        .joinedAt(LocalDateTime.now())
+                        .isActive(true)
+                        .build();
+                milestoneMemberRepository.save(mm);
             }
         }
+
 
         if (!errors.isEmpty()) {
             throw new BusinessException(String.join("; ", errors));
@@ -102,49 +116,50 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                         .projectMilestone(milestone)
                         .projectMember(pm)
                         .joinedAt(LocalDateTime.now())
+                        .isActive(true)
                         .build())
                 .toList();
 
         milestoneMemberRepository.saveAll(toSave);
 
-        return ApiResponse.success("Thêm thành công thành viên vào milestone", null);
+        return ApiResponse.success("Thêm thành công các thành viên vào milestone", null);
     }
 
     @Override
     public ApiResponse<Void> removeProjectMembersFromMilestone(RemoveMilestoneMembersRequest request) {
-
         ProjectMilestone milestone = projectMilestoneRepository.findById(request.getMilestoneId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy milestone"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy milestone với ID: " + request.getMilestoneId()));
 
         List<UUID> projectMemberIds = request.getProjectMemberIds();
         if (projectMemberIds == null || projectMemberIds.isEmpty()) {
-            throw new BusinessException("Danh sách thành viên không được để trống");
+            throw new BusinessException("Danh sách thành viên để loại bỏ không được để trống");
         }
 
         List<MilestoneMember> milestoneMembers = milestoneMemberRepository
                 .findByProjectMilestoneIdAndProjectMemberIds(milestone.getId(), projectMemberIds);
 
         if (milestoneMembers.isEmpty()) {
-            throw new BusinessException("Không tìm thấy thành viên trong milestone này");
+            throw new BusinessException("Không tìm thấy các thành viên trong milestone này");
         }
 
         List<String> errors = new ArrayList<>();
 
         for (MilestoneMember mm : milestoneMembers) {
-
             ProjectMember pm = mm.getProjectMember();
 
             if (!Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject())) {
-                errors.add("Chỉ TALENT mới có thể bị kick khỏi milestone, thành viên: " + pm.getUserId());
+                errors.add("Chỉ TALENT mới có thể bị loại bỏ, thành viên với projectMemberId: " + pm.getId());
                 continue;
             }
 
-            if (mm.getLeftAt() != null) {
-                errors.add("Thành viên " + pm.getUserId() + " đã rời milestone trước đó");
+            if (!mm.isActive()) {
+                errors.add("Thành viên với projectMemberId " + pm.getId() + " đã rời milestone trước đó");
                 continue;
             }
 
             mm.setLeftAt(LocalDateTime.now());
+            mm.setActive(true);
         }
 
         if (!errors.isEmpty()) {
@@ -159,10 +174,13 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     @Override
     public ApiResponse<GetMilestoneMemberResponse> getMilestoneMembers(UUID milestoneId, Boolean isActive) {
         List<MilestoneMember> milestoneMembers;
-        if (isActive != null && isActive) {
-            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_IdAndLeftAtIsNull(milestoneId);
-        } else {
+
+        if (isActive == null) {
             milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+        } else if (isActive) {
+            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_IdAndIsActive(milestoneId, true);
+        } else {
+            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_IdAndIsActive(milestoneId, false);
         }
 
         if (milestoneMembers.isEmpty()) {
@@ -173,13 +191,9 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .map(mm -> mm.getProjectMember().getUserId().toString())
                 .toList();
 
-        UserServiceGrpc.UserServiceBlockingStub stub =
-                UserServiceGrpc.newBlockingStub(userServiceChannel);
-
+        UserServiceGrpc.UserServiceBlockingStub stub = UserServiceGrpc.newBlockingStub(userServiceChannel);
         GetUsersByIdsResponse usersResponse = stub.getUsersByIds(
-                GetUsersByIdsRequest.newBuilder()
-                        .addAllUserId(userIds)
-                        .build()
+                GetUsersByIdsRequest.newBuilder().addAllUserId(userIds).build()
         );
 
         Map<UUID, UserInfo> userMap = usersResponse.getUsersList().stream()
@@ -221,5 +235,4 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
         return ApiResponse.success(response);
     }
-
 }
