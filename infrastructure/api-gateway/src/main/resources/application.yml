@@ -141,6 +141,13 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: milestone-member-service
+          uri: lb://project-service
+          predicates:
+            - Path=/api/v1/milestone-members/**
+          filters:
+            - StripPrefix=0
+
         # Checklist Service
         - id: checklist-template-service
           uri: lb://checklist-service

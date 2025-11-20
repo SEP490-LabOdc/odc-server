@@ -264,8 +264,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<List<ProjectResponse>> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-
+        List<Project> projects = projectRepository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt"));
 
         Set<UUID> companyIds = projects.stream()
                 .map(Project::getCompanyId)
@@ -322,6 +321,8 @@ public class ProjectServiceImpl implements ProjectService {
             for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
                 orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
             }
+        } else {
+            orders.add(new Sort.Order(Sort.Direction.DESC, "updatedAt"));
         }
         Sort sort = Sort.by(orders);
 
@@ -347,6 +348,8 @@ public class ProjectServiceImpl implements ProjectService {
             for (com.odc.common.dto.SortRequest sortRequest : request.getSorts()) {
                 orders.add(new Sort.Order(sortRequest.getDirection(), sortRequest.getKey()));
             }
+        } else {
+            orders.add(new Sort.Order(Sort.Direction.DESC, "updatedAt"));
         }
         Sort sort = Sort.by(orders);
 
@@ -483,7 +486,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<List<GetProjectApplicationResponse>> getProjectApplications(UUID projectId) {
-        List<ProjectApplication> projectApplicationList = projectApplicationRepository.findByProjectId(projectId);
+        List<ProjectApplication> projectApplicationList = projectApplicationRepository
+                .findByProjectId(projectId)
+                .stream()
+                .sorted(Comparator.comparing(ProjectApplication::getUpdatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
 
         if (projectApplicationList.isEmpty()) {
             return ApiResponse.success(List.of());
@@ -527,7 +535,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
 
-        List<Project> projectList = projectRepository.findByCompanyId(UUID.fromString(companyResponse.getCompanyId()));
+        List<Project> projectList = projectRepository
+                .findByCompanyIdOrderByUpdatedAtDesc(UUID.fromString(companyResponse.getCompanyId()));
 
         List<GetProjectResponse> projects = projectList.stream()
                 .map(this::convertToCompanyProjectResponse)
@@ -587,6 +596,160 @@ public class ProjectServiceImpl implements ProjectService {
 
         return ApiResponse.success("Cập nhật thành công trạng thái dự án.", null);
     }
+
+    @Override
+    public ApiResponse<List<ProjectResponse>> getMyProjects(UUID userId, String status) {
+
+        if (status != null && !status.trim().isEmpty()) {
+            if (!EnumUtil.isEnumValueExist(status.toUpperCase(), ProjectStatus.class)) {
+                throw new BusinessException("Trạng thái dự án không hợp lệ: " + status);
+            }
+        }
+
+
+        List<ProjectMember> projectMembers = projectMemberRepository.findByUserId(userId);
+
+        if (projectMembers.isEmpty()) {
+            return ApiResponse.success("Không có dự án nào", List.of());
+        }
+
+        List<UUID> projectIds = projectMembers.stream()
+                .map(pm -> pm.getProject().getId())
+                .distinct()
+                .toList();
+
+
+        List<Project> projects = projectRepository.findAllById(projectIds);
+
+
+        if (status != null && !status.trim().isEmpty()) {
+            String statusUpper = status.toUpperCase();
+            projects = projects.stream()
+                    .filter(p -> statusUpper.equalsIgnoreCase(p.getStatus()))
+                    .collect(Collectors.toList());
+        }
+
+        Set<UUID> companyIds = projects.stream()
+                .map(Project::getCompanyId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<UUID, String> companyIdToNameMap = new HashMap<>();
+        if (!companyIds.isEmpty()) {
+            CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                    CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+            try {
+                GetCompaniesByIdsRequest request = GetCompaniesByIdsRequest.newBuilder()
+                        .addAllCompanyIds(
+                                companyIds.stream()
+                                        .map(UUID::toString)
+                                        .toList()
+                        )
+                        .build();
+
+                GetCompaniesByIdsResponse response = companyStub.getCompaniesByIds(request);
+
+                response.getCompanyNamesMap().forEach((id, name) -> {
+                    try {
+                        companyIdToNameMap.put(UUID.fromString(id), name);
+                    } catch (Exception e) {
+                        log.warn("Lỗi khi convert companyId {}: {}", id, e.getMessage());
+                    }
+                });
+
+            } catch (Exception e) {
+                log.error("Không thể lấy danh sách công ty qua gRPC: {}", e.getMessage(), e);
+            }
+        }
+
+
+        List<ProjectResponse> projectResponses = projects.stream()
+                .map(project -> {
+
+                    String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
+
+                    List<ProjectMember> mentorMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
+                            .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                            .toList();
+
+                    List<String> mentorUserIds = mentorMembers.stream()
+                            .map(pm -> pm.getUserId().toString())
+                            .toList();
+
+                    Map<String, String> userIdToNameMap;
+                    if (!mentorUserIds.isEmpty()) {
+                        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+                        GetNameResponse userNamesResponse = userStub.getName(
+                                GetNameRequest.newBuilder()
+                                        .addAllIds(mentorUserIds)
+                                        .build()
+                        );
+                        userIdToNameMap = userNamesResponse.getMapMap();
+                    } else {
+                        userIdToNameMap = Map.of();
+                    }
+
+                    List<UserParticipantResponse> mentors = mentorMembers.stream()
+                            .map(pm -> UserParticipantResponse.builder()
+                                    .id(pm.getUserId())
+                                    .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                                    .roleName(Role.MENTOR.toString())
+                                    .isLeader(pm.isLeader())
+                                    .build())
+                            .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
+                            .toList();
+
+                    UUID createdByUserId = null;
+                    String createdByName = null;
+                    String createdByAvatar = null;
+                    if (project.getCreatedBy() != null && !project.getCreatedBy().isEmpty()) {
+                        try {
+                            createdByUserId = UUID.fromString(project.getCreatedBy());
+                            UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+                            GetUserByIdResponse userResponse = userStub.getUserById(
+                                    GetUserByIdRequest.newBuilder()
+                                            .setUserId(project.getCreatedBy())
+                                            .build()
+                            );
+                            createdByName = userResponse.getFullName();
+                            createdByAvatar = userResponse.getAvatarUrl();
+                        } catch (Exception e) {
+                            log.warn("Không thể lấy thông tin người tạo project: {}", e.getMessage());
+                        }
+                    }
+
+                    UUID currentMilestoneId = null;
+                    String currentMilestoneName = null;
+                    List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(project.getId());
+                    if (milestones != null && !milestones.isEmpty()) {
+                        ProjectMilestone currentMilestone = milestones.stream()
+                                .filter(m -> Status.ACTIVE.toString().equalsIgnoreCase(m.getStatus()) ||
+                                        (!Status.COMPLETED.toString().equalsIgnoreCase(m.getStatus()) &&
+                                                !Status.CANCELED.toString().equalsIgnoreCase(m.getStatus())))
+                                .min(Comparator.comparing(ProjectMilestone::getStartDate,
+                                        Comparator.nullsLast(Comparator.naturalOrder())))
+                                .orElse(null);
+
+                        if (currentMilestone != null) {
+                            currentMilestoneId = currentMilestone.getId();
+                            currentMilestoneName = currentMilestone.getTitle();
+                        }
+                    }
+
+                    return convertToProjectResponse(project, mentors,
+                            createdByUserId, createdByName, createdByAvatar,
+                            currentMilestoneId, currentMilestoneName, companyName);
+                })
+                .collect(Collectors.toList());
+
+        String message = status != null && !status.trim().isEmpty()
+                ? String.format("Lấy danh sách dự án của bạn với trạng thái '%s' thành công", status)
+                : "Lấy danh sách dự án của bạn thành công";
+
+        return ApiResponse.success(message, projectResponses);
+    }
+
 
     private ProjectResponse convertToProjectResponse(Project project) {
         return convertToProjectResponse(project, List.of(), null, null, null, null, null, null);

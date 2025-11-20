@@ -24,4 +24,6 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     @Query("SELECT u.id FROM User u JOIN u.role r WHERE r.name IN :roles")
     List<UUID> findUserIdsByRoles(List<String> roles);
+
+    List<User> findByIdIn(List<UUID> ids);
 }
