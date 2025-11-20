@@ -7,18 +7,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface MilestoneMemberRepository extends JpaRepository<MilestoneMember, UUID> {
-    @Query("""
-                SELECT CASE WHEN COUNT(mm) > 0 THEN TRUE ELSE FALSE END
-                FROM MilestoneMember mm
-                WHERE mm.projectMilestone.id = :milestoneId
-                  AND mm.projectMember.id = :projectMemberId
-            """)
-    boolean existsMemberInMilestone(@Param("milestoneId") UUID milestoneId,
-                                    @Param("projectMemberId") UUID projectMemberId);
+
+    boolean existsByProjectMilestone_IdAndProjectMember_IdAndIsActiveTrue(UUID milestoneId, UUID projectMemberId);
+
+    List<MilestoneMember> findByProjectMilestone_IdAndIsActive(UUID milestoneId, boolean isActive);
 
     @Query("""
                 SELECT mm FROM MilestoneMember mm
@@ -30,19 +27,7 @@ public interface MilestoneMemberRepository extends JpaRepository<MilestoneMember
             @Param("memberIds") List<UUID> memberIds
     );
 
-    @Query("""
-                SELECT mm FROM MilestoneMember mm
-                JOIN FETCH mm.projectMember pm
-                WHERE mm.projectMilestone.project.id = :projectId
-                  AND mm.projectMilestone.status = 'IN_PROGRESS'
-                  AND pm.roleInProject = 'TALENT'
-                  AND mm.leftAt IS NULL
-            """)
-    List<MilestoneMember> findActiveTalentsByProjectId(@Param("projectId") UUID projectId);
-
-    List<MilestoneMember> findByProjectMilestone_IdAndProjectMember_RoleInProjectAndLeftAtIsNull(UUID milestoneId, String talent);
-
-    List<MilestoneMember> findByProjectMilestone_IdAndLeftAtIsNull(UUID milestoneId);
-
     List<MilestoneMember> findByProjectMilestone_Id(UUID milestoneId);
+
+    Optional<MilestoneMember> findByProjectMilestone_IdAndProjectMember_Id(UUID milestoneId, UUID projectMemberId);
 }
