@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -200,8 +201,18 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             dto.setIsActive(pm.getLeftAt() == null);
 
             return dto;
-        }).toList();
-
+        }).sorted(
+                Comparator.comparing(GetProjectMemberByProjectIdResponse::getIsLeader).reversed()
+                        .thenComparing(dto -> {
+                            ProjectMember pm = projectMemberList.stream()
+                                    .filter(p -> p.getId().equals(dto.getProjectMemberId()))
+                                    .findFirst()
+                                    .orElse(null);
+                            return pm != null ? pm.getRoleInProject() : "";
+                        }, Comparator.nullsLast(String::compareToIgnoreCase))
+                        .thenComparing(GetProjectMemberByProjectIdResponse::getJoinedAt,
+                                Comparator.nullsLast(LocalDateTime::compareTo))
+        ).toList();
         return ApiResponse.success(result);
     }
 }
