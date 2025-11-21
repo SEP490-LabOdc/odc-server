@@ -49,6 +49,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final EventPublisher eventPublisher;
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
+    private final ManagedChannel fileServiceChannel;
 
     // Constructor với @Qualifier - THÊM CONSTRUCTOR NÀY
     public ProjectServiceImpl(
@@ -60,7 +61,8 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectMilestoneRepository projectMilestoneRepository,
             EventPublisher eventPublisher,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel,
-            @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
+            @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel,
+            @Qualifier("fileServiceChannel") ManagedChannel fileServiceChannel) {
         this.projectRepository = projectRepository;
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
@@ -70,6 +72,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
         this.projectMilestoneRepository = projectMilestoneRepository;
+        this.fileServiceChannel = fileServiceChannel;
     }
 
     @Override
@@ -748,6 +751,58 @@ public class ProjectServiceImpl implements ProjectService {
                 : "Lấy danh sách dự án của bạn thành công";
 
         return ApiResponse.success(message, projectResponses);
+    }
+
+    @Override
+    public ApiResponse<List<UserSubmittedCvResponse>> getUserSubmittedCvs(UUID userId) {
+        Pageable pageable = PageRequest.of(0, 5);
+        List<ProjectApplication> applications = projectApplicationRepository
+                .findByUserIdOrderBySubmittedAtDesc(userId, pageable);
+
+        if (applications.isEmpty()) {
+            return ApiResponse.success("Không có CV nào được nộp", List.of());
+        }
+
+        List<String> fileLinks = applications.stream()
+                .map(ProjectApplication::getCvUrl)
+                .filter(Objects::nonNull)
+                .filter(link -> !link.isEmpty())
+                .distinct()
+                .toList();
+
+        Map<String, String> fileLinkToNameMap = new HashMap<>();
+
+        if (!fileLinks.isEmpty()) {
+            try {
+
+                log.warn("File-service GRPC chưa được implement, trả về fileName = null");
+
+            } catch (Exception e) {
+                log.error("Lỗi khi gọi file-service GRPC: {}", e.getMessage(), e);
+            }
+        }
+
+        List<UserSubmittedCvResponse> responses = applications.stream()
+                .map(pa -> {
+                    String fileName = fileLinkToNameMap.getOrDefault(pa.getCvUrl(), null);
+                    if (fileName == null) {
+                        fileName = "Unknown"; // hoặc null tùy requirement
+                    }
+
+                    LocalDateTime submittedAt = pa.getUpdatedAt() != null
+                            ? pa.getUpdatedAt()
+                            : pa.getCreatedAt();
+
+                    return UserSubmittedCvResponse.builder()
+                            .projectName(pa.getProject().getTitle())
+                            .submittedAt(submittedAt)
+                            .fileLink(pa.getCvUrl())
+                            .fileName(fileName)
+                            .build();
+                })
+                .toList();
+
+        return ApiResponse.success("Lấy danh sách CV đã nộp thành công", responses);
     }
 
 
