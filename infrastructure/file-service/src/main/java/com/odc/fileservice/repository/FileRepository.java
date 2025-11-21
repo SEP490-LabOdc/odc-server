@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface FileRepository extends JpaRepository<FileEntity, UUID> {
     List<FileEntity> findByEntityId(String entityId);
+    List<FileEntity> findByFileUrlIn(List<String> urls);
 }

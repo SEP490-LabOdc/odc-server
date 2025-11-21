@@ -40,6 +40,4 @@ public interface ProjectService {
     ApiResponse<Void> updateProjectStatus(UUID projectId, UpdateProjectStatusRequest request);
 
     ApiResponse<List<ProjectResponse>> getMyProjects(UUID userId, String status);
-
-    ApiResponse<List<UserSubmittedCvResponse>> getUserSubmittedCvs(UUID userId);
 }

@@ -131,11 +131,4 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request));
     }
-
-    @GetMapping("/my-submitted-cvs")
-    public ResponseEntity<ApiResponse<List<UserSubmittedCvResponse>>> getMySubmittedCvs() {
-        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        ApiResponse<List<UserSubmittedCvResponse>> response = projectService.getUserSubmittedCvs(userId);
-        return ResponseEntity.ok(response);
-    }
 }
