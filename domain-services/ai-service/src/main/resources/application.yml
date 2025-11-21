@@ -1,0 +1,73 @@
+server:
+  port: 8086
+
+# Spring
+spring:
+  application:
+    name: ai-service
+
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers:
+      - ${KAFKA_BROKER_URL:localhost:9092}
+    consumer:
+      group-id: ai-service-consumer-group
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka:eureka123@localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    metadata-map:
+      version: 1.0.0
+      environment: ${spring.profiles.active}
+
+# Management Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG
+    reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/ai-service.log
+
+# gRPC Configuration
+#grpc:
+#  server:
+#    address: 0.0.0.0
+#    port: 9091
+#  client:
+#    project-service:
+#      address: ${PROJECT-SERVICE-GRPC:0.0.0.0}
+#      port: 9094
