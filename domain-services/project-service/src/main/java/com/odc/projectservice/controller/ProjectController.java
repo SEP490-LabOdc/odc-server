@@ -132,4 +132,11 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request));
     }
 
+    @GetMapping("/my-applications")
+    public ResponseEntity<ApiResponse<List<GetTalentApplicationResponse>>> getMyApplications(
+            @RequestParam(required = false) String search) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectService.getTalentApplications(userId, search));
+    }
+
 }

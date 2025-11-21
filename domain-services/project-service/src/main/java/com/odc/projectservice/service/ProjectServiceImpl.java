@@ -750,6 +750,42 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success(message, projectResponses);
     }
 
+    @Override
+    public ApiResponse<List<GetTalentApplicationResponse>> getTalentApplications(UUID userId, String search) {
+        List<ProjectApplication> applications = projectApplicationRepository.findByUserIdAndNotDeleted(userId);
+
+        if (search != null && !search.trim().isEmpty()) {
+            String searchLower = search.toLowerCase().trim();
+            applications = applications.stream()
+                    .filter(app -> app.getProject() != null &&
+                            app.getProject().getTitle() != null &&
+                            app.getProject().getTitle().toLowerCase().contains(searchLower))
+                    .collect(Collectors.toList());
+        }
+
+        applications = applications.stream()
+                .sorted(Comparator.comparing(
+                        ProjectApplication::getUpdatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
+                .collect(Collectors.toList());
+
+        List<GetTalentApplicationResponse> responses = applications.stream()
+                .map(app -> GetTalentApplicationResponse.builder()
+                        .id(app.getId())
+                        .userId(app.getUserId())
+                        .projectId(app.getProject() != null ? app.getProject().getId() : null)
+                        .projectName(app.getProject() != null ? app.getProject().getTitle() : null)
+                        .cvUrl(app.getCvUrl())
+                        .status(app.getStatus())
+                        .appliedAt(app.getAppliedAt())
+                        .updatedAt(app.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("Lấy danh sách đơn ứng tuyển thành công", responses);
+    }
+
 
     private ProjectResponse convertToProjectResponse(Project project) {
         return convertToProjectResponse(project, List.of(), null, null, null, null, null, null);
