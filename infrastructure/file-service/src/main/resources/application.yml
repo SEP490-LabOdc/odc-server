@@ -34,6 +34,18 @@ spring:
         order_inserts: true
         order_updates: true
 
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers:
+      - ${KAFKA_BROKER_URL:localhost:9092}
+    consumer:
+      group-id: user-service-consumer-group
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -102,3 +114,8 @@ springdoc:
   swagger-ui:
     path: /file-service/swagger/index.html
 
+# gRPC Configuration
+grpc:
+  server:
+    port: 9099
+    address: 0.0.0.0
