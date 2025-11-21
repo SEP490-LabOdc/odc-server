@@ -1,6 +1,7 @@
 package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
@@ -132,4 +133,12 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request));
     }
 
+    @GetMapping("/my-applications")
+    public ResponseEntity<ApiResponse<PaginatedResult<GetTalentApplicationResponse>>> getMyApplications(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectService.getTalentApplications(userId, search, page, size));
+    }
 }
