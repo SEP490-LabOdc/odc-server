@@ -10,5 +10,6 @@ import java.util.UUID;
 
 public interface ProjectApplicationService {
     ApiResponse<ApplyProjectResponse> applyProject(ApplyProjectRequest request);
+
     ApiResponse<List<UserSubmittedCvResponse>> getUserSubmittedCvs(UUID userId);
 }

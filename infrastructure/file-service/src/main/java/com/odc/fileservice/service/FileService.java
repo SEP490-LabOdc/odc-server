@@ -36,7 +36,7 @@ public class FileService {
                 .uploadedAt(LocalDateTime.now())
                 .build();
 
-        if(entityId != null && !entityId.isEmpty()) {
+        if (entityId != null && !entityId.isEmpty()) {
             fileEntity.setEntityId(entityId);
         }
 
