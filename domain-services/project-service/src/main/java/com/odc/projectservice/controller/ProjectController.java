@@ -80,7 +80,7 @@ public class ProjectController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('LAB_ADMIN')")
+    @PreAuthorize("hasAuthority('MENTOR')")
     @GetMapping("/{projectId}/applicants")
     public ResponseEntity<ApiResponse<List<GetProjectApplicationResponse>>> getProjectApplications(
             @PathVariable UUID projectId
