@@ -750,6 +750,42 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success(message, projectResponses);
     }
 
+    @Override
+    public ApiResponse<PaginatedResult<GetTalentApplicationResponse>> getTalentApplications(
+            UUID userId, String search, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("updatedAt").descending());
+
+        Page<ProjectApplication> applicationPage;
+
+        if (search != null && !search.trim().isEmpty()) {
+            applicationPage = projectApplicationRepository
+                    .searchByUserIdAndProjectTitle(userId, search.toLowerCase().trim(), pageable);
+        } else {
+            applicationPage = projectApplicationRepository
+                    .findByUserIdAndNotDeleted(userId, pageable);
+        }
+
+        Page<GetTalentApplicationResponse> mappedPage = applicationPage.map(app ->
+                GetTalentApplicationResponse.builder()
+                        .id(app.getId())
+                        .userId(app.getUserId())
+                        .projectId(app.getProject() != null ? app.getProject().getId() : null)
+                        .projectName(app.getProject() != null ? app.getProject().getTitle() : null)
+                        .cvUrl(app.getCvUrl())
+                        .status(app.getStatus())
+                        .appliedAt(app.getAppliedAt())
+                        .updatedAt(app.getUpdatedAt())
+                        .build()
+        );
+
+        return ApiResponse.success(
+                "Lấy danh sách đơn ứng tuyển thành công",
+                PaginatedResult.from(mappedPage)
+        );
+    }
+
+
     private ProjectResponse convertToProjectResponse(Project project) {
         return convertToProjectResponse(project, List.of(), null, null, null, null, null, null);
     }
