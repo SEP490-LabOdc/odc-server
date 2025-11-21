@@ -49,4 +49,12 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             "AND (pa.isDeleted = false OR pa.isDeleted IS NULL) " +
             "AND (p.isDeleted = false OR p.isDeleted IS NULL)")
     List<ProjectApplication> findByUserIdAndNotDeleted(@Param("userId") UUID userId);
+
+    @Query("SELECT pa FROM ProjectApplication pa " +
+            "JOIN FETCH pa.project p " +
+            "WHERE pa.userId = :userId " +
+            "AND pa.isDeleted = false " +
+            "AND p.isDeleted = false " +
+            "ORDER BY COALESCE(pa.updatedAt, pa.createdAt) DESC")
+    List<ProjectApplication> findByUserIdOrderBySubmittedAtDesc(@Param("userId") UUID userId, Pageable pageable);
 }
