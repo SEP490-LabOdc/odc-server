@@ -21,6 +21,7 @@ public class ProjectResponse {
     private String title;
     private String description;
     private String status;
+    private Boolean isOpenForApplications;
     private LocalDate startDate;
     private LocalDate endDate;
     private BigDecimal budget;

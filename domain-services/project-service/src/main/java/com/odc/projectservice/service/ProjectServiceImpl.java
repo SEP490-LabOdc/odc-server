@@ -809,6 +809,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .title(project.getTitle())
                 .description(project.getDescription())
                 .status(project.getStatus())
+                .isOpenForApplications(project.getIsOpenForApplications())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
                 .budget(project.getBudget())
