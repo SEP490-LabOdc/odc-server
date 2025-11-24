@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -57,4 +58,6 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             "AND p.isDeleted = false " +
             "ORDER BY COALESCE(pa.updatedAt, pa.createdAt) DESC")
     List<ProjectApplication> findByUserIdOrderBySubmittedAtDesc(@Param("userId") UUID userId, Pageable pageable);
+
+    Optional<ProjectApplication> findByProject_IdAndUserId(UUID projectId, UUID userId);
 }
