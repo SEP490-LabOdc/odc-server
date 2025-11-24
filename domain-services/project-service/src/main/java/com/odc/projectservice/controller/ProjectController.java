@@ -8,6 +8,7 @@ import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
 import com.odc.projectservice.dto.response.*;
+import com.odc.projectservice.service.ProjectApplicationService;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import com.odc.projectservice.service.ProjectService;
 import jakarta.validation.Valid;
@@ -27,6 +28,7 @@ import java.util.UUID;
 public class ProjectController {
     private final ProjectService projectService;
     private final ProjectMilestoneService projectMilestoneService;
+    private final ProjectApplicationService projectApplicationService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(@Valid @RequestBody CreateProjectRequest request) {
@@ -140,5 +142,13 @@ public class ProjectController {
             @RequestParam(defaultValue = "10") int size) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectService.getTalentApplications(userId, search, page, size));
+    }
+
+    @GetMapping("{projectId}/application-status")
+    public ResponseEntity<ApiResponse<ProjectApplicationStatusResponse>> getProjectApplicationStatus(
+            @PathVariable UUID projectId
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectApplicationService.getProjectApplicationStatus(projectId, userId));
     }
 }
