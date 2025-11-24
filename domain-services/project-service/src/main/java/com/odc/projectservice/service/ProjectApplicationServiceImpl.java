@@ -12,12 +12,15 @@ import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
 import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.ApplyProjectRequest;
+import com.odc.projectservice.dto.request.RejectRequest;
 import com.odc.projectservice.dto.response.ApplyProjectResponse;
 import com.odc.projectservice.dto.response.ProjectApplicationStatusResponse;
 import com.odc.projectservice.dto.response.UserSubmittedCvResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectApplication;
+import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.repository.ProjectApplicationRepository;
+import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.userservice.v1.CheckRoleByUserIdRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
@@ -26,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -40,18 +44,20 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ManagedChannel userServiceChannel;
     private final EventPublisher eventPublisher;
     private final ManagedChannel fileServiceChannel;
-
+    private final ProjectMemberRepository projectMemberRepository;
 
     public ProjectApplicationServiceImpl(ProjectRepository projectRepository,
                                          ProjectApplicationRepository projectApplicationRepository,
                                          @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel1,
                                          @Qualifier("fileServiceChannel") ManagedChannel fileServiceChannel,
-                                         EventPublisher eventPublisher) {
+                                         EventPublisher eventPublisher,
+                                         ProjectMemberRepository projectMemberRepository) {
         this.projectRepository = projectRepository;
         this.projectApplicationRepository = projectApplicationRepository;
         this.userServiceChannel = userServiceChannel1;
         this.fileServiceChannel = fileServiceChannel;
         this.eventPublisher = eventPublisher;
+        this.projectMemberRepository = projectMemberRepository;
     }
 
     @Override
@@ -255,5 +261,105 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                         .submittedAt(existing.getAppliedAt())
                         .status(existing.getStatus())
                         .build());
+    }
+
+    @Override
+    public ApiResponse<Void> approveApplication(UUID projectApplicationId) {
+        ProjectApplication application = projectApplicationRepository.findById(projectApplicationId)
+                .orElseThrow(() -> new BusinessException("Application không tồn tại"));
+
+        if (!application.getStatus().equals(ProjectApplicationStatus.PENDING.toString())) {
+            throw new BusinessException("Chỉ có thể duyệt application ở trạng thái PENDING");
+        }
+
+        boolean isAlreadyMember = projectMemberRepository
+                .existsByProject_IdAndUserId(application.getProject().getId(), application.getUserId());
+        if (isAlreadyMember) {
+            throw new BusinessException("User đã là thành viên của dự án này");
+        }
+
+        ProjectMember member = ProjectMember.builder()
+                .project(application.getProject())
+                .userId(application.getUserId())
+                .roleInProject(Role.TALENT.toString())
+                .isLeader(false)
+                .joinedAt(LocalDateTime.now())
+                .build();
+        projectMemberRepository.save(member);
+
+        application.setStatus(ProjectApplicationStatus.APPROVED.toString());
+        application.setReviewNotes("Approved");
+        application.setReviewedBy((UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        application.setUpdatedAt(LocalDateTime.now());
+        projectApplicationRepository.save(application);
+
+        // Gửi notification
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("PROJECT_APPLICATION")
+                .setTitle("Ứng tuyển dự án được duyệt")
+                .setContent("Bạn đã được duyệt tham gia dự án \"" + application.getProject().getTitle() + "\". Chúc mừng!")
+                .putAllData(Map.of(
+                        "projectId", application.getProject().getId().toString(),
+                        "applicationId", application.getId().toString(),
+                        "status", application.getStatus()
+                ))
+                .setDeepLink("/my-applications/" + application.getId())
+                .setPriority("HIGH")
+                .setTarget(Target.newBuilder()
+                        .setUser(UserTarget.newBuilder()
+                                .addUserIds(application.getUserId().toString())
+                                .build())
+                        .build())
+                .addAllChannels(List.of(Channel.WEB))
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("PROJECT_APPLICATION")
+                .build();
+
+        eventPublisher.publish("notifications", notificationEvent);
+
+        return ApiResponse.success("Duyệt ứng viên thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> rejectApplication(UUID projectApplicationId, RejectRequest request) {
+        ProjectApplication application = projectApplicationRepository.findById(projectApplicationId)
+                .orElseThrow(() -> new BusinessException("Application không tồn tại"));
+
+        if (!application.getStatus().equals(ProjectApplicationStatus.PENDING.toString())) {
+            throw new BusinessException("Chỉ có thể từ chối application ở trạng thái PENDING");
+        }
+
+        application.setStatus(ProjectApplicationStatus.REJECTED.toString());
+        application.setReviewNotes(request.getReviewNotes());
+        application.setReviewedBy((UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        application.setUpdatedAt(LocalDateTime.now());
+        projectApplicationRepository.save(application);
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("PROJECT_APPLICATION")
+                .setTitle("Ứng tuyển dự án bị từ chối")
+                .setContent("CV của bạn cho dự án \"" + application.getProject().getTitle() + "\" đã bị từ chối. Lý do: " + request.getReviewNotes())
+                .putAllData(Map.of(
+                        "projectId", application.getProject().getId().toString(),
+                        "applicationId", application.getId().toString(),
+                        "status", application.getStatus()
+                ))
+                .setDeepLink("/my-applications/" + application.getId())
+                .setPriority("HIGH")
+                .setTarget(Target.newBuilder()
+                        .setUser(UserTarget.newBuilder()
+                                .addUserIds(application.getUserId().toString())
+                                .build())
+                        .build())
+                .addAllChannels(List.of(Channel.WEB))
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("PROJECT_APPLICATION")
+                .build();
+
+        eventPublisher.publish("notifications", notificationEvent);
+
+        return ApiResponse.success("Từ chối ứng viên thành công", null);
     }
 }

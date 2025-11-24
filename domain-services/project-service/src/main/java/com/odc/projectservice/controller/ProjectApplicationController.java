@@ -2,6 +2,7 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.ApplyProjectRequest;
+import com.odc.projectservice.dto.request.RejectRequest;
 import com.odc.projectservice.dto.response.ApplyProjectResponse;
 import com.odc.projectservice.dto.response.UserSubmittedCvResponse;
 import com.odc.projectservice.service.ProjectApplicationService;
@@ -32,5 +33,22 @@ public class ProjectApplicationController {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         ApiResponse<List<UserSubmittedCvResponse>> response = projectApplicationService.getUserSubmittedCvs(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{projectApplicationId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approve(@PathVariable UUID projectApplicationId) {
+        return ResponseEntity.ok(
+                projectApplicationService.approveApplication(projectApplicationId)
+        );
+    }
+
+    @PostMapping("/{projectApplicationId}/reject")
+    public ResponseEntity<ApiResponse<Void>> reject(
+            @PathVariable UUID projectApplicationId,
+            @RequestBody RejectRequest request
+    ) {
+        return ResponseEntity.ok(
+                projectApplicationService.rejectApplication(projectApplicationId, request)
+        );
     }
 }

@@ -2,6 +2,7 @@ package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.ApplyProjectRequest;
+import com.odc.projectservice.dto.request.RejectRequest;
 import com.odc.projectservice.dto.response.ApplyProjectResponse;
 import com.odc.projectservice.dto.response.ProjectApplicationStatusResponse;
 import com.odc.projectservice.dto.response.UserSubmittedCvResponse;
@@ -15,4 +16,8 @@ public interface ProjectApplicationService {
     ApiResponse<List<UserSubmittedCvResponse>> getUserSubmittedCvs(UUID userId);
 
     ApiResponse<ProjectApplicationStatusResponse> getProjectApplicationStatus(UUID projectId, UUID userId);
+
+    ApiResponse<Void> approveApplication(UUID projectApplicationId);
+
+    ApiResponse<Void> rejectApplication(UUID projectApplicationId, RejectRequest request);
 }
