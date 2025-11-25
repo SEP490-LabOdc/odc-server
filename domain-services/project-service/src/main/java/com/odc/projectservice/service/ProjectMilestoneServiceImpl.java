@@ -4,6 +4,7 @@ import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.fileservice.v1.FileInfo;
 import com.odc.fileservice.v1.FileServiceGrpc;
 import com.odc.fileservice.v1.GetFilesByEntityIdRequest;
 import com.odc.fileservice.v1.GetFilesByEntityIdResponse;
@@ -25,7 +26,6 @@ import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import com.odc.fileservice.v1.FileInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -312,6 +312,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                     .build();
         }
     }
+
     private MilestoneDocumentResponse convertToMilestoneDocumentResponse(FileInfo fileInfo) {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return MilestoneDocumentResponse.builder()

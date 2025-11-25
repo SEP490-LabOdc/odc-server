@@ -153,6 +153,7 @@ public class ProjectController {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectApplicationService.getProjectApplicationStatus(projectId, userId));
     }
+
     @GetMapping("/{projectId}/documents")
     public ResponseEntity<ApiResponse<List<ProjectDocumentResponse>>> getProjectDocuments(
             @PathVariable UUID projectId) {
