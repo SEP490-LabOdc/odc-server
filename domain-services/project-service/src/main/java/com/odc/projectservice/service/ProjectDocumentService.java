@@ -24,4 +24,6 @@ public interface ProjectDocumentService {
     ApiResponse<List<ProjectDocumentResponse>> searchProjectDocuments(SearchRequest request);
 
     ApiResponse<PaginatedResult<ProjectDocumentResponse>> searchProjectDocumentsWithPagination(SearchRequest request);
+
+    ApiResponse<List<ProjectDocumentResponse>> getProjectDocumentsByProjectId(UUID projectId);
 }
