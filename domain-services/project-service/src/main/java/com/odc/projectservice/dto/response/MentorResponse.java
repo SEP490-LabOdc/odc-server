@@ -15,5 +15,6 @@ public class MentorResponse {
     private UUID id;
     private String name;
     private String email;
+    private String avatarUrl;
     private Integer projectCount;
 }
