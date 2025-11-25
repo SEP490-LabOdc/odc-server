@@ -3,6 +3,7 @@ package com.odc.projectservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import jakarta.validation.Valid;
@@ -51,6 +52,13 @@ public class ProjectMilestoneController {
     @DeleteMapping("/{milestoneId}")
     public ResponseEntity<ApiResponse<Void>> deleteProjectMilestone(@PathVariable UUID milestoneId) {
         ApiResponse<Void> response = projectMilestoneService.deleteProjectMilestone(milestoneId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/{milestoneId}/documents")
+    public ResponseEntity<ApiResponse<List<MilestoneDocumentResponse>>> getMilestoneDocuments(
+            @PathVariable UUID milestoneId) {
+        ApiResponse<List<MilestoneDocumentResponse>> response =
+                projectMilestoneService.getDocumentsByMilestoneId(milestoneId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
