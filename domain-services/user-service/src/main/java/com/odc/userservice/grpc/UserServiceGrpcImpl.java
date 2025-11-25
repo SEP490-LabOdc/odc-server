@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -158,7 +159,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
                         .setId(mentorId)
                         .setName(mentor.getFullName())
                         .setEmail(mentor.getEmail())
-                        .setAvatarUrl(mentor.getAvatarUrl())
+                        .setAvatarUrl(Optional.ofNullable(mentor.getAvatarUrl()).orElse(""))
                         .setProjectCount(projectCount)
                         .build();
 

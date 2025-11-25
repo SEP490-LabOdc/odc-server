@@ -143,7 +143,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                         .id(UUID.fromString(mentorInfo.getId()))
                         .name(mentorInfo.getName())
                         .email(mentorInfo.getEmail())
-                        .avatarUrl(mentorInfo.getAvatarUrl())
+                        .avatarUrl(Optional.of(mentorInfo.getAvatarUrl()).orElse(""))
                         .projectCount(mentorInfo.getProjectCount())
                         .build())
                 .sorted(Comparator
