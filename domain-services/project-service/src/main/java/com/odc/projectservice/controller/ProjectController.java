@@ -9,6 +9,7 @@ import com.odc.projectservice.dto.request.UpdateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.service.ProjectApplicationService;
+import com.odc.projectservice.service.ProjectDocumentService;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import com.odc.projectservice.service.ProjectService;
 import jakarta.validation.Valid;
@@ -29,6 +30,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final ProjectMilestoneService projectMilestoneService;
     private final ProjectApplicationService projectApplicationService;
+    private final ProjectDocumentService projectDocumentService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(@Valid @RequestBody CreateProjectRequest request) {
@@ -150,5 +152,13 @@ public class ProjectController {
     ) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectApplicationService.getProjectApplicationStatus(projectId, userId));
+    }
+
+    @GetMapping("/{projectId}/documents")
+    public ResponseEntity<ApiResponse<List<ProjectDocumentResponse>>> getProjectDocuments(
+            @PathVariable UUID projectId) {
+        ApiResponse<List<ProjectDocumentResponse>> response =
+                projectDocumentService.getProjectDocumentsByProjectId(projectId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

@@ -77,7 +77,8 @@ message MentorInfo {
   string id = 1;
   string name = 2;
   string email = 3;
-  int32 project_count = 4;
+  string avatar_url = 4;
+  int32 project_count = 5;
 }
 
 message GetMentorsWithProjectCountResponse {

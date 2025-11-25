@@ -189,4 +189,25 @@ public class ProjectDocumentServiceImpl implements ProjectDocumentService {
 
         return ApiResponse.success(PaginatedResult.from(page));
     }
+
+    @Override
+    public ApiResponse<List<ProjectDocumentResponse>> getProjectDocumentsByProjectId(UUID projectId) {
+
+        projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        List<ProjectDocumentResponse> documents = projectDocumentRepository.findByProjectId(projectId)
+                .stream()
+                .map(document -> ProjectDocumentResponse.builder()
+                        .id(document.getId())
+                        .projectId(document.getProject().getId())
+                        .documentName(document.getDocumentName())
+                        .documentUrl(document.getDocumentUrl())
+                        .documentType(document.getDocumentType())
+                        .uploadedAt(document.getUploadedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("Lấy danh sách tài liệu dự án thành công", documents);
+    }
 }

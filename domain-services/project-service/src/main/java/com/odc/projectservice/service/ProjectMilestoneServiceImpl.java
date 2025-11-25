@@ -4,8 +4,13 @@ import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.fileservice.v1.FileInfo;
+import com.odc.fileservice.v1.FileServiceGrpc;
+import com.odc.fileservice.v1.GetFilesByEntityIdRequest;
+import com.odc.fileservice.v1.GetFilesByEntityIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
 import com.odc.projectservice.entity.Project;
@@ -21,10 +26,12 @@ import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +40,14 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 @RequiredArgsConstructor
 public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel;
+    private final @Qualifier("fileServiceChannel") ManagedChannel fileServiceChannel;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -266,6 +275,53 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .message("Xóa milestone dự án thành công")
                 .timestamp(LocalDateTime.now())
                 .data(null)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<List<MilestoneDocumentResponse>> getDocumentsByMilestoneId(UUID milestoneId) {
+        try {
+
+            FileServiceGrpc.FileServiceBlockingStub stub =
+                    FileServiceGrpc.newBlockingStub(fileServiceChannel);
+
+            GetFilesByEntityIdRequest request = GetFilesByEntityIdRequest.newBuilder()
+                    .setEntityId(milestoneId.toString())
+                    .build();
+
+            GetFilesByEntityIdResponse grpcResponse = stub.getFilesByEntityId(request);
+
+            List<MilestoneDocumentResponse> documents = grpcResponse.getFilesList().stream()
+                    .map(this::convertToMilestoneDocumentResponse)
+                    .collect(Collectors.toList());
+
+            return ApiResponse.<List<MilestoneDocumentResponse>>builder()
+                    .success(true)
+                    .message("Lấy danh sách documents của milestone thành công")
+                    .timestamp(LocalDateTime.now())
+                    .data(documents)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Lỗi khi gọi file-service gRPC để lấy documents: {}", e.getMessage(), e);
+            return ApiResponse.<List<MilestoneDocumentResponse>>builder()
+                    .success(false)
+                    .message("Lỗi khi lấy danh sách documents: " + e.getMessage())
+                    .timestamp(LocalDateTime.now())
+                    .data(List.of())
+                    .build();
+        }
+    }
+
+    private MilestoneDocumentResponse convertToMilestoneDocumentResponse(FileInfo fileInfo) {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        return MilestoneDocumentResponse.builder()
+                .id(UUID.fromString(fileInfo.getId()))
+                .fileName(fileInfo.getFileName())
+                .fileUrl(fileInfo.getFileUrl())
+                .s3Key(fileInfo.getS3Key())
+                .uploadedAt(LocalDateTime.parse(fileInfo.getUploadedAt(), formatter))
+                .entityId(fileInfo.getEntityId())
                 .build();
     }
 

@@ -158,6 +158,7 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
                         .setId(mentorId)
                         .setName(mentor.getFullName())
                         .setEmail(mentor.getEmail())
+                        .setAvatarUrl(mentor.getAvatarUrl())
                         .setProjectCount(projectCount)
                         .build();
 
