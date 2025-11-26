@@ -22,7 +22,7 @@ public class JwtUtil {
     @Value("${JWT_SECRET:2326a4d228021d40f8e67817543d00cee23879d297929b33c3c844b65ea63b13be033701e03db49517e3321393dbdfef}")
     private String secret;
 
-    @Value("${JWT_EXPIRATION:15}")
+    @Value("${JWT_EXPIRATION:1440}")
     private Long expiration;
 
     private SecretKey getSigningKey() {
