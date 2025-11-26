@@ -51,4 +51,13 @@ public class ProjectMemberController {
         ApiResponse<UUID> response = projectMemberService.toggleMentorLeader(projectId, mentorId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PatchMapping("/projects/{projectId}/talents/{talentId}/leader")
+    public ResponseEntity<ApiResponse<UUID>> toggleTalentLeader(
+            @PathVariable UUID projectId,
+            @PathVariable UUID talentId,
+            @Valid @RequestBody ToggleMentorLeaderRequest request) {
+        ApiResponse<UUID> response = projectMemberService.toggleTalentLeader(projectId, talentId, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

@@ -19,5 +19,5 @@ public interface ProjectMemberService {
 
     ApiResponse<UUID> toggleMentorLeader(UUID projectId, UUID mentorId, ToggleMentorLeaderRequest request);
 
-
+    ApiResponse<UUID> toggleTalentLeader(UUID projectId, UUID talentId, ToggleMentorLeaderRequest request);
 }
