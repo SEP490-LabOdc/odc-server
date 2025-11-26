@@ -6,6 +6,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
+import com.odc.projectservice.dto.response.MentorLeaderResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
@@ -216,5 +217,51 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                                 Comparator.nullsLast(LocalDateTime::compareTo))
         ).toList();
         return ApiResponse.success(result);
+    }
+
+    @Override
+    public ApiResponse<UUID> setMentorAsLeader(UUID projectId, UUID mentorId) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID: '" + projectId + "' không tồn tại"));
+
+        ProjectMember mentorMember = projectMemberRepository
+                .findByProjectIdAndUserIdAndRole(projectId, mentorId, Role.MENTOR.toString());
+
+        if (mentorMember == null) {
+            throw new BusinessException("Mentor does not belong to this project");
+        }
+
+        List<ProjectMember> allMentorsInProject = projectMemberRepository
+                .findByProjectIdAndRole(projectId, Role.MENTOR.toString());
+
+        ProjectMember existingLeader = allMentorsInProject.stream()
+                .filter(mentor -> mentor.isLeader() && !mentor.getId().equals(mentorMember.getId()))
+                .findFirst()
+                .orElse(null);
+
+        if (existingLeader != null && !mentorMember.isLeader()) {
+            throw new BusinessException("Dự án này đã có mentor leader. Một project chỉ được phép có 1 mentor là leader.");
+        }
+
+        if (mentorMember.isLeader()) {
+            log.info("Mentor {} đã là leader của dự án {}", mentorId, projectId);
+            return ApiResponse.success("Mentor đã là leader của dự án", mentorMember.getId());
+        }
+
+        allMentorsInProject.forEach(mentor -> {
+            if (!mentor.getId().equals(mentorMember.getId())) {
+                mentor.setLeader(false);
+            }
+        });
+
+        mentorMember.setLeader(true);
+
+        projectMemberRepository.saveAll(allMentorsInProject);
+        projectMemberRepository.save(mentorMember);
+
+        log.info("Đã gán mentor {} làm leader cho dự án {}", mentorId, projectId);
+
+        return ApiResponse.success("Đã gán mentor làm leader thành công", mentorMember.getId());
     }
 }

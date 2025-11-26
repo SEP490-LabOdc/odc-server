@@ -41,4 +41,12 @@ public class ProjectMemberController {
     ) {
         return ResponseEntity.ok(projectMemberService.getProjectMembersByProjectId(projectId));
     }
+
+    @PutMapping("/projects/{projectId}/mentors/{mentorId}/set-leader")
+    public ResponseEntity<ApiResponse<UUID>> setMentorAsLeader(
+            @PathVariable UUID projectId,
+            @PathVariable UUID mentorId) {
+        ApiResponse<UUID> response = projectMemberService.setMentorAsLeader(projectId, mentorId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
