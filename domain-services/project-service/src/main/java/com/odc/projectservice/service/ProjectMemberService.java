@@ -2,7 +2,9 @@ package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
+import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
+import com.odc.projectservice.dto.response.MentorLeaderResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 
 import java.util.List;
@@ -14,4 +16,8 @@ public interface ProjectMemberService {
     ApiResponse<List<MentorResponse>> getAvailableMentors(UUID projectId);
 
     ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId);
+
+    ApiResponse<UUID> toggleMentorLeader(UUID projectId, UUID mentorId, ToggleMentorLeaderRequest request);
+
+    ApiResponse<UUID> toggleTalentLeader(UUID projectId, UUID talentId, ToggleMentorLeaderRequest request);
 }
