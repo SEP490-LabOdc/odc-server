@@ -2,6 +2,7 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
+import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.service.ProjectMemberService;
@@ -42,11 +43,12 @@ public class ProjectMemberController {
         return ResponseEntity.ok(projectMemberService.getProjectMembersByProjectId(projectId));
     }
 
-    @PutMapping("/projects/{projectId}/mentors/{mentorId}/set-leader")
-    public ResponseEntity<ApiResponse<UUID>> setMentorAsLeader(
+    @PatchMapping("/projects/{projectId}/mentors/{mentorId}/leader")
+    public ResponseEntity<ApiResponse<UUID>> toggleMentorLeader(
             @PathVariable UUID projectId,
-            @PathVariable UUID mentorId) {
-        ApiResponse<UUID> response = projectMemberService.setMentorAsLeader(projectId, mentorId);
+            @PathVariable UUID mentorId,
+            @Valid @RequestBody ToggleMentorLeaderRequest request) {
+        ApiResponse<UUID> response = projectMemberService.toggleMentorLeader(projectId, mentorId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
