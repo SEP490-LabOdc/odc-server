@@ -196,7 +196,7 @@ spring:
             allowCredentials: true
             maxAge: 3600
 
-  # Load balancer Configuration
+    # Load balancer Configuration
     loadbalancer:
       clients:
         notification-service:
