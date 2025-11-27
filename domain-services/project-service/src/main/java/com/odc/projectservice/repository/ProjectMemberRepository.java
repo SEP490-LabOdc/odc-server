@@ -25,4 +25,13 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
     List<ProjectMember> findByIdIn(List<UUID> projectMemberIds);
 
     boolean existsByProject_IdAndUserId(UUID id, UUID userId);
+
+    @Query("SELECT pm FROM ProjectMember pm WHERE pm.project.id = :projectId AND pm.userId = :userId AND pm.roleInProject = :role")
+    ProjectMember findByProjectIdAndUserIdAndRole(UUID projectId, UUID userId, String role);
+
+    @Query("SELECT pm FROM ProjectMember pm WHERE pm.project.id = :projectId AND pm.roleInProject = :role")
+    List<ProjectMember> findByProjectIdAndRole(UUID projectId, String role);
+
+    @Query("SELECT pm FROM ProjectMember pm WHERE pm.project.id = :projectId AND pm.roleInProject = :role AND pm.isLeader = true")
+    List<ProjectMember> findByProjectIdAndRoleAndIsLeaderTrue(UUID projectId, String role);
 }
