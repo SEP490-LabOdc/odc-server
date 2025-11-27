@@ -11,6 +11,10 @@ import com.odc.common.specification.GenericSpecification;
 import com.odc.common.util.EnumUtil;
 import com.odc.commonlib.event.EventPublisher;
 import com.odc.companyservice.v1.*;
+import com.odc.notification.v1.Channel;
+import com.odc.notification.v1.NotificationEvent;
+import com.odc.notification.v1.RoleTarget;
+import com.odc.notification.v1.Target;
 import com.odc.projectservice.dto.request.CreateProjectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
 import com.odc.projectservice.dto.request.UpdateProjectRequest;
@@ -110,6 +114,36 @@ public class ProjectServiceImpl implements ProjectService {
         Project savedProject = projectRepository.save(project);
         ProjectResponse responseData = convertToProjectResponse(savedProject);
 
+        RoleTarget roleTarget = RoleTarget.newBuilder()
+                .addRoles(Role.LAB_ADMIN.toString())
+                .build();
+
+        Target target = Target.newBuilder()
+                .setRole(roleTarget)
+                .build();
+
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("projectId", savedProject.getId().toString());
+        dataMap.put("companyId", companyResponse.getCompanyId());
+        dataMap.put("projectTitle", savedProject.getTitle());
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("NEW_PROJECT_CREATED")
+                .setTitle("New Project Created")
+                .setContent("A new project titled \"" + savedProject.getTitle() + "\" has been created and is awaiting approval.")
+                .putAllData(dataMap)
+                .setDeepLink("/approve-project?id=" + savedProject.getId())
+                .setPriority("HIGH")
+                .setTarget(target)
+                .addAllChannels(List.of(Channel.WEB))
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("PROJECT_MANAGEMENT")
+                .build();
+
+        eventPublisher.publish("notifications", notificationEvent);
+        log.info("Notification event published successfully.");
+
         return ApiResponse.success("Tạo dự án thành công", responseData);
     }
 
@@ -118,6 +152,10 @@ public class ProjectServiceImpl implements ProjectService {
         Project existingProject = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
+        if (!existingProject.getStatus().equals(ProjectStatus.UPDATE_REQUIRED.toString())) {
+            throw new BusinessException("Dự án này không yêu cầu cập nhật nữa.");
+        }
+
         if (!existingProject.getTitle().equals(request.getTitle())) {
             if (projectRepository.existsByCompanyIdAndTitleAndIdNot(existingProject.getCompanyId(), request.getTitle(), projectId)) {
                 throw new BusinessException("Dự án với tiêu đề '" + request.getTitle() + "' đã tồn tại trong công ty này");
@@ -125,8 +163,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
         Set<Skill> skills = Set.of();
         if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            skills = skillRepository.findAllById(request.getSkillIds()).stream()
-                    .collect(Collectors.toSet());
+            skills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
 
             if (skills.size() != request.getSkillIds().size()) {
                 throw new BusinessException("Có một số kỹ năng không tồn tại");
@@ -134,14 +171,45 @@ public class ProjectServiceImpl implements ProjectService {
         }
         existingProject.setTitle(request.getTitle());
         existingProject.setDescription(request.getDescription());
-        existingProject.setStatus(request.getStatus());
-        existingProject.setStartDate(request.getStartDate());
-        existingProject.setEndDate(request.getEndDate());
         existingProject.setBudget(request.getBudget());
         existingProject.setSkills(skills);
+        existingProject.setStatus(ProjectStatus.PENDING.toString());
 
         Project updatedProject = projectRepository.save(existingProject);
         ProjectResponse responseData = convertToProjectResponse(updatedProject);
+
+        RoleTarget roleTarget = RoleTarget.newBuilder()
+                .addRoles(Role.LAB_ADMIN.toString())
+                .build();
+
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("projectId", updatedProject.getId().toString());
+        dataMap.put("companyId", existingProject.getCompanyId().toString());
+        dataMap.put("projectTitle", updatedProject.getTitle());
+
+        Target target = Target.newBuilder()
+                .setRole(roleTarget)
+                .build();
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("PROJECT_UPDATED")
+                .setTitle("Project Updated - Awaiting Review")
+                .setContent("Project titled \"" + updatedProject.getTitle() + "\" has been updated by the company user and is awaiting review.")
+                .putAllData(dataMap)
+                .setDeepLink("/review-project?id=" + updatedProject.getId())
+                .setPriority("HIGH")
+                .setTarget(target)
+                .addAllChannels(List.of(Channel.WEB))
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("PROJECT_MANAGEMENT")
+                .build();
+
+        log.info("Built notification event for LAB_ADMIN: {}", notificationEvent);
+
+        eventPublisher.publish("notifications", notificationEvent);
+        log.info("Notification event published successfully.");
+
         return ApiResponse.success("Cập nhật dự án thành công", responseData);
     }
 
@@ -491,7 +559,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .stream()
                 .sorted(Comparator.comparing(ProjectApplication::getUpdatedAt,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+                .toList();
 
         if (projectApplicationList.isEmpty()) {
             return ApiResponse.success(List.of());
@@ -626,7 +694,7 @@ public class ProjectServiceImpl implements ProjectService {
             String statusUpper = status.toUpperCase();
             projects = projects.stream()
                     .filter(p -> statusUpper.equalsIgnoreCase(p.getStatus()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         Set<UUID> companyIds = projects.stream()
