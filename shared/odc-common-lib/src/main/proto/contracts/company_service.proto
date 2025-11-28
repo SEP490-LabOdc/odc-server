@@ -27,6 +27,7 @@ message GetCompanyByIdRequest {
 message GetCompanyByIdResponse {
   string company_name = 1;
   string contact_person_email = 2;
+  string user_id = 3;
 }
 
 message GetCompaniesByIdsRequest {

@@ -853,6 +853,59 @@ public class ProjectServiceImpl implements ProjectService {
         );
     }
 
+    @Override
+    public ApiResponse<PaginatedResult<ProjectResponse>> getRelatedProjects(UUID projectId, int page, int size) {
+        Project currentProject = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        Set<UUID> skillIds = currentProject.getSkills().stream()
+                .map(Skill::getId)
+                .collect(Collectors.toSet());
+
+        if (skillIds.isEmpty()) {
+            return ApiResponse.success("Không tìm thấy dự án liên quan",
+                    PaginatedResult.<ProjectResponse>builder()
+                            .data(List.of())
+                            .currentPage(page)
+                            .totalElements(0)
+                            .totalPages(0)
+                            .build());
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
+        Page<Project> relatedProjectsPage = projectRepository.findRelatedProjectsBySkills(skillIds, projectId, pageable);
+
+        Set<UUID> companyIds = relatedProjectsPage.getContent().stream()
+                .map(Project::getCompanyId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<UUID, String> companyIdToNameMap = new HashMap<>();
+        if (!companyIds.isEmpty()) {
+            try {
+                CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                        CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+                GetCompaniesByIdsRequest request = GetCompaniesByIdsRequest.newBuilder()
+                        .addAllCompanyIds(companyIds.stream().map(UUID::toString).toList())
+                        .build();
+
+                GetCompaniesByIdsResponse response = companyStub.getCompaniesByIds(request);
+                response.getCompanyNamesMap().forEach((id, name) -> {
+                    companyIdToNameMap.put(UUID.fromString(id), name);
+                });
+            } catch (Exception e) {
+                log.error("Lỗi khi lấy danh sách công ty qua gRPC: {}", e.getMessage());
+            }
+        }
+
+        Page<ProjectResponse> responsePage = relatedProjectsPage.map(project -> {
+            String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
+            return convertToProjectResponse(project, List.of(), null, null, null, null, null, companyName);
+        });
+
+        return ApiResponse.success("Lấy danh sách dự án liên quan thành công", PaginatedResult.from(responsePage));
+    }
 
     private ProjectResponse convertToProjectResponse(Project project) {
         return convertToProjectResponse(project, List.of(), null, null, null, null, null, null);

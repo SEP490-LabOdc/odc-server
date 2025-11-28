@@ -25,7 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/project-service/",
             "/ws/",
             "/api/v1/project-applications/apply",
-            "/api/v1/projects/hiring"
+            "/api/v1/projects/hiring",
+            "/related"
     };
     private final JwtUtil jwtUtil;
 

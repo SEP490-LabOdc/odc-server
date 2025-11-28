@@ -161,4 +161,14 @@ public class ProjectController {
                 projectDocumentService.getProjectDocumentsByProjectId(projectId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping("/{projectId}/related")
+    public ResponseEntity<ApiResponse<PaginatedResult<ProjectResponse>>> getRelatedProjects(
+            @PathVariable UUID projectId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        ApiResponse<PaginatedResult<ProjectResponse>> response = projectService.getRelatedProjects(projectId, page, size);
+        return ResponseEntity.ok(response);
+    }
 }

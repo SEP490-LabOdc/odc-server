@@ -4,7 +4,6 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
 import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
-import com.odc.projectservice.dto.response.MentorLeaderResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 
 import java.util.List;

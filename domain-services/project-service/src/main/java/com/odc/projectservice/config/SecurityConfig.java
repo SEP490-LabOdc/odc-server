@@ -28,11 +28,13 @@ public class SecurityConfig {
             "/project-service/v3/api-docs/**",
             "/project-service/swagger/**",
             "/api/v1/project-applications/apply",
-            "/api/v1/projects/hiring"
+            "/api/v1/projects/hiring",
+            "/api/v1/projects/*/related"
     };
 
     private static final String[] GET_ALL_PATHS = {
-            "/api/v1/skills/**"
+            "/api/v1/skills/**",
+            "/api/v1/projects/*/related"
     };
     private static final String[] POST_ALL_PATHS = {
             "/api/v1/skills/search"

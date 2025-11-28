@@ -47,7 +47,8 @@ public class SecurityConfig {
     private static final String[] GET_PERMIT_PATHS = {
             "/api/v1/companies",
             "/api/v1/projects/hiring",
-            "/api/v1/skills/**"
+            "/api/v1/skills/**",
+            "/api/v1/projects/*/related",
     };
     private static final String[] POST_PERMIT_PATHS = {
             "/api/v1/files/upload",

@@ -7,7 +7,6 @@ import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
 import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
-import com.odc.projectservice.dto.response.MentorLeaderResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
