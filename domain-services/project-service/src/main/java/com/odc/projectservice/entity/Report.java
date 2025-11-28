@@ -36,6 +36,9 @@ public class Report extends BaseEntity {
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
+    @Column(name = "feedback")
+    private String feedback;
+
     @Type(JsonBinaryType.class)
     @Column(name = "attachments_url", columnDefinition = "jsonb")
     private List<String> attachmentsUrl;

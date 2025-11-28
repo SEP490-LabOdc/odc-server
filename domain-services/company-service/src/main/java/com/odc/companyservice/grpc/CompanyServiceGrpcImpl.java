@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @GrpcService
@@ -41,12 +42,17 @@ public class CompanyServiceGrpcImpl extends CompanyServiceGrpc.CompanyServiceImp
     public void getCompanyById(GetCompanyByIdRequest request, StreamObserver<GetCompanyByIdResponse> responseObserver) {
         try {
             Company company = companyRepository.findById(UUID.fromString(request.getCompanyId()))
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công ty cho id: " +  request.getCompanyId()));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công ty cho id: " + request.getCompanyId()));
 
             GetCompanyByIdResponse response = GetCompanyByIdResponse
                     .newBuilder()
                     .setCompanyName(company.getName())
                     .setContactPersonEmail(company.getContactPersonEmail())
+                    .setUserId(
+                            Optional.ofNullable(company.getUserId())
+                                    .map(Object::toString)
+                                    .orElse("")
+                    )
                     .build();
 
             responseObserver.onNext(response);

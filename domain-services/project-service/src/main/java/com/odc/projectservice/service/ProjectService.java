@@ -42,4 +42,6 @@ public interface ProjectService {
     ApiResponse<List<ProjectResponse>> getMyProjects(UUID userId, String status);
 
     ApiResponse<PaginatedResult<GetTalentApplicationResponse>> getTalentApplications(UUID userId, String search, int page, int size);
+
+    ApiResponse<PaginatedResult<ProjectResponse>> getRelatedProjects(UUID projectId, int page, int size);
 }
