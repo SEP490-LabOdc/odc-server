@@ -148,6 +148,13 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: system-template-service
+          uri: lb://project-service
+          predicates:
+            - Path=/api/v1/system-templates/**
+          filters:
+            - StripPrefix=0
+
         # Checklist Service
         - id: checklist-template-service
           uri: lb://checklist-service
