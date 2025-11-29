@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
@@ -53,6 +54,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final EventPublisher eventPublisher;
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
+    private final ObjectMapper objectMapper;
 
     // Constructor với @Qualifier - THÊM CONSTRUCTOR NÀY
     public ProjectServiceImpl(
@@ -63,6 +65,7 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectDocumentRepository projectDocumentRepository,
             ProjectMilestoneRepository projectMilestoneRepository,
             EventPublisher eventPublisher,
+            ObjectMapper objectMapper,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
         this.projectRepository = projectRepository;
@@ -74,6 +77,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
         this.projectMilestoneRepository = projectMilestoneRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -578,15 +582,27 @@ public class ProjectServiceImpl implements ProjectService {
         Map<String, String> userIdToNameMap = userNamesResponse.getMapMap();
 
         List<GetProjectApplicationResponse> responses = projectApplicationList.stream()
-                .map(pa -> GetProjectApplicationResponse.builder()
-                        .id(pa.getId())
-                        .userId(pa.getUserId())
-                        .name(userIdToNameMap.getOrDefault(pa.getUserId().toString(), "Unknown"))
-                        .cvUrl(pa.getCvUrl())
-                        .status(pa.getStatus())
-                        .appliedAt(pa.getAppliedAt())
-                        .build()
-                )
+                .map(pa -> {
+                    AiScanResultResponse aiResponse = null;
+
+                    if (pa.getAiScanResult() != null) {
+                        try {
+                            aiResponse = objectMapper.convertValue(pa.getAiScanResult(), AiScanResultResponse.class);
+                        } catch (Exception e) {
+                            log.error("Lỗi map AI result: {}", e.getMessage());
+                        }
+                    }
+
+                    return GetProjectApplicationResponse.builder()
+                            .id(pa.getId())
+                            .userId(pa.getUserId())
+                            .name(userIdToNameMap.getOrDefault(pa.getUserId().toString(), "Unknown"))
+                            .cvUrl(pa.getCvUrl())
+                            .status(pa.getStatus())
+                            .appliedAt(pa.getAppliedAt())
+                            .aiScanResult(aiResponse)
+                            .build();
+                })
                 .toList();
 
         return ApiResponse.success(responses);

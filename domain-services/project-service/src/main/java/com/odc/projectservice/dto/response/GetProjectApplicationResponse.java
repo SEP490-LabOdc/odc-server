@@ -15,4 +15,5 @@ public class GetProjectApplicationResponse {
     private UUID userId;
     private String name, cvUrl, status;
     private LocalDateTime appliedAt;
+    private AiScanResultResponse aiScanResult;
 }
