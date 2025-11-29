@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package com.odc.projectservice.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.projectservice.v1";
+option java_outer_classname = "CvAnalysisEventProto";
+
+message CvAnalysisRequiredEvent {
+  string project_application_id = 1;
+  string project_id = 2;
+  string user_id = 3;
+  string cv_url = 4;
+}

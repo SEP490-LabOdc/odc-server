@@ -22,6 +22,7 @@ import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.repository.ProjectApplicationRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
+import com.odc.projectservice.v1.CvAnalysisRequiredEvent;
 import com.odc.userservice.v1.CheckRoleByUserIdRequest;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
@@ -107,6 +108,15 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 .build();
 
         projectApplicationRepository.save(projectApplication);
+
+        CvAnalysisRequiredEvent event = CvAnalysisRequiredEvent.newBuilder()
+                .setProjectApplicationId(projectApplication.getId().toString())
+                .setProjectId(project.getId().toString())
+                .setUserId(request.getUserId().toString())
+                .setCvUrl(projectApplication.getCvUrl())
+                .build();
+
+        eventPublisher.publish("project.cv.analysis", event);
 
         NotificationEvent notificationEvent = NotificationEvent.newBuilder()
                 .setId(UUID.randomUUID().toString())
