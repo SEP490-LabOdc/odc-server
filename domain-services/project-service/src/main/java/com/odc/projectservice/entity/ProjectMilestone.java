@@ -1,8 +1,10 @@
 package com.odc.projectservice.entity;
 
 import com.odc.common.entity.BaseEntity;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,4 +38,8 @@ public class ProjectMilestone extends BaseEntity {
 
     @OneToMany(mappedBy = "projectMilestone")
     private List<MilestoneMember> members;
+
+    @Type(JsonBinaryType.class)
+    @Column(name = "attachment_urls", columnDefinition = "jsonb")
+    private List<String> attachmentUrls;
 }
