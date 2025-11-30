@@ -23,5 +23,5 @@ public class UpdateProjectMilestoneRequest {
     @Size(max = 50, message = "Trạng thái không được vượt quá 50 ký tự")
     private String status;
 
-    private List<String> attachmentUrls;
+    private List<UpdateMilestoneAttachmentRequest> attachmentUrls;
 }

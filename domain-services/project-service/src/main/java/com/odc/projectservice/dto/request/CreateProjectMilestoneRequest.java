@@ -24,5 +24,5 @@ public class CreateProjectMilestoneRequest {
 
     private LocalDate endDate;
 
-    private List<String> attachmentUrls;
+    private List<CreateMilestoneAttachmentRequest> attachmentUrls;
 }

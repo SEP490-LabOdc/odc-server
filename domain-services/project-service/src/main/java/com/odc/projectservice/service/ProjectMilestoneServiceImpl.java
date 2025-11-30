@@ -10,10 +10,12 @@ import com.odc.fileservice.v1.FileServiceGrpc;
 import com.odc.fileservice.v1.GetFilesByEntityIdRequest;
 import com.odc.fileservice.v1.GetFilesByEntityIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.UpdateMilestoneAttachmentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
+import com.odc.projectservice.entity.MilestoneAttachment;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
@@ -67,6 +69,20 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             }
         }
 
+        List<MilestoneAttachment> attachmentList = new ArrayList<>();
+
+        if (request.getAttachmentUrls() != null) {
+            request.getAttachmentUrls().forEach(dto ->
+                    attachmentList.add(
+                            new MilestoneAttachment(
+                                    dto.getName(),
+                                    dto.getFileName(),
+                                    dto.getUrl()
+                            )
+                    )
+            );
+        }
+
         ProjectMilestone projectMilestone = ProjectMilestone.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -74,7 +90,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .endDate(request.getEndDate())
                 .status(Status.PENDING.toString())
                 .project(project)
-                .attachmentUrls(request.getAttachmentUrls() != null ? request.getAttachmentUrls() : List.of())
+                .attachmentUrls(attachmentList)
                 .build();
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
@@ -87,7 +103,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(savedMilestone.getStartDate())
                 .endDate(savedMilestone.getEndDate())
                 .status(savedMilestone.getStatus())
-                .attachmentUrls(savedMilestone.getAttachmentUrls() != null ? savedMilestone.getAttachmentUrls() : List.of())
+                .attachmentUrls(savedMilestone.getAttachmentUrls())
                 .build();
 
         return ApiResponse.success("Tạo milestone dự án thành công", responseData);
@@ -111,7 +127,30 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         existingMilestone.setStatus(request.getStatus());
 
         if (request.getAttachmentUrls() != null) {
-            existingMilestone.setAttachmentUrls(request.getAttachmentUrls());
+            List<MilestoneAttachment> currentAttachments = existingMilestone.getAttachmentUrls() != null
+                    ? new ArrayList<>(existingMilestone.getAttachmentUrls())
+                    : new ArrayList<>();
+
+            List<MilestoneAttachment> updatedAttachments = new ArrayList<>();
+
+            for (UpdateMilestoneAttachmentRequest dto : request.getAttachmentUrls()) {
+                Optional<MilestoneAttachment> existingFileOpt = currentAttachments.stream()
+                        .filter(a -> a.getFileName().equals(dto.getFileName()))
+                        .findFirst();
+
+                if (existingFileOpt.isPresent()) {
+                    MilestoneAttachment existingFile = existingFileOpt.get();
+                    existingFile.setName(dto.getName());
+                    existingFile.setUrl(dto.getUrl());
+                    updatedAttachments.add(existingFile);
+                } else {
+                    updatedAttachments.add(new MilestoneAttachment(dto.getName(), dto.getFileName(), dto.getUrl()));
+                }
+            }
+
+            existingMilestone.setAttachmentUrls(updatedAttachments);
+        } else {
+            existingMilestone.setAttachmentUrls(List.of());
         }
 
         ProjectMilestone updatedMilestone = projectMilestoneRepository.save(existingMilestone);

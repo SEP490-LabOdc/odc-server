@@ -41,5 +41,5 @@ public class ProjectMilestone extends BaseEntity {
 
     @Type(JsonBinaryType.class)
     @Column(name = "attachment_urls", columnDefinition = "jsonb")
-    private List<String> attachmentUrls;
+    private List<MilestoneAttachment> attachmentUrls;
 }
