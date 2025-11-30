@@ -5,6 +5,14 @@ import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.companyservice.v1.CompanyServiceGrpc;
+import com.odc.companyservice.v1.GetCompanyByIdRequest;
+import com.odc.companyservice.v1.GetCompanyByIdResponse;
+import com.odc.notification.v1.Channel;
+import com.odc.notification.v1.NotificationEvent;
+import com.odc.notification.v1.Target;
+import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.UpdateMilestoneAttachmentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
@@ -42,6 +50,8 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel;
+    private final ManagedChannel companyServiceChannel;
+    private final EventPublisher eventPublisher;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -86,6 +96,46 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
 
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByIdRequest getCompanyByIdRequest = GetCompanyByIdRequest.newBuilder()
+                .setCompanyId(project.getCompanyId().toString())
+                .build();
+        GetCompanyByIdResponse companyDetailResponse = companyStub.getCompanyById(getCompanyByIdRequest);
+        UUID companyUserId = UUID.fromString(companyDetailResponse.getUserId());
+
+        UserTarget userTarget = UserTarget.newBuilder()
+                .addUserIds(companyUserId.toString())
+                .build();
+
+        Target target = Target.newBuilder()
+                .setUser(userTarget)
+                .build();
+
+        Map<String, String> dataMap = Map.of(
+                "projectId", project.getId().toString(),
+                "milestoneId", savedMilestone.getId().toString(),
+                "milestoneTitle", savedMilestone.getTitle()
+        );
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("NEW_PROJECT_MILESTONE_CREATED")
+                .setTitle("Milestone mới được tạo")
+                .setContent("Milestone \"" + savedMilestone.getTitle() + "\" của dự án \"" + project.getTitle() + "\" đã được tạo.")
+                .putAllData(dataMap)
+                .setDeepLink("/projects/" + project.getId() + "/milestones/" + savedMilestone.getId())
+                .setPriority("HIGH")
+                .setTarget(target)
+                .addChannels(Channel.WEB)
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("PROJECT_MANAGEMENT")
+                .build();
+
+        eventPublisher.publish("notifications", notificationEvent);
+        log.info("Notification event published to company user: {}", companyUserId);
+
         ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
                 .id(savedMilestone.getId())
                 .projectId(savedMilestone.getProject().getId())
@@ -99,7 +149,6 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         return ApiResponse.success("Tạo milestone dự án thành công", responseData);
     }
-
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> updateProjectMilestone(UUID milestoneId, UpdateProjectMilestoneRequest request) {
