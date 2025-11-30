@@ -24,4 +24,6 @@ public interface ProjectMilestoneService {
     ApiResponse<Void> updateMilestoneStatusToOngoing(UUID milestoneId);
 
     ApiResponse<Void> deleteMilestoneAttachment(UUID milestoneId, UUID attachmentId);
+
+    ApiResponse<Void> approveProjectPlan(UUID milestoneId);
 }

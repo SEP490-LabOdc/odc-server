@@ -69,4 +69,12 @@ public class ProjectMilestoneController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{milestoneId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approveProjectMilestone(
+            @PathVariable UUID milestoneId) {
+
+        ApiResponse<Void> response = projectMilestoneService.approveProjectPlan(milestoneId);
+        return ResponseEntity.ok(response);
+    }
+
 }

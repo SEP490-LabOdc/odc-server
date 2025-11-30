@@ -417,6 +417,56 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return ApiResponse.success("Xóa attachment thành công", null);
     }
 
+    @Override
+    public ApiResponse<Void> approveProjectPlan(UUID milestoneId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
+
+        if (!Status.PENDING.toString().equalsIgnoreCase(milestone.getStatus())) {
+            throw new BusinessException("Chỉ milestone ở trạng thái PENDING mới có thể được approve");
+        }
+
+        milestone.setStatus(ProjectMilestoneStatus.PENDING_START.toString());
+        projectMilestoneRepository.save(milestone);
+
+        Project project = milestone.getProject();
+        List<ProjectMember> targetMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
+                .filter(pm -> pm.isLeader() || Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .toList();
+
+        if (!targetMembers.isEmpty()) {
+            Set<UUID> userIds = targetMembers.stream()
+                    .map(ProjectMember::getUserId)
+                    .collect(Collectors.toSet());
+
+            Map<String, String> dataMap = new HashMap<>();
+            dataMap.put("projectId", project.getId().toString());
+            dataMap.put("projectTitle", project.getTitle());
+
+            NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                    .setId(UUID.randomUUID().toString())
+                    .setType("PROJECT_PLAN_APPROVED")
+                    .setTitle("Dự án đã được khách hàng duyệt")
+                    .setContent("Project plan của dự án \"" + project.getTitle() + "\" đã được khách hàng duyệt. Chuẩn bị bắt đầu.")
+                    .putAllData(dataMap)
+                    .setDeepLink("/projects/" + project.getId())
+                    .setPriority("HIGH")
+                    .setTarget(Target.newBuilder()
+                            .setUser(UserTarget.newBuilder()
+                                    .addAllUserIds(userIds.stream().map(UUID::toString).toList())
+                                    .build())
+                            .build())
+                    .addChannels(Channel.WEB)
+                    .setCreatedAt(System.currentTimeMillis())
+                    .setCategory("PROJECT_MANAGEMENT")
+                    .build();
+
+            eventPublisher.publish("notifications", notificationEvent);
+            log.info("Notification event published to mentors/leaders successfully.");
+        }
+
+        return ApiResponse.success("Milestone đã được approve và chuyển sang PENDING_START", null);
+    }
 
     private ProjectMilestoneResponse convertToProjectMilestoneResponse(ProjectMilestone milestone) {
         return ProjectMilestoneResponse.builder()
