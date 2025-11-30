@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UpdateProjectMilestoneRequest {
@@ -21,4 +22,6 @@ public class UpdateProjectMilestoneRequest {
     @NotBlank(message = "Trạng thái không được để trống")
     @Size(max = 50, message = "Trạng thái không được vượt quá 50 ký tự")
     private String status;
+
+    private List<String> attachmentUrls;
 }

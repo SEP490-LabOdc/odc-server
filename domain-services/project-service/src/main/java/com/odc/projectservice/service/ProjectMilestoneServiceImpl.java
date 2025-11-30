@@ -32,10 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,6 +51,13 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + request.getProjectId() + "' không tồn tại"));
 
+        Optional<ProjectMilestone> latestMilestone = projectMilestoneRepository.findLatestByProjectId(request.getProjectId());
+        if (latestMilestone.isPresent()) {
+            ProjectMilestone latest = latestMilestone.get();
+            if (!Status.COMPLETED.toString().equalsIgnoreCase(latest.getStatus())) {
+                throw new BusinessException("Không thể tạo milestone mới. Milestone mới nhất chưa hoàn thành (status: " + latest.getStatus() + ")");
+            }
+        }
 
         if (request.getStartDate() != null && request.getEndDate() != null) {
             if (request.getStartDate().isAfter(request.getEndDate())) {
@@ -68,6 +72,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .endDate(request.getEndDate())
                 .status(Status.PENDING.toString())
                 .project(project)
+                .attachmentUrls(request.getAttachmentUrls() != null ? request.getAttachmentUrls() : List.of())
                 .build();
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
@@ -80,6 +85,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(savedMilestone.getStartDate())
                 .endDate(savedMilestone.getEndDate())
                 .status(savedMilestone.getStatus())
+                .attachmentUrls(savedMilestone.getAttachmentUrls() != null ? savedMilestone.getAttachmentUrls() : List.of())
                 .build();
 
         return ApiResponse.success("Tạo milestone dự án thành công", responseData);
@@ -102,6 +108,10 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         existingMilestone.setEndDate(request.getEndDate());
         existingMilestone.setStatus(request.getStatus());
 
+        if (request.getAttachmentUrls() != null) {
+            existingMilestone.setAttachmentUrls(request.getAttachmentUrls());
+        }
+
         ProjectMilestone updatedMilestone = projectMilestoneRepository.save(existingMilestone);
 
         ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
@@ -112,6 +122,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(updatedMilestone.getStartDate())
                 .endDate(updatedMilestone.getEndDate())
                 .status(updatedMilestone.getStatus())
+                .attachmentUrls(updatedMilestone.getAttachmentUrls() != null ? updatedMilestone.getAttachmentUrls() : List.of())
                 .build();
 
         return ApiResponse.success("Cập nhật milestone dự án thành công", responseData);
@@ -251,6 +262,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(milestone.getStartDate())
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())
+                .attachmentUrls(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
                 .talents(talents)
                 .mentors(mentors)
                 .build();
@@ -334,6 +346,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(milestone.getStartDate())
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())
+                .attachmentUrls(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
                 .build();
     }
 }
