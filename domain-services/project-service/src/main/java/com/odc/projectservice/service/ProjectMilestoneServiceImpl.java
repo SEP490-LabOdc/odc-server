@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -335,9 +336,11 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             throw new BusinessException("Không thể cập nhật trạng thái. Milestone hiện không ở trạng thái 'PENDING_START'.");
         }
 
-//        if (!milestone.getStartDate().isEqual(LocalDate.now())) {
-//            throw new BusinessException("Không thể cập nhật trạng thái. Ngày bắt đầu của milestone chưa đến.");
-//        }
+        LocalDate today = LocalDate.now();
+
+        if (today.isBefore(milestone.getStartDate())) {
+            milestone.setStartDate(today);
+        }
 
         milestone.setStatus(ProjectMilestoneStatus.ON_GOING.toString());
         projectMilestoneRepository.save(milestone);
