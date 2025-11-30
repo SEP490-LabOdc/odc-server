@@ -23,5 +23,5 @@ public class ProjectMilestoneResponse {
     private String status;
     private List<TalentMentorInfoResponse> talents;
     private List<TalentMentorInfoResponse> mentors;
-    private List<MilestoneAttachment> attachmentUrls;
+    private List<MilestoneAttachment> attachments;
 }
