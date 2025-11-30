@@ -1,4 +1,4 @@
-package com.odc.projectservice.event.handler;
+package com.odc.projectservice.event;
 
 import com.odc.common.constant.Role;
 import com.odc.commonlib.event.EventHandler;
