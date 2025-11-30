@@ -24,4 +24,5 @@ public interface ProjectMilestoneService {
 
     ApiResponse<List<MilestoneDocumentResponse>> getDocumentsByMilestoneId(UUID milestoneId);
 
+    ApiResponse<Void> updateMilestoneStatusToOngoing(UUID milestoneId);
 }

@@ -62,4 +62,10 @@ public class ProjectMilestoneController {
                 projectMilestoneService.getDocumentsByMilestoneId(milestoneId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    //    @PreAuthorize("hasAuthority('MENTOR')")
+    @PatchMapping("/{milestoneId}/start")
+    public ResponseEntity<ApiResponse<Void>> updateMilestoneStatusToOngoing(@PathVariable UUID milestoneId) {
+        return ResponseEntity.ok(projectMilestoneService.updateMilestoneStatusToOngoing(milestoneId));
+    }
 }

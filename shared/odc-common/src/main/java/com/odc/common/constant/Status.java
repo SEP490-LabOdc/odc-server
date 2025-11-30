@@ -11,5 +11,5 @@ public enum Status {
     UPDATE_REQUIRED,
     DISABLED,
     APPROVED,
-    HIRING
+    HIRING,
 }

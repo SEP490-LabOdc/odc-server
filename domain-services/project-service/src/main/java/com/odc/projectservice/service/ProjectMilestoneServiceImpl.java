@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.ProjectMilestoneStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
@@ -323,6 +324,25 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                     .data(List.of())
                     .build();
         }
+    }
+
+    @Override
+    public ApiResponse<Void> updateMilestoneStatusToOngoing(UUID milestoneId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
+
+        if (!milestone.getStatus().equals(ProjectMilestoneStatus.PENDING_START.toString())) {
+            throw new BusinessException("Không thể cập nhật trạng thái. Milestone hiện không ở trạng thái 'PENDING_START'.");
+        }
+
+//        if (!milestone.getStartDate().isEqual(LocalDate.now())) {
+//            throw new BusinessException("Không thể cập nhật trạng thái. Ngày bắt đầu của milestone chưa đến.");
+//        }
+
+        milestone.setStatus(ProjectMilestoneStatus.ON_GOING.toString());
+        projectMilestoneRepository.save(milestone);
+
+        return ApiResponse.success("Thay đổi trạng thái của milestone thành công.", null);
     }
 
     private MilestoneDocumentResponse convertToMilestoneDocumentResponse(FileInfo fileInfo) {
