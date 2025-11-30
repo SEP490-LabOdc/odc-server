@@ -1,18 +1,16 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.ProjectMilestoneStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
-import com.odc.fileservice.v1.FileInfo;
-import com.odc.fileservice.v1.FileServiceGrpc;
-import com.odc.fileservice.v1.GetFilesByEntityIdRequest;
-import com.odc.fileservice.v1.GetFilesByEntityIdResponse;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.UpdateMilestoneAttachmentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
-import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
+import com.odc.projectservice.entity.MilestoneAttachment;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
@@ -30,8 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,7 +42,6 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel;
-    private final @Qualifier("fileServiceChannel") ManagedChannel fileServiceChannel;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -65,6 +62,18 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             }
         }
 
+        List<MilestoneAttachment> attachmentList = new ArrayList<>();
+        if (request.getAttachmentUrls() != null) {
+            request.getAttachmentUrls().forEach(dto ->
+                    attachmentList.add(new MilestoneAttachment(
+                            UUID.randomUUID(),
+                            dto.getName(),
+                            dto.getFileName(),
+                            dto.getUrl()
+                    ))
+            );
+        }
+
         ProjectMilestone projectMilestone = ProjectMilestone.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -72,7 +81,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .endDate(request.getEndDate())
                 .status(Status.PENDING.toString())
                 .project(project)
-                .attachmentUrls(request.getAttachmentUrls() != null ? request.getAttachmentUrls() : List.of())
+                .attachmentUrls(attachmentList)
                 .build();
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
@@ -85,11 +94,12 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(savedMilestone.getStartDate())
                 .endDate(savedMilestone.getEndDate())
                 .status(savedMilestone.getStatus())
-                .attachmentUrls(savedMilestone.getAttachmentUrls() != null ? savedMilestone.getAttachmentUrls() : List.of())
+                .attachments(savedMilestone.getAttachmentUrls())
                 .build();
 
         return ApiResponse.success("Tạo milestone dự án thành công", responseData);
     }
+
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> updateProjectMilestone(UUID milestoneId, UpdateProjectMilestoneRequest request) {
@@ -108,9 +118,30 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         existingMilestone.setEndDate(request.getEndDate());
         existingMilestone.setStatus(request.getStatus());
 
+        List<MilestoneAttachment> currentAttachments = existingMilestone.getAttachmentUrls() != null
+                ? new ArrayList<>(existingMilestone.getAttachmentUrls())
+                : new ArrayList<>();
+
+        List<MilestoneAttachment> updatedAttachments = new ArrayList<>();
+
         if (request.getAttachmentUrls() != null) {
-            existingMilestone.setAttachmentUrls(request.getAttachmentUrls());
+            for (UpdateMilestoneAttachmentRequest dto : request.getAttachmentUrls()) {
+                Optional<MilestoneAttachment> existingFileOpt = currentAttachments.stream()
+                        .filter(a -> a.getFileName().equals(dto.getFileName()))
+                        .findFirst();
+
+                if (existingFileOpt.isPresent()) {
+                    MilestoneAttachment existingFile = existingFileOpt.get();
+                    existingFile.setName(dto.getName());
+                    existingFile.setUrl(dto.getUrl());
+                    updatedAttachments.add(existingFile);
+                } else {
+                    updatedAttachments.add(new MilestoneAttachment(UUID.randomUUID(), dto.getName(), dto.getFileName(), dto.getUrl()));
+                }
+            }
         }
+
+        existingMilestone.setAttachmentUrls(updatedAttachments);
 
         ProjectMilestone updatedMilestone = projectMilestoneRepository.save(existingMilestone);
 
@@ -122,11 +153,12 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(updatedMilestone.getStartDate())
                 .endDate(updatedMilestone.getEndDate())
                 .status(updatedMilestone.getStatus())
-                .attachmentUrls(updatedMilestone.getAttachmentUrls() != null ? updatedMilestone.getAttachmentUrls() : List.of())
+                .attachments(updatedMilestone.getAttachmentUrls() != null ? updatedMilestone.getAttachmentUrls() : List.of())
                 .build();
 
         return ApiResponse.success("Cập nhật milestone dự án thành công", responseData);
     }
+
 
     @Override
     public ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestones() {
@@ -262,7 +294,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(milestone.getStartDate())
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())
-                .attachmentUrls(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
+                .attachments(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
                 .talents(talents)
                 .mentors(mentors)
                 .build();
@@ -291,51 +323,51 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     }
 
     @Override
-    public ApiResponse<List<MilestoneDocumentResponse>> getDocumentsByMilestoneId(UUID milestoneId) {
-        try {
+    public ApiResponse<Void> updateMilestoneStatusToOngoing(UUID milestoneId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
 
-            FileServiceGrpc.FileServiceBlockingStub stub =
-                    FileServiceGrpc.newBlockingStub(fileServiceChannel);
-
-            GetFilesByEntityIdRequest request = GetFilesByEntityIdRequest.newBuilder()
-                    .setEntityId(milestoneId.toString())
-                    .build();
-
-            GetFilesByEntityIdResponse grpcResponse = stub.getFilesByEntityId(request);
-
-            List<MilestoneDocumentResponse> documents = grpcResponse.getFilesList().stream()
-                    .map(this::convertToMilestoneDocumentResponse)
-                    .collect(Collectors.toList());
-
-            return ApiResponse.<List<MilestoneDocumentResponse>>builder()
-                    .success(true)
-                    .message("Lấy danh sách documents của milestone thành công")
-                    .timestamp(LocalDateTime.now())
-                    .data(documents)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Lỗi khi gọi file-service gRPC để lấy documents: {}", e.getMessage(), e);
-            return ApiResponse.<List<MilestoneDocumentResponse>>builder()
-                    .success(false)
-                    .message("Lỗi khi lấy danh sách documents: " + e.getMessage())
-                    .timestamp(LocalDateTime.now())
-                    .data(List.of())
-                    .build();
+        if (!milestone.getStatus().equals(ProjectMilestoneStatus.PENDING_START.toString())) {
+            throw new BusinessException("Không thể cập nhật trạng thái. Milestone hiện không ở trạng thái 'PENDING_START'.");
         }
+
+        LocalDate today = LocalDate.now();
+
+        if (today.isBefore(milestone.getStartDate())) {
+            milestone.setStartDate(today);
+        }
+
+        milestone.setStatus(ProjectMilestoneStatus.ON_GOING.toString());
+        projectMilestoneRepository.save(milestone);
+
+        return ApiResponse.success("Thay đổi trạng thái của milestone thành công.", null);
     }
 
-    private MilestoneDocumentResponse convertToMilestoneDocumentResponse(FileInfo fileInfo) {
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-        return MilestoneDocumentResponse.builder()
-                .id(UUID.fromString(fileInfo.getId()))
-                .fileName(fileInfo.getFileName())
-                .fileUrl(fileInfo.getFileUrl())
-                .s3Key(fileInfo.getS3Key())
-                .uploadedAt(LocalDateTime.parse(fileInfo.getUploadedAt(), formatter))
-                .entityId(fileInfo.getEntityId())
-                .build();
+    @Override
+    public ApiResponse<Void> deleteMilestoneAttachment(UUID milestoneId, UUID attachmentId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(
+                        "Milestone với ID '" + milestoneId + "' không tồn tại"
+                ));
+
+        if (milestone.getAttachmentUrls() == null || milestone.getAttachmentUrls().isEmpty()) {
+            throw new BusinessException("Milestone không có attachment nào để xóa");
+        }
+
+        List<MilestoneAttachment> updatedAttachments = milestone.getAttachmentUrls().stream()
+                .filter(a -> !a.getId().equals(attachmentId))
+                .toList();
+
+        if (updatedAttachments.size() == milestone.getAttachmentUrls().size()) {
+            throw new BusinessException("Attachment với ID '" + attachmentId + "' không tồn tại");
+        }
+
+        milestone.setAttachmentUrls(updatedAttachments);
+        projectMilestoneRepository.save(milestone);
+
+        return ApiResponse.success("Xóa attachment thành công", null);
     }
+
 
     private ProjectMilestoneResponse convertToProjectMilestoneResponse(ProjectMilestone milestone) {
         return ProjectMilestoneResponse.builder()
@@ -346,7 +378,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(milestone.getStartDate())
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())
-                .attachmentUrls(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
+                .attachments(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
                 .build();
     }
 }

@@ -3,6 +3,7 @@ package com.odc.projectservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @ComponentScan(
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.ComponentScan;
                 "com.odc.commonlib"
         }
 )
+@EnableScheduling
 public class ProjectServiceApplication {
 
     public static void main(String[] args) {

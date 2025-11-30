@@ -1,5 +1,6 @@
 package com.odc.projectservice.dto.response;
 
+import com.odc.projectservice.entity.MilestoneAttachment;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,5 +23,5 @@ public class ProjectMilestoneResponse {
     private String status;
     private List<TalentMentorInfoResponse> talents;
     private List<TalentMentorInfoResponse> mentors;
-    private List<String> attachmentUrls;
+    private List<MilestoneAttachment> attachments;
 }

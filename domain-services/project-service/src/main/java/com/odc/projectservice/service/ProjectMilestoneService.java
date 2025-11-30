@@ -3,7 +3,6 @@ package com.odc.projectservice.service;
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
-import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 
 import java.util.List;
@@ -22,6 +21,7 @@ public interface ProjectMilestoneService {
 
     ApiResponse<Void> deleteProjectMilestone(UUID milestoneId);
 
-    ApiResponse<List<MilestoneDocumentResponse>> getDocumentsByMilestoneId(UUID milestoneId);
+    ApiResponse<Void> updateMilestoneStatusToOngoing(UUID milestoneId);
 
+    ApiResponse<Void> deleteMilestoneAttachment(UUID milestoneId, UUID attachmentId);
 }

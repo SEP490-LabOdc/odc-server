@@ -21,14 +21,12 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class AiMatchingServiceImpl implements AiMatchingService {
-    @Value("${gemini.api.key}")
-    private String apiKey;
-
-    @Value("${gemini.base-url}")
-    private String baseUrl;
-
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    @Value("${gemini.api.key}")
+    private String apiKey;
+    @Value("${gemini.base-url}")
+    private String baseUrl;
 
     public Map<String, Object> analyzeCv(String cvUrl, String jobDescription) {
         try {
