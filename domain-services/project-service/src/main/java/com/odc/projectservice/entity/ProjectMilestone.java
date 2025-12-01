@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,6 +32,9 @@ public class ProjectMilestone extends BaseEntity {
 
     @Column(name = "status", nullable = false, length = 50)
     private String status;
+
+    @Column(name = "budget")
+    private BigDecimal budget;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

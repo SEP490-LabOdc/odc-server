@@ -112,6 +112,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .status(Status.PENDING.toString())
                 .isOpenForApplications(false)
                 .budget(request.getBudget())
+                .remainingBudget(request.getBudget())
                 .skills(skills)
                 .build();
 
@@ -176,6 +177,7 @@ public class ProjectServiceImpl implements ProjectService {
         existingProject.setTitle(request.getTitle());
         existingProject.setDescription(request.getDescription());
         existingProject.setBudget(request.getBudget());
+        // TODO: BUDGET <> REMAINING BUDGET
         existingProject.setSkills(skills);
         existingProject.setStatus(ProjectStatus.PENDING.toString());
 
@@ -1074,6 +1076,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
                 .budget(project.getBudget())
+                .remainingBudget(project.getRemainingBudget())
                 .skills(skillResponses)
                 .mentors(mentors)
                 .talents(talents)
