@@ -4,4 +4,5 @@ public enum ProjectApplicationStatus {
     PENDING,
     REJECTED,
     APPROVED,
+    CANCELED
 }

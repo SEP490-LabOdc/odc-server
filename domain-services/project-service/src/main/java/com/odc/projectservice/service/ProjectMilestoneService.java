@@ -1,8 +1,11 @@
 package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 
 import java.util.List;
@@ -26,4 +29,12 @@ public interface ProjectMilestoneService {
     ApiResponse<Void> deleteMilestoneAttachment(UUID milestoneId, UUID attachmentId);
 
     ApiResponse<Void> approveProjectPlan(UUID milestoneId);
+
+    ApiResponse<Void> rejectProjectMilestone(UUID milestoneId, MilestoneRejectRequest request);
+
+    ApiResponse<PaginatedResult<FeedbackResponse>> getMilestoneFeedbacks(
+            UUID milestoneId,
+            Integer page,
+            Integer size
+    );
 }

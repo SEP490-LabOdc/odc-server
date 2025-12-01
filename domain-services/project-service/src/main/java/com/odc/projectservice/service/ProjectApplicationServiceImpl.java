@@ -77,6 +77,10 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                         "Bạn đã ứng tuyển vào dự án này."
                 );
             }
+
+            if (existingApplication.getStatus().equals(ProjectApplicationStatus.CANCELED.toString())) {
+                throw new BusinessException("Ứng viên đã vào một dự án khác, không thể ứng tuyển.");
+            }
         }
 
         if (!UserServiceGrpc
@@ -98,6 +102,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         if (alreadyApplied) {
             throw new BusinessException("Sinh viên đã đăng ký tham gia dự án này");
         }
+
+        List<ProjectApplication> otherApplications = projectApplicationRepository
+                .findOtherApplicationsByUserId(request.getUserId(), request.getProjectId()
+                );
+        for (ProjectApplication pa : otherApplications) {
+            if (pa.getStatus().equals(ProjectApplicationStatus.PENDING.toString())) {
+                pa.setStatus(ProjectApplicationStatus.CANCELED.toString());
+            }
+        }
+        projectApplicationRepository.saveAll(otherApplications);
 
         ProjectApplication projectApplication = ProjectApplication.builder()
                 .project(project)

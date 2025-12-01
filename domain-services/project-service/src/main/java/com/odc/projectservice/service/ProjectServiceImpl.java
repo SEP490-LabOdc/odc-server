@@ -1052,7 +1052,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors,List<UserParticipantResponse> talents,
+    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors, List<UserParticipantResponse> talents,
                                                      UUID createdBy, String createdByName, String createdByAvatar,
                                                      UUID currentMilestoneId, String currentMilestoneName,
                                                      String companyName) {
