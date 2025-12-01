@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -254,6 +255,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .toList();
 
         Map<String, String> userIdToNameMapTemp;
+        Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
         if (!allUserIds.isEmpty()) {
             try {
                 UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
@@ -263,6 +265,18 @@ public class ProjectServiceImpl implements ProjectService {
                                 .build()
                 );
                 userIdToNameMapTemp = userNamesResponse.getMapMap();
+                GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                        GetUsersByIdsRequest.newBuilder()
+                                .addAllUserId(allUserIds)
+                                .build()
+                );
+
+                userIdToUserInfoMap = usersResponse.getUsersList().stream()
+                        .collect(Collectors.toMap(
+                                UserInfo::getUserId,
+                                Function.identity(),
+                                (v1, v2) -> v1
+                        ));
             } catch (Exception e) {
                 log.error("Không thể lấy thông tin user qua gRPC: {}", e.getMessage(), e);
                 userIdToNameMapTemp = Map.of();
@@ -272,24 +286,35 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         final Map<String, String> userIdToNameMap = userIdToNameMapTemp;
+        final Map<String, UserInfo> finalUserIdToUserInfoMap = userIdToUserInfoMap;
 
         List<UserParticipantResponse> mentors = mentorMembers.stream()
-                .map(pm -> UserParticipantResponse.builder()
-                        .id(pm.getUserId())
-                        .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
-                        .roleName(Role.MENTOR.toString())
-                        .isLeader(pm.isLeader())
-                        .build())
+                .map(pm -> {
+                    UserInfo userInfo = finalUserIdToUserInfoMap.get(pm.getUserId().toString());
+                    return UserParticipantResponse.builder()
+                            .id(pm.getUserId())
+                            .name(userInfo != null ? userInfo.getFullName() :
+                                    userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                            .roleName(Role.MENTOR.toString())
+                            .isLeader(pm.isLeader())
+                            .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
+                            .build();
+                })
                 .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
                 .toList();
 
         List<UserParticipantResponse> talents = talentMembers.stream()
-                .map(pm -> UserParticipantResponse.builder()
-                        .id(pm.getUserId())
-                        .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
-                        .roleName(Role.TALENT.toString())
-                        .isLeader(pm.isLeader())
-                        .build())
+                .map(pm -> {
+                    UserInfo userInfo = finalUserIdToUserInfoMap.get(pm.getUserId().toString());
+                    return UserParticipantResponse.builder()
+                            .id(pm.getUserId())
+                            .name(userInfo != null ? userInfo.getFullName() :
+                                    userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                            .roleName(Role.TALENT.toString())
+                            .isLeader(pm.isLeader())
+                            .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
+                            .build();
+                })
                 .sorted(Comparator.comparing((UserParticipantResponse t) -> !t.isLeader()))
                 .toList();
 
@@ -406,6 +431,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .collect(Collectors.toSet());
 
         Map<String, String> userIdToNameMap = new HashMap<>();
+        Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
         if (!allUserIds.isEmpty()) {
             try {
                 UserServiceGrpc.UserServiceBlockingStub userStub =
@@ -415,12 +441,27 @@ public class ProjectServiceImpl implements ProjectService {
                                 .addAllIds(new ArrayList<>(allUserIds))
                                 .build());
                 userIdToNameMap = userNamesResponse.getMapMap();
+
+                GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                        GetUsersByIdsRequest.newBuilder()
+                                .addAllUserId(new ArrayList<>(allUserIds))
+                                .build()
+                );
+
+                userIdToUserInfoMap = usersResponse.getUsersList().stream()
+                        .collect(Collectors.toMap(
+                                UserInfo::getUserId,
+                                Function.identity(),
+                                (v1, v2) -> v1
+                        ));
             } catch (Exception e) {
                 log.error("Không thể lấy danh sách user qua gRPC: {}", e.getMessage(), e);
             }
         }
 
         final Map<String, String> finalUserIdToNameMap = userIdToNameMap;
+        final Map<String, UserInfo> finalUserIdToUserInfoMap = userIdToUserInfoMap;
+
         List<ProjectResponse> projectResponses = projects.stream()
                 .map(project -> {
                     String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
@@ -430,12 +471,14 @@ public class ProjectServiceImpl implements ProjectService {
                     List<UserParticipantResponse> mentors = members.stream()
                             .filter(member -> Role.MENTOR.toString().equalsIgnoreCase(member.getRoleInProject()))
                             .map(member -> {
-                                String name = finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown");
+                                UserInfo userInfo = finalUserIdToUserInfoMap.get(member.getUserId().toString());
                                 return UserParticipantResponse.builder()
                                         .id(member.getUserId())
-                                        .name(name)
+                                        .name(userInfo != null ? userInfo.getFullName() :
+                                                finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown"))
                                         .roleName(Role.MENTOR.toString())
                                         .isLeader(member.isLeader())
+                                        .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
                                         .build();
                             })
                             .sorted(Comparator.comparing((UserParticipantResponse p) -> !p.isLeader()))
@@ -444,12 +487,14 @@ public class ProjectServiceImpl implements ProjectService {
                     List<UserParticipantResponse> talents = members.stream()
                             .filter(member -> Role.USER.toString().equalsIgnoreCase(member.getRoleInProject()))
                             .map(member -> {
-                                String name = finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown");
+                                UserInfo userInfo = finalUserIdToUserInfoMap.get(member.getUserId().toString());
                                 return UserParticipantResponse.builder()
                                         .id(member.getUserId())
-                                        .name(name)
+                                        .name(userInfo != null ? userInfo.getFullName() :
+                                                finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown"))
                                         .roleName(Role.TALENT.toString())
                                         .isLeader(member.isLeader())
+                                        .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
                                         .build();
                             })
                             .sorted(Comparator.comparing((UserParticipantResponse p) -> !p.isLeader()))
