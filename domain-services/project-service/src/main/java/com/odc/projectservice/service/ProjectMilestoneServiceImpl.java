@@ -101,6 +101,11 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         BigDecimal milestoneBudget = remainingBudget.multiply(percentageValue)
                 .setScale(2, RoundingMode.HALF_UP);
 
+        if (remainingBudget.subtract(milestoneBudget).compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("Ngân sách còn lại của dự án không đủ để tạo milestone với "
+                    + request.getPercentage() + "%");
+        }
+
         ProjectMilestone projectMilestone = ProjectMilestone.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
