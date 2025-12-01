@@ -1,9 +1,11 @@
 package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import jakarta.validation.Valid;
@@ -87,4 +89,14 @@ public class ProjectMilestoneController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{milestoneId}/feedbacks")
+    public ResponseEntity<ApiResponse<PaginatedResult<FeedbackResponse>>> getMilestoneFeedbacks(
+            @PathVariable UUID milestoneId,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size
+    ) {
+        ApiResponse<PaginatedResult<FeedbackResponse>> response =
+                projectMilestoneService.getMilestoneFeedbacks(milestoneId, page, size);
+        return ResponseEntity.ok(response);
+    }
 }
