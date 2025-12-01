@@ -60,4 +60,15 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     List<ProjectApplication> findByUserIdOrderBySubmittedAtDesc(@Param("userId") UUID userId, Pageable pageable);
 
     Optional<ProjectApplication> findByProject_IdAndUserId(UUID projectId, UUID userId);
+
+    @Query("""
+                SELECT pa
+                FROM ProjectApplication pa
+                WHERE pa.userId = :userId
+                  AND pa.project.id <> :currentProjectId
+            """)
+    List<ProjectApplication> findOtherApplicationsByUserId(
+            @Param("userId") UUID userId,
+            @Param("currentProjectId") UUID currentProjectId
+    );
 }

@@ -236,27 +236,40 @@ public class ProjectServiceImpl implements ProjectService {
         Project existingProject = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
+        List<ProjectMember> allMembers = projectMemberRepository.findByProjectId(projectId);
 
-        List<ProjectMember> mentorMembers = projectMemberRepository.findByProjectId(projectId).stream()
+        List<ProjectMember> mentorMembers = allMembers.stream()
                 .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
                 .toList();
 
-        List<String> mentorUserIds = mentorMembers.stream()
-                .map(pm -> pm.getUserId().toString())
+        List<ProjectMember> talentMembers = allMembers.stream()
+                .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
                 .toList();
 
-        Map<String, String> userIdToNameMap;
-        if (!mentorUserIds.isEmpty()) {
-            UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
-            GetNameResponse userNamesResponse = userStub.getName(
-                    GetNameRequest.newBuilder()
-                            .addAllIds(mentorUserIds)
-                            .build()
-            );
-            userIdToNameMap = userNamesResponse.getMapMap();
+        List<String> allUserIds = allMembers.stream()
+                .map(pm -> pm.getUserId().toString())
+                .distinct()
+                .toList();
+
+        Map<String, String> userIdToNameMapTemp;
+        if (!allUserIds.isEmpty()) {
+            try {
+                UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+                GetNameResponse userNamesResponse = userStub.getName(
+                        GetNameRequest.newBuilder()
+                                .addAllIds(allUserIds)
+                                .build()
+                );
+                userIdToNameMapTemp = userNamesResponse.getMapMap();
+            } catch (Exception e) {
+                log.error("Không thể lấy thông tin user qua gRPC: {}", e.getMessage(), e);
+                userIdToNameMapTemp = Map.of();
+            }
         } else {
-            userIdToNameMap = Map.of();
+            userIdToNameMapTemp = Map.of();
         }
+
+        final Map<String, String> userIdToNameMap = userIdToNameMapTemp;
 
         List<UserParticipantResponse> mentors = mentorMembers.stream()
                 .map(pm -> UserParticipantResponse.builder()
@@ -268,6 +281,15 @@ public class ProjectServiceImpl implements ProjectService {
                 .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
                 .toList();
 
+        List<UserParticipantResponse> talents = talentMembers.stream()
+                .map(pm -> UserParticipantResponse.builder()
+                        .id(pm.getUserId())
+                        .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                        .roleName(Role.TALENT.toString())
+                        .isLeader(pm.isLeader())
+                        .build())
+                .sorted(Comparator.comparing((UserParticipantResponse t) -> !t.isLeader()))
+                .toList();
 
         UUID createdByUserId = null;
         String createdByName = null;
@@ -288,12 +310,10 @@ public class ProjectServiceImpl implements ProjectService {
             }
         }
 
-
         UUID currentMilestoneId = null;
         String currentMilestoneName = null;
         List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(projectId);
         if (milestones != null && !milestones.isEmpty()) {
-
             ProjectMilestone currentMilestone = milestones.stream()
                     .filter(m -> Status.ACTIVE.toString().equalsIgnoreCase(m.getStatus()) ||
                             (!Status.COMPLETED.toString().equalsIgnoreCase(m.getStatus()) &&
@@ -327,7 +347,7 @@ public class ProjectServiceImpl implements ProjectService {
             }
         }
 
-        ProjectResponse responseData = convertToProjectResponse(existingProject, mentors,
+        ProjectResponse responseData = convertToProjectResponse(existingProject, mentors, talents,
                 createdByUserId, createdByName, createdByAvatar,
                 currentMilestoneId, currentMilestoneName, companyName);
 
@@ -342,7 +362,6 @@ public class ProjectServiceImpl implements ProjectService {
                 .map(Project::getCompanyId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
 
         Map<UUID, String> companyIdToNameMap = new HashMap<>();
         if (!companyIds.isEmpty()) {
@@ -373,10 +392,68 @@ public class ProjectServiceImpl implements ProjectService {
             }
         }
 
+        Map<UUID, List<ProjectMember>> projectMembersMap = new HashMap<>();
+        for (Project project : projects) {
+            List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+            projectMembersMap.put(project.getId(), members);
+        }
+
+        Set<String> allUserIds = projectMembersMap.values().stream()
+                .flatMap(List::stream)
+                .map(member -> member.getUserId().toString())
+                .collect(Collectors.toSet());
+
+        Map<String, String> userIdToNameMap = new HashMap<>();
+        if (!allUserIds.isEmpty()) {
+            try {
+                UserServiceGrpc.UserServiceBlockingStub userStub =
+                        UserServiceGrpc.newBlockingStub(userServiceChannel);
+                GetNameResponse userNamesResponse = userStub.getName(
+                        GetNameRequest.newBuilder()
+                                .addAllIds(new ArrayList<>(allUserIds))
+                                .build());
+                userIdToNameMap = userNamesResponse.getMapMap();
+            } catch (Exception e) {
+                log.error("Không thể lấy danh sách user qua gRPC: {}", e.getMessage(), e);
+            }
+        }
+
+        final Map<String, String> finalUserIdToNameMap = userIdToNameMap;
         List<ProjectResponse> projectResponses = projects.stream()
                 .map(project -> {
                     String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
-                    return convertToProjectResponse(project, List.of(), null, null, null,
+
+                    List<ProjectMember> members = projectMembersMap.getOrDefault(project.getId(), Collections.emptyList());
+
+                    List<UserParticipantResponse> mentors = members.stream()
+                            .filter(member -> Role.MENTOR.toString().equalsIgnoreCase(member.getRoleInProject()))
+                            .map(member -> {
+                                String name = finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown");
+                                return UserParticipantResponse.builder()
+                                        .id(member.getUserId())
+                                        .name(name)
+                                        .roleName(Role.MENTOR.toString())
+                                        .isLeader(member.isLeader())
+                                        .build();
+                            })
+                            .sorted(Comparator.comparing((UserParticipantResponse p) -> !p.isLeader()))
+                            .collect(Collectors.toList());
+
+                    List<UserParticipantResponse> talents = members.stream()
+                            .filter(member -> Role.USER.toString().equalsIgnoreCase(member.getRoleInProject()))
+                            .map(member -> {
+                                String name = finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown");
+                                return UserParticipantResponse.builder()
+                                        .id(member.getUserId())
+                                        .name(name)
+                                        .roleName(Role.TALENT.toString())
+                                        .isLeader(member.isLeader())
+                                        .build();
+                            })
+                            .sorted(Comparator.comparing((UserParticipantResponse p) -> !p.isLeader()))
+                            .collect(Collectors.toList());
+
+                    return convertToProjectResponse(project, mentors, talents, null, null, null,
                             null, null, companyName);
                 })
                 .collect(Collectors.toList());
@@ -466,7 +543,7 @@ public class ProjectServiceImpl implements ProjectService {
                     String name = userIdToNameMap.get(member.getUserId().toString());
                     if (name == null) return null;
 
-                    String roleName = Role.TALENT.toString();
+                    String roleName = Role.USER.toString();
                     if (Role.MENTOR.toString().equalsIgnoreCase(member.getRoleInProject())) {
                         roleName = Role.MENTOR.toString();
                     }
@@ -683,13 +760,11 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<List<ProjectResponse>> getMyProjects(UUID userId, String status) {
-
         if (status != null && !status.trim().isEmpty()) {
             if (!EnumUtil.isEnumValueExist(status.toUpperCase(), ProjectStatus.class)) {
                 throw new BusinessException("Trạng thái dự án không hợp lệ: " + status);
             }
         }
-
 
         List<ProjectMember> projectMembers = projectMemberRepository.findByUserId(userId);
 
@@ -702,9 +777,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .distinct()
                 .toList();
 
-
         List<Project> projects = projectRepository.findAllById(projectIds);
-
 
         if (status != null && !status.trim().isEmpty()) {
             String statusUpper = status.toUpperCase();
@@ -747,41 +820,92 @@ public class ProjectServiceImpl implements ProjectService {
             }
         }
 
+        Map<UUID, List<ProjectMember>> projectMembersMap = new HashMap<>();
+        for (Project project : projects) {
+            List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+            projectMembersMap.put(project.getId(), members);
+        }
+
+        Set<String> allUserIds = projectMembersMap.values().stream()
+                .flatMap(List::stream)
+                .map(member -> member.getUserId().toString())
+                .collect(Collectors.toSet());
+
+        Set<String> createdByUserIds = projects.stream()
+                .map(Project::getCreatedBy)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        allUserIds.addAll(createdByUserIds);
+
+        Map<String, String> userIdToNameMap = new HashMap<>();
+        Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
+
+        if (!allUserIds.isEmpty()) {
+            try {
+                UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+
+                GetNameResponse userNamesResponse = userStub.getName(
+                        GetNameRequest.newBuilder()
+                                .addAllIds(new ArrayList<>(allUserIds))
+                                .build()
+                );
+                userIdToNameMap = userNamesResponse.getMapMap();
+
+                if (!createdByUserIds.isEmpty()) {
+                    GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                            GetUsersByIdsRequest.newBuilder()
+                                    .addAllUserId(new ArrayList<>(createdByUserIds))
+                                    .build()
+                    );
+
+                    userIdToUserInfoMap = usersResponse.getUsersList().stream()
+                            .collect(Collectors.toMap(
+                                    u -> u.getUserId(),
+                                    u -> u
+                            ));
+                }
+            } catch (Exception e) {
+                log.error("Không thể lấy thông tin user qua gRPC: {}", e.getMessage(), e);
+            }
+        }
+
+        final Map<String, String> finalUserIdToNameMap = userIdToNameMap;
+        final Map<String, UserInfo> finalUserIdToUserInfoMap = userIdToUserInfoMap;
 
         List<ProjectResponse> projectResponses = projects.stream()
                 .map(project -> {
-
                     String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
 
-                    List<ProjectMember> mentorMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
+                    List<ProjectMember> members = projectMembersMap.getOrDefault(project.getId(), Collections.emptyList());
+
+                    List<ProjectMember> mentorMembers = members.stream()
                             .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
                             .toList();
 
-                    List<String> mentorUserIds = mentorMembers.stream()
-                            .map(pm -> pm.getUserId().toString())
+                    List<ProjectMember> talentMembers = members.stream()
+                            .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
                             .toList();
-
-                    Map<String, String> userIdToNameMap;
-                    if (!mentorUserIds.isEmpty()) {
-                        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
-                        GetNameResponse userNamesResponse = userStub.getName(
-                                GetNameRequest.newBuilder()
-                                        .addAllIds(mentorUserIds)
-                                        .build()
-                        );
-                        userIdToNameMap = userNamesResponse.getMapMap();
-                    } else {
-                        userIdToNameMap = Map.of();
-                    }
 
                     List<UserParticipantResponse> mentors = mentorMembers.stream()
                             .map(pm -> UserParticipantResponse.builder()
                                     .id(pm.getUserId())
-                                    .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                                    .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                                     .roleName(Role.MENTOR.toString())
                                     .isLeader(pm.isLeader())
                                     .build())
                             .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
+                            .toList();
+
+                    List<UserParticipantResponse> talents = talentMembers.stream()
+                            .map(pm -> UserParticipantResponse.builder()
+                                    .id(pm.getUserId())
+                                    .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                                    .roleName(Role.TALENT.toString())
+                                    .isLeader(pm.isLeader())
+                                    .build())
+                            .sorted(Comparator.comparing((UserParticipantResponse t) -> !t.isLeader()))
                             .toList();
 
                     UUID createdByUserId = null;
@@ -790,14 +914,14 @@ public class ProjectServiceImpl implements ProjectService {
                     if (project.getCreatedBy() != null && !project.getCreatedBy().isEmpty()) {
                         try {
                             createdByUserId = UUID.fromString(project.getCreatedBy());
-                            UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
-                            GetUserByIdResponse userResponse = userStub.getUserById(
-                                    GetUserByIdRequest.newBuilder()
-                                            .setUserId(project.getCreatedBy())
-                                            .build()
-                            );
-                            createdByName = userResponse.getFullName();
-                            createdByAvatar = userResponse.getAvatarUrl();
+                            UserInfo userInfo = finalUserIdToUserInfoMap.get(project.getCreatedBy());
+                            if (userInfo != null) {
+                                createdByName = userInfo.getFullName();
+                                createdByAvatar = userInfo.getAvatarUrl();
+                            } else {
+                                // Fallback nếu không có trong map
+                                createdByName = finalUserIdToNameMap.getOrDefault(project.getCreatedBy(), "Unknown");
+                            }
                         } catch (Exception e) {
                             log.warn("Không thể lấy thông tin người tạo project: {}", e.getMessage());
                         }
@@ -821,7 +945,7 @@ public class ProjectServiceImpl implements ProjectService {
                         }
                     }
 
-                    return convertToProjectResponse(project, mentors,
+                    return convertToProjectResponse(project, mentors, talents,
                             createdByUserId, createdByName, createdByAvatar,
                             currentMilestoneId, currentMilestoneName, companyName);
                 })
@@ -917,18 +1041,18 @@ public class ProjectServiceImpl implements ProjectService {
 
         Page<ProjectResponse> responsePage = relatedProjectsPage.map(project -> {
             String companyName = companyIdToNameMap.getOrDefault(project.getCompanyId(), null);
-            return convertToProjectResponse(project, List.of(), null, null, null, null, null, companyName);
+            return convertToProjectResponse(project, List.of(), List.of(), null, null, null, null, null, companyName);
         });
 
         return ApiResponse.success("Lấy danh sách dự án liên quan thành công", PaginatedResult.from(responsePage));
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {
-        return convertToProjectResponse(project, List.of(), null, null, null, null, null, null);
+        return convertToProjectResponse(project, List.of(), List.of(), null, null, null, null, null, null);
     }
 
 
-    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors,
+    private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors, List<UserParticipantResponse> talents,
                                                      UUID createdBy, String createdByName, String createdByAvatar,
                                                      UUID currentMilestoneId, String currentMilestoneName,
                                                      String companyName) {
@@ -952,6 +1076,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .budget(project.getBudget())
                 .skills(skillResponses)
                 .mentors(mentors)
+                .talents(talents)
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
                 .createdBy(createdBy)

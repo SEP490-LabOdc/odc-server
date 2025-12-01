@@ -4,16 +4,25 @@ import com.odc.common.constant.ProjectMilestoneStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.companyservice.v1.CompanyServiceGrpc;
+import com.odc.companyservice.v1.GetCompanyByIdRequest;
+import com.odc.companyservice.v1.GetCompanyByIdResponse;
+import com.odc.notification.v1.Channel;
+import com.odc.notification.v1.NotificationEvent;
+import com.odc.notification.v1.Target;
+import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateMilestoneAttachmentRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
-import com.odc.projectservice.entity.MilestoneAttachment;
-import com.odc.projectservice.entity.Project;
-import com.odc.projectservice.entity.ProjectMember;
-import com.odc.projectservice.entity.ProjectMilestone;
+import com.odc.projectservice.entity.*;
+import com.odc.projectservice.repository.MilestoneFeedbackRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectMilestoneRepository;
 import com.odc.projectservice.repository.ProjectRepository;
@@ -26,6 +35,11 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -42,6 +56,9 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel;
+    private final ManagedChannel companyServiceChannel;
+    private final EventPublisher eventPublisher;
+    private final MilestoneFeedbackRepository milestoneFeedbackRepository;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -86,6 +103,46 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
 
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByIdRequest getCompanyByIdRequest = GetCompanyByIdRequest.newBuilder()
+                .setCompanyId(project.getCompanyId().toString())
+                .build();
+        GetCompanyByIdResponse companyDetailResponse = companyStub.getCompanyById(getCompanyByIdRequest);
+        UUID companyUserId = UUID.fromString(companyDetailResponse.getUserId());
+
+        UserTarget userTarget = UserTarget.newBuilder()
+                .addUserIds(companyUserId.toString())
+                .build();
+
+        Target target = Target.newBuilder()
+                .setUser(userTarget)
+                .build();
+
+        Map<String, String> dataMap = Map.of(
+                "projectId", project.getId().toString(),
+                "milestoneId", savedMilestone.getId().toString(),
+                "milestoneTitle", savedMilestone.getTitle()
+        );
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("NEW_PROJECT_MILESTONE_CREATED")
+                .setTitle("Milestone mới được tạo")
+                .setContent("Milestone \"" + savedMilestone.getTitle() + "\" của dự án \"" + project.getTitle() + "\" đã được tạo.")
+                .putAllData(dataMap)
+                .setDeepLink("/projects/" + project.getId() + "/milestones/" + savedMilestone.getId())
+                .setPriority("HIGH")
+                .setTarget(target)
+                .addChannels(Channel.WEB)
+                .setCreatedAt(System.currentTimeMillis())
+                .setCategory("PROJECT_MANAGEMENT")
+                .build();
+
+        eventPublisher.publish("notifications", notificationEvent);
+        log.info("Notification event published to company user: {}", companyUserId);
+
         ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
                 .id(savedMilestone.getId())
                 .projectId(savedMilestone.getProject().getId())
@@ -99,7 +156,6 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         return ApiResponse.success("Tạo milestone dự án thành công", responseData);
     }
-
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> updateProjectMilestone(UUID milestoneId, UpdateProjectMilestoneRequest request) {
@@ -159,7 +215,6 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return ApiResponse.success("Cập nhật milestone dự án thành công", responseData);
     }
 
-
     @Override
     public ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestones() {
         List<ProjectMilestone> milestones = projectMilestoneRepository.findAll();
@@ -208,11 +263,11 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         List<ProjectMember> talentMembers = projectMembers.stream()
                 .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
-                .collect(Collectors.toList());
+                .toList();
 
         List<ProjectMember> mentorMembers = projectMembers.stream()
                 .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> allUserIds = projectMembers.stream()
                 .map(pm -> pm.getUserId().toString())
@@ -236,7 +291,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                                 u -> u
                         ));
             } catch (Exception e) {
-                System.err.println("Lỗi khi lấy thông tin user: " + e.getMessage());
+                log.error("Lỗi khi lấy thông tin user: {}", e.getMessage());
             }
         }
 
@@ -368,6 +423,155 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return ApiResponse.success("Xóa attachment thành công", null);
     }
 
+    @Override
+    public ApiResponse<Void> approveProjectPlan(UUID milestoneId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
+
+        if (!Status.PENDING.toString().equalsIgnoreCase(milestone.getStatus())) {
+            throw new BusinessException("Chỉ milestone ở trạng thái PENDING mới có thể được approve");
+        }
+
+        milestone.setStatus(ProjectMilestoneStatus.PENDING_START.toString());
+        projectMilestoneRepository.save(milestone);
+
+        Project project = milestone.getProject();
+        List<ProjectMember> targetMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
+                .filter(pm -> pm.isLeader() || Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .toList();
+
+        if (!targetMembers.isEmpty()) {
+            Set<UUID> userIds = targetMembers.stream()
+                    .map(ProjectMember::getUserId)
+                    .collect(Collectors.toSet());
+
+            Map<String, String> dataMap = new HashMap<>();
+            dataMap.put("projectId", project.getId().toString());
+            dataMap.put("projectTitle", project.getTitle());
+
+            NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                    .setId(UUID.randomUUID().toString())
+                    .setType("PROJECT_PLAN_APPROVED")
+                    .setTitle("Dự án đã được khách hàng duyệt")
+                    .setContent("Project plan của dự án \"" + project.getTitle() + "\" đã được khách hàng duyệt. Chuẩn bị bắt đầu.")
+                    .putAllData(dataMap)
+                    .setDeepLink("/projects/" + project.getId())
+                    .setPriority("HIGH")
+                    .setTarget(Target.newBuilder()
+                            .setUser(UserTarget.newBuilder()
+                                    .addAllUserIds(userIds.stream().map(UUID::toString).toList())
+                                    .build())
+                            .build())
+                    .addChannels(Channel.WEB)
+                    .setCreatedAt(System.currentTimeMillis())
+                    .setCategory("PROJECT_MANAGEMENT")
+                    .build();
+
+            eventPublisher.publish("notifications", notificationEvent);
+            log.info("Notification event published to mentors/leaders successfully.");
+        }
+
+        return ApiResponse.success("Milestone đã được approve và chuyển sang PENDING_START", null);
+    }
+
+    @Override
+    public ApiResponse<Void> rejectProjectMilestone(UUID milestoneId, MilestoneRejectRequest request) {
+
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
+
+        if (!ProjectMilestoneStatus.PENDING.toString().equalsIgnoreCase(milestone.getStatus())) {
+            throw new BusinessException("Chỉ milestone ở trạng thái PENDING mới có thể bị reject");
+        }
+
+        MilestoneFeedback feedback = MilestoneFeedback.builder()
+                .milestone(milestone)
+                .userId((UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .content(request.getFeedbackContent())
+                .attachmentUrls(request.getAttachmentUrls())
+                .build();
+
+        milestoneFeedbackRepository.save(feedback);
+
+        // 2️⃣ Update status của milestone
+        milestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
+        projectMilestoneRepository.save(milestone);
+
+
+        // 3️⃣ Lấy leader + mentor để gửi notify
+        Project project = milestone.getProject();
+
+        List<ProjectMember> targetMembers = projectMemberRepository.findByProjectId(project.getId())
+                .stream()
+                .filter(pm -> pm.isLeader() ||
+                        Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .toList();
+
+        if (!targetMembers.isEmpty()) {
+
+            Set<UUID> userIds = targetMembers.stream()
+                    .map(ProjectMember::getUserId)
+                    .collect(Collectors.toSet());
+
+            Map<String, String> dataMap = new HashMap<>();
+            dataMap.put("projectId", project.getId().toString());
+            dataMap.put("projectTitle", project.getTitle());
+            dataMap.put("milestoneId", milestone.getId().toString());
+
+            NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                    .setId(UUID.randomUUID().toString())
+                    .setType("PROJECT_PLAN_REJECTED")
+                    .setTitle("Milestone bị khách hàng từ chối")
+                    .setContent("Khách hàng đã từ chối milestone \"" + milestone.getTitle() + "\". Hãy xem feedback và cập nhật lại.")
+                    .putAllData(dataMap)
+                    .setDeepLink("/projects/" + project.getId() + "/milestones/" + milestone.getId())
+                    .setPriority("HIGH")
+                    .setTarget(Target.newBuilder()
+                            .setUser(UserTarget.newBuilder()
+                                    .addAllUserIds(userIds.stream().map(UUID::toString).toList())
+                                    .build())
+                            .build())
+                    .addChannels(Channel.WEB)
+                    .setCreatedAt(System.currentTimeMillis())
+                    .setCategory("PROJECT_MANAGEMENT")
+                    .build();
+
+            eventPublisher.publish("notifications", notificationEvent);
+            log.info("Notification sent to mentor/leader: milestone rejected.");
+        }
+
+        return ApiResponse.success("Milestone đã bị reject & status chuyển sang UPDATE_REQUIRED", null);
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<FeedbackResponse>> getMilestoneFeedbacks(
+            UUID milestoneId,
+            Integer page,
+            Integer size
+    ) {
+        int pageIndex = (page != null && page > 0) ? page - 1 : 0;
+        int pageSize = (size != null && size > 0) ? size : 10;
+
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<MilestoneFeedback> feedbackPage =
+                milestoneFeedbackRepository.findByMilestoneId(milestoneId, pageable);
+
+        Page<FeedbackResponse> mappedPage = feedbackPage.map(this::mapToFeedbackResponse);
+
+        return ApiResponse.success(PaginatedResult.from(mappedPage));
+    }
+
+    private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {
+        FeedbackResponse.FeedbackResponseBuilder builder = FeedbackResponse.builder()
+                .id(fb.getId())
+                .userId(fb.getUserId())
+                .content(fb.getContent())
+                .attachmentUrls(fb.getAttachmentUrls())
+                .createdAt(fb.getCreatedAt());
+
+        return builder.build();
+    }
 
     private ProjectMilestoneResponse convertToProjectMilestoneResponse(ProjectMilestone milestone) {
         return ProjectMilestoneResponse.builder()

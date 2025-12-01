@@ -2,6 +2,7 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.service.ProjectMilestoneService;
@@ -66,6 +67,23 @@ public class ProjectMilestoneController {
             @PathVariable UUID attachmentId) {
 
         ApiResponse<Void> response = projectMilestoneService.deleteMilestoneAttachment(milestoneId, attachmentId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{milestoneId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approveProjectMilestone(
+            @PathVariable UUID milestoneId) {
+
+        ApiResponse<Void> response = projectMilestoneService.approveProjectPlan(milestoneId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{milestoneId}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectProjectMilestone(
+            @PathVariable UUID milestoneId,
+            @RequestBody MilestoneRejectRequest request
+    ) {
+        ApiResponse<Void> response = projectMilestoneService.rejectProjectMilestone(milestoneId, request);
         return ResponseEntity.ok(response);
     }
 
