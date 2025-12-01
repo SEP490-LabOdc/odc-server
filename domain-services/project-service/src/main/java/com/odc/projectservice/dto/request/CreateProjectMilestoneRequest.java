@@ -1,8 +1,6 @@
 package com.odc.projectservice.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -19,6 +17,11 @@ public class CreateProjectMilestoneRequest {
     private String title;
 
     private String description;
+
+    @NotNull(message = "Percentage cannot be null")
+    @DecimalMin(value = "0.0001", inclusive = false, message = "Phần trăm phải lớn hơn 0%")
+    @DecimalMax(value = "100", inclusive = true, message = "Phần trăm không được vượt quá 100%")
+    private Float percentage;
 
     private LocalDate startDate;
 

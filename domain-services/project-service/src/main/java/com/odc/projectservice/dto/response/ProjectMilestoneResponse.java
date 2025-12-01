@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,7 @@ public class ProjectMilestoneResponse {
     private UUID projectId;
     private String projectName;
     private String title;
+    private BigDecimal budget;
     private String description;
     private LocalDate startDate;
     private LocalDate endDate;

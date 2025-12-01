@@ -42,6 +42,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -91,6 +93,19 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             );
         }
 
+        BigDecimal remainingBudget = project.getRemainingBudget() != null
+                ? project.getRemainingBudget()
+                : BigDecimal.ZERO;
+
+        BigDecimal percentageValue = BigDecimal.valueOf(request.getPercentage() / 100);
+        BigDecimal milestoneBudget = remainingBudget.multiply(percentageValue)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        if (remainingBudget.subtract(milestoneBudget).compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("Ngân sách còn lại của dự án không đủ để tạo milestone với "
+                    + request.getPercentage() + "%");
+        }
+
         ProjectMilestone projectMilestone = ProjectMilestone.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -99,9 +114,13 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .status(Status.PENDING.toString())
                 .project(project)
                 .attachmentUrls(attachmentList)
+                .budget(milestoneBudget)
                 .build();
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
+
+        project.setRemainingBudget(remainingBudget.subtract(milestoneBudget));
+        projectRepository.save(project);
 
         CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
                 CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
@@ -206,6 +225,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .projectId(updatedMilestone.getProject().getId())
                 .title(updatedMilestone.getTitle())
                 .description(updatedMilestone.getDescription())
+                .budget(updatedMilestone.getBudget())
                 .startDate(updatedMilestone.getStartDate())
                 .endDate(updatedMilestone.getEndDate())
                 .status(updatedMilestone.getStatus())
@@ -579,6 +599,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .projectId(milestone.getProject().getId())
                 .title(milestone.getTitle())
                 .description(milestone.getDescription())
+                .budget(milestone.getBudget())
                 .startDate(milestone.getStartDate())
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())

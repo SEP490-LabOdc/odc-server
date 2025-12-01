@@ -25,6 +25,7 @@ public class ProjectResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private BigDecimal budget;
+    private BigDecimal remainingBudget;
     private Set<SkillResponse> skills;
     private List<UserParticipantResponse> mentors;
     private List<UserParticipantResponse> talents;
