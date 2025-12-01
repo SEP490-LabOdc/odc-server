@@ -38,9 +38,10 @@ public class ProjectMemberController {
 
     @GetMapping("/projects/{projectId}/project-members")
     public ResponseEntity<ApiResponse<List<GetProjectMemberByProjectIdResponse>>> getProjectMembers(
-            @PathVariable UUID projectId
+            @PathVariable UUID projectId,
+            @RequestParam(required = false) UUID milestoneId
     ) {
-        return ResponseEntity.ok(projectMemberService.getProjectMembersByProjectId(projectId));
+        return ResponseEntity.ok(projectMemberService.getProjectMembersByProjectId(projectId, milestoneId));
     }
 
     @PatchMapping("/projects/{projectId}/mentors/{mentorId}/leader")

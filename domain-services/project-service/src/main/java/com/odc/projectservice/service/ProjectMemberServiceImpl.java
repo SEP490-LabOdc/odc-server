@@ -8,8 +8,10 @@ import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
 import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
+import com.odc.projectservice.entity.MilestoneMember;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
+import com.odc.projectservice.repository.MilestoneMemberRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.userservice.v1.*;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import java.util.Set;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,14 +32,17 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectRepository projectRepository;
+    private final MilestoneMemberRepository milestoneMemberRepository;
     private final ManagedChannel userServiceChannel;
 
     public ProjectMemberServiceImpl(
             ProjectMemberRepository projectMemberRepository,
             ProjectRepository projectRepository,
+            MilestoneMemberRepository milestoneMemberRepository,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel) {
         this.projectMemberRepository = projectMemberRepository;
         this.projectRepository = projectRepository;
+        this.milestoneMemberRepository = milestoneMemberRepository;
         this.userServiceChannel = userServiceChannel;
     }
 
@@ -157,12 +163,33 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
-    public ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId) {
+    public ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId, UUID milestoneId) {
         List<ProjectMember> projectMemberList = projectMemberRepository.findByProjectId(projectId);
+
+        if (milestoneId != null) {
+            List<MilestoneMember> milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+
+            Set<UUID> talentProjectMemberIdsInMilestone = milestoneMembers.stream()
+                    .map(MilestoneMember::getProjectMember)
+                    .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                    .map(ProjectMember::getId)
+                    .collect(Collectors.toSet());
+
+            projectMemberList = projectMemberList.stream()
+                    .filter(pm -> {
+                        if (Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject())) {
+                            return !talentProjectMemberIdsInMilestone.contains(pm.getId());
+                        }
+                        return true;
+                    })
+                    .collect(Collectors.toList());
+        }
 
         if (projectMemberList.isEmpty()) {
             return ApiResponse.success(List.of());
         }
+
+        final List<ProjectMember> finalProjectMemberList = projectMemberList;
 
         List<String> userIds = projectMemberList.stream()
                 .map(pm -> pm.getUserId().toString())
@@ -184,7 +211,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 ));
 
         List<GetProjectMemberByProjectIdResponse> result = projectMemberList.stream().map(pm -> {
-
             UserInfo userInfo = userMap.get(pm.getUserId());
 
             GetProjectMemberByProjectIdResponse dto = new GetProjectMemberByProjectIdResponse();
@@ -208,7 +234,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }).sorted(
                 Comparator.comparing(GetProjectMemberByProjectIdResponse::getIsLeader).reversed()
                         .thenComparing(dto -> {
-                            ProjectMember pm = projectMemberList.stream()
+                            ProjectMember pm = finalProjectMemberList.stream()
                                     .filter(p -> p.getId().equals(dto.getProjectMemberId()))
                                     .findFirst()
                                     .orElse(null);
