@@ -22,10 +22,7 @@ import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
 import com.odc.projectservice.entity.*;
-import com.odc.projectservice.repository.MilestoneFeedbackRepository;
-import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.repository.ProjectMilestoneRepository;
-import com.odc.projectservice.repository.ProjectRepository;
+import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
 import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
@@ -57,6 +54,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final MilestoneMemberRepository milestoneMemberRepository;
     private final @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
     private final EventPublisher eventPublisher;
@@ -276,10 +274,14 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
 
         Project project = milestone.getProject();
-
         String projectName = project.getTitle();
 
-        List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(project.getId());
+        List<MilestoneMember> milestoneMembers = milestoneMemberRepository
+                .findByProjectMilestone_IdAndIsActive(milestoneId, true);
+        
+        List<ProjectMember> projectMembers = milestoneMembers.stream()
+                .map(MilestoneMember::getProjectMember)
+                .collect(Collectors.toList());
 
         List<ProjectMember> talentMembers = projectMembers.stream()
                 .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
