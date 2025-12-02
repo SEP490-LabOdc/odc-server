@@ -31,4 +31,7 @@ public class ReportResponse {
     private LocalDate reportingDate;
     private LocalDateTime createdAt;
     private String feedback;
+
+    private UUID milestoneId;
+    private String milestoneTitle;
 }

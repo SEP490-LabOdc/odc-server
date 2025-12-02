@@ -124,38 +124,41 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .setCompanyId(project.getCompanyId().toString())
                 .build();
         GetCompanyByIdResponse companyDetailResponse = companyStub.getCompanyById(getCompanyByIdRequest);
-        UUID companyUserId = UUID.fromString(companyDetailResponse.getUserId());
 
-        UserTarget userTarget = UserTarget.newBuilder()
-                .addUserIds(companyUserId.toString())
-                .build();
+        if (companyDetailResponse.getUserId() != null && !companyDetailResponse.getUserId().isEmpty()) {
+            UUID companyUserId = UUID.fromString(companyDetailResponse.getUserId());
 
-        Target target = Target.newBuilder()
-                .setUser(userTarget)
-                .build();
+            UserTarget userTarget = UserTarget.newBuilder()
+                    .addUserIds(companyUserId.toString())
+                    .build();
 
-        Map<String, String> dataMap = Map.of(
-                "projectId", project.getId().toString(),
-                "milestoneId", savedMilestone.getId().toString(),
-                "milestoneTitle", savedMilestone.getTitle()
-        );
+            Target target = Target.newBuilder()
+                    .setUser(userTarget)
+                    .build();
 
-        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
-                .setId(UUID.randomUUID().toString())
-                .setType("NEW_PROJECT_MILESTONE_CREATED")
-                .setTitle("Milestone mới được tạo")
-                .setContent("Milestone \"" + savedMilestone.getTitle() + "\" của dự án \"" + project.getTitle() + "\" đã được tạo.")
-                .putAllData(dataMap)
-                .setDeepLink("/projects/" + project.getId() + "/milestones/" + savedMilestone.getId())
-                .setPriority("HIGH")
-                .setTarget(target)
-                .addChannels(Channel.WEB)
-                .setCreatedAt(System.currentTimeMillis())
-                .setCategory("PROJECT_MANAGEMENT")
-                .build();
+            Map<String, String> dataMap = Map.of(
+                    "projectId", project.getId().toString(),
+                    "milestoneId", savedMilestone.getId().toString(),
+                    "milestoneTitle", savedMilestone.getTitle()
+            );
 
-        eventPublisher.publish("notifications", notificationEvent);
-        log.info("Notification event published to company user: {}", companyUserId);
+            NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                    .setId(UUID.randomUUID().toString())
+                    .setType("NEW_PROJECT_MILESTONE_CREATED")
+                    .setTitle("Milestone mới được tạo")
+                    .setContent("Milestone \"" + savedMilestone.getTitle() + "\" của dự án \"" + project.getTitle() + "\" đã được tạo.")
+                    .putAllData(dataMap)
+                    .setDeepLink("/projects/" + project.getId() + "/milestones/" + savedMilestone.getId())
+                    .setPriority("HIGH")
+                    .setTarget(target)
+                    .addChannels(Channel.WEB)
+                    .setCreatedAt(System.currentTimeMillis())
+                    .setCategory("PROJECT_MANAGEMENT")
+                    .build();
+
+            eventPublisher.publish("notifications", notificationEvent);
+            log.info("Notification event published to company user: {}", companyUserId);
+        }
 
         ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
                 .id(savedMilestone.getId())
@@ -275,7 +278,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         List<MilestoneMember> milestoneMembers = milestoneMemberRepository
                 .findByProjectMilestone_IdAndIsActive(milestoneId, true);
-        
+
         List<ProjectMember> projectMembers = milestoneMembers.stream()
                 .map(MilestoneMember::getProjectMember)
                 .collect(Collectors.toList());

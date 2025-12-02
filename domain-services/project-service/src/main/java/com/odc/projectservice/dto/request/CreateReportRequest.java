@@ -8,7 +8,6 @@ import java.util.UUID;
 
 @Data
 public class CreateReportRequest {
-    @NotNull(message = "ProjectId không được để trống")
     private UUID projectId;
 
     @NotNull(message = "Loại báo cáo không được để trống")
@@ -17,4 +16,6 @@ public class CreateReportRequest {
     private String content; // Nội dung text (cho Daily)
 
     private List<String> attachmentsUrl; // Link file đính kèm
+
+    private UUID milestoneId;
 }
