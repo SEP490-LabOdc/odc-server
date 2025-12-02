@@ -14,10 +14,7 @@ import com.odc.notification.v1.Channel;
 import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
 import com.odc.notification.v1.UserTarget;
-import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
-import com.odc.projectservice.dto.request.MilestoneRejectRequest;
-import com.odc.projectservice.dto.request.UpdateMilestoneAttachmentRequest;
-import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
@@ -580,6 +577,61 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         Page<FeedbackResponse> mappedPage = feedbackPage.map(this::mapToFeedbackResponse);
 
         return ApiResponse.success(PaginatedResult.from(mappedPage));
+    }
+
+    @Override
+    public ApiResponse<ProjectMilestoneResponse> addMilestoneAttachments(UUID milestoneId, AddMilestoneAttachmentsRequest request) {
+
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(
+                        "Milestone với ID '" + milestoneId + "' không tồn tại"
+                ));
+
+        if (Boolean.TRUE.equals(milestone.getIsDeleted())) {
+            throw new BusinessException("Milestone với ID '" + milestoneId + "' đã bị xóa");
+        }
+
+        List<MilestoneAttachment> currentAttachments = milestone.getAttachmentUrls() != null
+                ? new ArrayList<>(milestone.getAttachmentUrls())
+                : new ArrayList<>();
+
+        List<MilestoneAttachment> newAttachments = new ArrayList<>();
+        if (request.getAttachments() != null && !request.getAttachments().isEmpty()) {
+            for (CreateMilestoneAttachmentRequest dto : request.getAttachments()) {
+                MilestoneAttachment newAttachment = new MilestoneAttachment(
+                        UUID.randomUUID(),
+                        dto.getName(),
+                        dto.getFileName(),
+                        dto.getUrl()
+                );
+                newAttachments.add(newAttachment);
+            }
+        }
+
+        List<MilestoneAttachment> mergedAttachments = new ArrayList<>(currentAttachments);
+        mergedAttachments.addAll(newAttachments);
+
+        UUID mentorId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        milestone.setAttachmentUrls(mergedAttachments);
+        milestone.setUpdatedBy(mentorId.toString()); // Convert UUID to String
+
+        ProjectMilestone updatedMilestone = projectMilestoneRepository.save(milestone);
+
+        ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
+                .id(updatedMilestone.getId())
+                .projectId(updatedMilestone.getProject().getId())
+                .title(updatedMilestone.getTitle())
+                .description(updatedMilestone.getDescription())
+                .budget(updatedMilestone.getBudget())
+                .startDate(updatedMilestone.getStartDate())
+                .endDate(updatedMilestone.getEndDate())
+                .status(updatedMilestone.getStatus())
+                .attachments(updatedMilestone.getAttachmentUrls() != null
+                        ? updatedMilestone.getAttachmentUrls()
+                        : List.of())
+                .build();
+
+        return ApiResponse.success("Thêm attachments cho milestone thành công", responseData);
     }
 
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {
