@@ -20,7 +20,6 @@ import com.odc.userservice.dto.response.UserRegisterResponse;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
 import com.odc.userservice.repository.UserRepository;
-import jakarta.ws.rs.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -215,7 +214,7 @@ public class AuthServiceImpl implements AuthService {
         boolean isFptEmail = email.toLowerCase().endsWith("@fpt.edu.vn");
 
         if (!isFptEmail) {
-            throw new BadRequestException("Chỉ cho phép đăng nhập bằng email FPT !");
+            throw new BusinessException("Chỉ cho phép đăng nhập bằng email FPT !");
         }
     }
 

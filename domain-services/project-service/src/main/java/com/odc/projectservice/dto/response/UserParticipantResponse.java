@@ -14,4 +14,5 @@ public class UserParticipantResponse {
     private String name;
     private String roleName;
     private boolean isLeader;
+    private String avatar;
 }

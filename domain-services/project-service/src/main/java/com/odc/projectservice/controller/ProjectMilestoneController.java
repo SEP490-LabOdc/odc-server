@@ -2,6 +2,7 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
+import com.odc.projectservice.dto.request.AddMilestoneAttachmentsRequest;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -98,5 +100,15 @@ public class ProjectMilestoneController {
         ApiResponse<PaginatedResult<FeedbackResponse>> response =
                 projectMilestoneService.getMilestoneFeedbacks(milestoneId, page, size);
         return ResponseEntity.ok(response);
+    }
+    @PreAuthorize("hasAuthority('MENTOR')")
+    @PostMapping("/{milestoneId}/milestone-attachments")
+    public ResponseEntity<ApiResponse<ProjectMilestoneResponse>> addMilestoneAttachments(
+            @PathVariable UUID milestoneId,
+            @Valid @RequestBody AddMilestoneAttachmentsRequest request) {
+
+        ApiResponse<ProjectMilestoneResponse> response =
+                projectMilestoneService.addMilestoneAttachments(milestoneId, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

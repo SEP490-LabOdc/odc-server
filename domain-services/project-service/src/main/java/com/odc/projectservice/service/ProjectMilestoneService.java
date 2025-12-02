@@ -2,6 +2,7 @@ package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
+import com.odc.projectservice.dto.request.AddMilestoneAttachmentsRequest;
 import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
@@ -36,5 +37,9 @@ public interface ProjectMilestoneService {
             UUID milestoneId,
             Integer page,
             Integer size
+    );
+    ApiResponse<ProjectMilestoneResponse> addMilestoneAttachments(
+            UUID milestoneId,
+            AddMilestoneAttachmentsRequest request
     );
 }
