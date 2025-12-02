@@ -50,4 +50,8 @@ public class Report extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_report_id")
     private Report parentReport;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "milestone_id") // Mặc định nullable = true
+    private ProjectMilestone milestone;
 }

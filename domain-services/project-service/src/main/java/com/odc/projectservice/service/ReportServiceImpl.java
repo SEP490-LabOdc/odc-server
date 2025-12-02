@@ -15,8 +15,10 @@ import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
+import com.odc.projectservice.entity.ProjectMilestone;
 import com.odc.projectservice.entity.Report;
 import com.odc.projectservice.repository.ProjectMemberRepository;
+import com.odc.projectservice.repository.ProjectMilestoneRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.projectservice.repository.ReportRepository;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
@@ -48,6 +50,7 @@ public class ReportServiceImpl implements ReportService {
     private final ReportRepository reportRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectMilestoneRepository projectMilestoneRepository;
 
     @Qualifier("userServiceChannel1")
     private final ManagedChannel userServiceChannel;
@@ -58,11 +61,13 @@ public class ReportServiceImpl implements ReportService {
     public ReportServiceImpl(ReportRepository reportRepository,
                              ProjectRepository projectRepository,
                              ProjectMemberRepository projectMemberRepository,
+                             ProjectMilestoneRepository projectMilestoneRepository,
                              ManagedChannel userServiceChannel,
                              ManagedChannel companyServiceChannel) {
         this.reportRepository = reportRepository;
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
+        this.projectMilestoneRepository = projectMilestoneRepository;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }
@@ -91,6 +96,20 @@ public class ReportServiceImpl implements ReportService {
         // Định tuyến người nhận
         UUID recipientId = resolveRecipient(project, senderRole, isLeader);
 
+        ProjectMilestone milestone = null;
+        if (ReportType.MILESTONE_REPORT.toString().equals(request.getReportType())) {
+            if (request.getMilestoneId() == null) {
+                throw new BusinessException("Báo cáo milestone yêu cầu phải có milestoneId");
+            }
+            milestone = projectMilestoneRepository.findById(request.getMilestoneId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
+
+            // Validate milestone thuộc về project
+            if (!milestone.getProject().getId().equals(project.getId())) {
+                throw new BusinessException("Milestone không thuộc về dự án này");
+            }
+        }
+
         Report report = Report.builder()
                 .project(project)
                 .reporterId(userId)
@@ -100,6 +119,7 @@ public class ReportServiceImpl implements ReportService {
                 .attachmentsUrl(request.getAttachmentsUrl())
                 .reportingDate(LocalDate.now())
                 .status(ReportStatus.SUBMITTED.toString())
+                .milestone(milestone)
                 .build();
 
         Report savedReport = reportRepository.save(report);
@@ -301,6 +321,8 @@ public class ReportServiceImpl implements ReportService {
                 .reportingDate(r.getReportingDate())
                 .createdAt(r.getCreatedAt())
                 .feedback(r.getFeedback())
+                .milestoneId(r.getMilestone() != null ? r.getMilestone().getId() : null)
+                .milestoneTitle(r.getMilestone() != null ? r.getMilestone().getTitle() : null)
                 .build();
     }
 }
