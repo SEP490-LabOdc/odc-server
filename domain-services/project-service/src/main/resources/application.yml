@@ -128,4 +128,4 @@ grpc:
 gemini:
   api:
     key: ${GEMINI_API_KEY:your_api_key}
-  base-url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key="
+  base-url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="

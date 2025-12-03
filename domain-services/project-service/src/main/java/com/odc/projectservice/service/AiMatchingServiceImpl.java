@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class AiMatchingServiceImpl implements AiMatchingService {
-    private final RestTemplate restTemplate;
+    private final RestTemplate externalRestTemplate;
     private final ObjectMapper objectMapper;
     @Value("${gemini.api.key}")
     private String apiKey;
