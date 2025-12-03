@@ -21,4 +21,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     // Admin: Tìm report gửi lên hệ thống (recipientId = null)
     Page<Report> findByRecipientIdIsNull(Pageable pageable);
+
+    Page<Report> findByMilestone_Id(UUID milestoneId, Pageable pageable);
 }

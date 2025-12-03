@@ -201,6 +201,17 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public ApiResponse<PaginatedResult<ReportResponse>> getReportsByMilestoneId(UUID milestoneId, int page, int size) {
+        projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("reportingDate").descending());
+        Page<Report> reportPage = reportRepository.findByMilestone_Id(milestoneId, pageable);
+
+        return ApiResponse.success(mapPageToResponse(reportPage));
+    }
+
+    @Override
     public ApiResponse<ReportResponse> getReportDetail(UUID reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
