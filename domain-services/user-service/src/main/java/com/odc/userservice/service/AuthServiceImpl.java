@@ -13,6 +13,7 @@ import com.odc.common.util.JwtUtil;
 import com.odc.common.util.StringUtil;
 import com.odc.commonlib.event.EventPublisher;
 import com.odc.user.v1.PasswordResetRequestEvent;
+import com.odc.user.v1.UserCreatedEvent;
 import com.odc.userservice.dto.request.*;
 import com.odc.userservice.dto.response.RefreshTokenResponse;
 import com.odc.userservice.dto.response.UserLoginResponse;
@@ -76,7 +77,8 @@ public class AuthServiceImpl implements AuthService {
                 .role(roleRepository.findByName(Role.USER.toString()).orElse(null))
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        publishUserCreatedEvent(savedUser);
 
         ApiResponse<UserRegisterResponse> response = new ApiResponse<>();
 
@@ -246,7 +248,10 @@ public class AuthServiceImpl implements AuthService {
                         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Role user mặc định (USER).")))
                 .build();
 
-        return userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+        publishUserCreatedEvent(savedUser);
+
+        return savedUser;
     }
 
     private String generateRandomPassword() {
@@ -271,5 +276,23 @@ public class AuthServiceImpl implements AuthService {
                                         "userId", user.getId())))
                         .refreshToken(refreshToken)
                         .build());
+    }
+
+    private void publishUserCreatedEvent(User user) {
+        try {
+            UserCreatedEvent event = UserCreatedEvent.newBuilder()
+                    .setUserId(user.getId().toString())
+                    .setEmail(user.getEmail())
+                    .setFullName(user.getFullName())
+                    .setRole(user.getRole().getName())
+                    .build();
+
+            // Topic "user.created" cần thống nhất
+            eventPublisher.publish("user.created", event);
+            log.info("Published UserCreatedEvent for user: {}", user.getId());
+        } catch (Exception e) {
+            log.error("Failed to publish UserCreatedEvent: {}", e.getMessage());
+            // Không throw exception để tránh rollback transaction đăng ký thành công
+        }
     }
 }

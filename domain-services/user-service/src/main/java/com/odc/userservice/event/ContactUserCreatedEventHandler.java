@@ -9,6 +9,7 @@ import com.odc.commonlib.event.EventPublisher;
 import com.odc.company.v1.CompanyApprovedEvent;
 import com.odc.company.v1.ContactUser;
 import com.odc.user.v1.ContactUserCreatedEvent;
+import com.odc.user.v1.UserCreatedEvent;
 import com.odc.user.v1.UserWelcomeNotificationEvent;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
@@ -55,6 +56,14 @@ public class ContactUserCreatedEventHandler implements EventHandler {
 
             userRepository.save(user);
             log.info("user has been saved: {}", user);
+
+            UserCreatedEvent userCreatedEvent = UserCreatedEvent.newBuilder()
+                    .setUserId(user.getId().toString())
+                    .setEmail(user.getEmail())
+                    .setFullName(user.getFullName())
+                    .setRole(user.getRole().getName())
+                    .build();
+            eventPublisher.publish("user.created", userCreatedEvent);
 
             ContactUserCreatedEvent contactUserCreatedEvent = ContactUserCreatedEvent
                     .newBuilder()
