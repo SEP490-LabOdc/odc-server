@@ -83,7 +83,7 @@ public class AiMatchingServiceImpl implements AiMatchingService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            var response = restTemplate.postForEntity(apiUrl, new HttpEntity<>(payload, headers), Map.class);
+            var response = externalRestTemplate.postForEntity(apiUrl, new HttpEntity<>(payload, headers), Map.class);
 
             return extractContent(response.getBody());
         } catch (Exception e) {
