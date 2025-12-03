@@ -107,6 +107,7 @@ springdoc:
     path: /payment-service/v3/api-docs
   swagger-ui:
     path: /payment-service/swagger/index.html
+
 # REST Service Configuration
 grpc:
   client:
@@ -120,3 +121,11 @@ grpc:
   server:
     address: 0.0.0.0
     port: 9096
+
+# PayOS Configuration
+payos:
+  client-id: ${PAYOS_CLIENT_ID:PAYOS_CLIENT_ID_DEFAULT}
+  api-key: ${PAYOS_API_KEY:PAYOS_API_KEY_DEFAULT}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:PAYOS_CHECKSUM_KEY_DEFAULT}
+  return-url: ${PAYMENT_RETURN_URL:https://example.com/payment/success}
+  cancel-url: ${PAYMENT_CANCEL_URL:https://example.com/payment/cancel}
