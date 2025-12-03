@@ -200,7 +200,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public ApiResponse<List<CompanyResponse>> getAllCompanies() {
         // 1. Lấy tất cả Company entity từ database
-        List<Company> companies = companyRepository.findAll();
+        List<Company> companies = companyRepository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt"));
 
         // 2. Dùng stream để chuyển đổi List<Company> thành List<CompanyResponseDTO>
         List<CompanyResponse> responseData = companies.stream()
