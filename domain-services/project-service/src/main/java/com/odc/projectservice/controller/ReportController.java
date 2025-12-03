@@ -73,4 +73,11 @@ public class ReportController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(reportService.getProjectReports(projectId, page, size));
     }
+    @GetMapping("/milestone/{milestoneId}")
+    public ResponseEntity<ApiResponse<PaginatedResult<ReportResponse>>> getReportsByMilestoneId(
+            @PathVariable UUID milestoneId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(reportService.getReportsByMilestoneId(milestoneId, page, size));
+    }
 }

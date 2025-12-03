@@ -23,4 +23,6 @@ public interface ReportService {
     ApiResponse<ReportResponse> getReportDetail(UUID reportId);
 
     ApiResponse<PaginatedResult<ReportResponse>> getProjectReports(UUID projectId, int page, int size);
+
+    ApiResponse<PaginatedResult<ReportResponse>> getReportsByMilestoneId(UUID milestoneId, int page, int size);
 }
