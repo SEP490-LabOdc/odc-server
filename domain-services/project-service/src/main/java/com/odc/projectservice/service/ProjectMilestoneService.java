@@ -7,6 +7,7 @@ import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 
 import java.util.List;
@@ -43,4 +44,6 @@ public interface ProjectMilestoneService {
             UUID milestoneId,
             AddMilestoneAttachmentsRequest request
     );
+
+    ApiResponse<List<MilestoneDocumentResponse>> getMilestoneDocuments(UUID milestoneId);
 }
