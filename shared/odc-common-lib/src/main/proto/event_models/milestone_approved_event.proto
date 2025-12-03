@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package com.odc.project.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.project.v1";
+option java_outer_classname = "MilestoneApprovedEventProto";
+
+message MilestoneApprovedEvent {
+  string milestone_id = 1;
+  string project_id = 2;
+  string company_id = 3;
+  string milestone_title = 4;
+  double amount = 5; // Số tiền cần thanh toán
+}
