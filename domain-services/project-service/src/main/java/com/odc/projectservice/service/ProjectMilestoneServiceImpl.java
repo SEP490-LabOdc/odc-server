@@ -117,49 +117,52 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         project.setRemainingBudget(remainingBudget.subtract(milestoneBudget));
         projectRepository.save(project);
 
-        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
-                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+        try {
+            CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                    CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
 
-        GetCompanyByIdRequest getCompanyByIdRequest = GetCompanyByIdRequest.newBuilder()
-                .setCompanyId(project.getCompanyId().toString())
-                .build();
-        GetCompanyByIdResponse companyDetailResponse = companyStub.getCompanyById(getCompanyByIdRequest);
-
-        if (companyDetailResponse.getUserId() != null && !companyDetailResponse.getUserId().isEmpty()) {
-            UUID companyUserId = UUID.fromString(companyDetailResponse.getUserId());
-
-            UserTarget userTarget = UserTarget.newBuilder()
-                    .addUserIds(companyUserId.toString())
+            GetCompanyByIdRequest getCompanyByIdRequest = GetCompanyByIdRequest.newBuilder()
+                    .setCompanyId(project.getCompanyId().toString())
                     .build();
+            GetCompanyByIdResponse companyDetailResponse = companyStub.getCompanyById(getCompanyByIdRequest);
 
-            Target target = Target.newBuilder()
-                    .setUser(userTarget)
-                    .build();
+            if (companyDetailResponse.getUserId() != null && !companyDetailResponse.getUserId().isEmpty()) {
+                UUID companyUserId = UUID.fromString(companyDetailResponse.getUserId());
 
-            Map<String, String> dataMap = Map.of(
-                    "projectId", project.getId().toString(),
-                    "milestoneId", savedMilestone.getId().toString(),
-                    "milestoneTitle", savedMilestone.getTitle()
-            );
+                UserTarget userTarget = UserTarget.newBuilder()
+                        .addUserIds(companyUserId.toString())
+                        .build();
 
-            NotificationEvent notificationEvent = NotificationEvent.newBuilder()
-                    .setId(UUID.randomUUID().toString())
-                    .setType("NEW_PROJECT_MILESTONE_CREATED")
-                    .setTitle("Milestone mới được tạo")
-                    .setContent("Milestone \"" + savedMilestone.getTitle() + "\" của dự án \"" + project.getTitle() + "\" đã được tạo.")
-                    .putAllData(dataMap)
-                    .setDeepLink("/projects/" + project.getId() + "/milestones/" + savedMilestone.getId())
-                    .setPriority("HIGH")
-                    .setTarget(target)
-                    .addChannels(Channel.WEB)
-                    .setCreatedAt(System.currentTimeMillis())
-                    .setCategory("PROJECT_MANAGEMENT")
-                    .build();
+                Target target = Target.newBuilder()
+                        .setUser(userTarget)
+                        .build();
 
-            eventPublisher.publish("notifications", notificationEvent);
-            log.info("Notification event published to company user: {}", companyUserId);
+                Map<String, String> dataMap = Map.of(
+                        "projectId", project.getId().toString(),
+                        "milestoneId", savedMilestone.getId().toString(),
+                        "milestoneTitle", savedMilestone.getTitle()
+                );
+
+                NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                        .setId(UUID.randomUUID().toString())
+                        .setType("NEW_PROJECT_MILESTONE_CREATED")
+                        .setTitle("Milestone mới được tạo")
+                        .setContent("Milestone \"" + savedMilestone.getTitle() + "\" của dự án \"" + project.getTitle() + "\" đã được tạo.")
+                        .putAllData(dataMap)
+                        .setDeepLink("/projects/" + project.getId() + "/milestones/" + savedMilestone.getId())
+                        .setPriority("HIGH")
+                        .setTarget(target)
+                        .addChannels(Channel.WEB)
+                        .setCreatedAt(System.currentTimeMillis())
+                        .setCategory("PROJECT_MANAGEMENT")
+                        .build();
+
+                eventPublisher.publish("notifications", notificationEvent);
+                log.info("Notification event published to company user: {}", companyUserId);
+            }
+        } catch (Exception e) {
+            log.error("Không thể lấy thông tin công ty qua gRPC để gửi thông báo: {}", e.getMessage(), e);
         }
-
         ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
                 .id(savedMilestone.getId())
                 .projectId(savedMilestone.getProject().getId())
