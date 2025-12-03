@@ -8,6 +8,8 @@ import com.odc.common.dto.SortRequest;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.common.specification.GenericSpecification;
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.user.v1.UserCreatedEvent;
 import com.odc.userservice.dto.request.CreateUserRequest;
 import com.odc.userservice.dto.request.UpdatePasswordRequest;
 import com.odc.userservice.dto.request.UpdateRoleRequest;
@@ -49,6 +51,7 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final @Qualifier("userServiceGrpcChannel") ManagedChannel userServiceGrpcChannel;
+    private final EventPublisher eventPublisher;
 
     @Override
     public ApiResponse<GetUserResponse> getUserById(UUID id) {
@@ -132,7 +135,8 @@ public class UserServiceImpl implements UserService {
                 .failedLoginAttempts(0)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        publishUserCreatedEvent(savedUser);
 
         return ApiResponse.<GetUserResponse>builder()
                 .success(true)
@@ -140,6 +144,24 @@ public class UserServiceImpl implements UserService {
                 .timestamp(LocalDateTime.now())
                 .data(toGetUserResponse(user))
                 .build();
+    }
+
+    private void publishUserCreatedEvent(User user) {
+        try {
+            UserCreatedEvent event = UserCreatedEvent.newBuilder()
+                    .setUserId(user.getId().toString())
+                    .setEmail(user.getEmail())
+                    .setFullName(user.getFullName())
+                    .setRole(user.getRole().getName())
+                    .build();
+
+            // Topic "user.created" cần thống nhất
+            eventPublisher.publish("user.created", event);
+            log.info("Published UserCreatedEvent for user: {}", user.getId());
+        } catch (Exception e) {
+            log.error("Failed to publish UserCreatedEvent: {}", e.getMessage());
+            // Không throw exception để tránh rollback transaction đăng ký thành công
+        }
     }
 
     private GetUserResponse toGetUserResponse(User user) {

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package com.odc.user.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.user.v1";
+option java_outer_classname = "UserCreatedEventProto";
+
+message UserCreatedEvent {
+  string user_id = 1;
+  string email = 2;
+  string full_name = 3;
+  string role = 4; // USER, MENTOR, COMPANY, ...
+  string user_type = 5; // INTERNAL, EXTERNAL (Optional)
+}
