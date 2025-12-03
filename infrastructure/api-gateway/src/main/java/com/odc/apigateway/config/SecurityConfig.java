@@ -53,7 +53,8 @@ public class SecurityConfig {
     private static final String[] POST_PERMIT_PATHS = {
             "/api/v1/files/upload",
             "/api/v1/project-applications/apply",
-            "/api/v1/skills/search"
+            "/api/v1/skills/search",
+            "/api/v1/payment/webhook"
     };
     private static final String[] OPTIONS_ANY_PATH = {"/**"};
     private final JwtAuthenticationManager authenticationManager;
