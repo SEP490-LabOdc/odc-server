@@ -16,6 +16,7 @@ import com.odc.notification.v1.Target;
 import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
 import com.odc.projectservice.entity.*;
@@ -239,10 +240,33 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     @Override
     public ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestones() {
         List<ProjectMilestone> milestones = projectMilestoneRepository.findAll();
+        List<UUID> milestoneIds = milestones.stream()
+                .map(ProjectMilestone::getId)
+                .toList();
 
+        // Lấy tất cả MilestoneMember active
+        List<MilestoneMember> allMembers = milestoneMemberRepository.findByProjectMilestone_IdInAndIsActive(milestoneIds, true);
+
+        // Map milestoneId -> List<MilestoneMember>
+        Map<UUID, List<MilestoneMember>> milestoneMembersMap = allMembers.stream()
+                .collect(Collectors.groupingBy(mm -> mm.getProjectMilestone().getId()));
+
+        // Lấy tất cả userId để fetch thông tin
+        List<UUID> allUserIds = allMembers.stream()
+                .map(mm -> mm.getProjectMember().getUserId())
+                .distinct()
+                .toList();
+
+        Map<UUID, UserInfo> userMap = getUserMapByIds(allUserIds); // helper fetch user info từ gRPC
+
+        // Map milestone -> response
         List<ProjectMilestoneResponse> milestoneResponses = milestones.stream()
-                .map(this::convertToProjectMilestoneResponse)
-                .collect(Collectors.toList());
+                .map(m -> convertToProjectMilestoneResponse(
+                        m,
+                        milestoneMembersMap.getOrDefault(m.getId(), List.of()),
+                        userMap
+                ))
+                .toList();
 
         return ApiResponse.<List<ProjectMilestoneResponse>>builder()
                 .success(true)
@@ -252,16 +276,37 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .build();
     }
 
+
     @Override
     public ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestonesByProjectId(UUID projectId) {
         projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
         List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(projectId);
+        List<UUID> milestoneIds = milestones.stream().map(ProjectMilestone::getId).toList();
+
+        // Lấy tất cả MilestoneMember active
+        List<MilestoneMember> allMembers = milestoneMemberRepository.findByProjectMilestone_IdInAndIsActive(milestoneIds, true);
+
+        // Map milestoneId -> List<MilestoneMember>
+        Map<UUID, List<MilestoneMember>> milestoneMembersMap = allMembers.stream()
+                .collect(Collectors.groupingBy(mm -> mm.getProjectMilestone().getId()));
+
+        // Lấy tất cả userId để fetch thông tin
+        List<UUID> allUserIds = allMembers.stream()
+                .map(mm -> mm.getProjectMember().getUserId())
+                .distinct()
+                .toList();
+
+        Map<UUID, UserInfo> userMap = getUserMapByIds(allUserIds);
 
         List<ProjectMilestoneResponse> milestoneResponses = milestones.stream()
-                .map(this::convertToProjectMilestoneResponse)
-                .collect(Collectors.toList());
+                .map(m -> convertToProjectMilestoneResponse(
+                        m,
+                        milestoneMembersMap.getOrDefault(m.getId(), List.of()),
+                        userMap
+                ))
+                .toList();
 
         return ApiResponse.<List<ProjectMilestoneResponse>>builder()
                 .success(true)
@@ -276,108 +321,21 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
 
-        Project project = milestone.getProject();
-        String projectName = project.getTitle();
-
         List<MilestoneMember> milestoneMembers = milestoneMemberRepository
                 .findByProjectMilestone_IdAndIsActive(milestoneId, true);
 
-        List<ProjectMember> projectMembers = milestoneMembers.stream()
-                .map(MilestoneMember::getProjectMember)
-                .collect(Collectors.toList());
-
-        List<ProjectMember> talentMembers = projectMembers.stream()
-                .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
-                .toList();
-
-        List<ProjectMember> mentorMembers = projectMembers.stream()
-                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
-                .toList();
-
-        List<String> allUserIds = projectMembers.stream()
-                .map(pm -> pm.getUserId().toString())
+        List<UUID> allUserIds = milestoneMembers.stream()
+                .map(mm -> mm.getProjectMember().getUserId())
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
-        Map<UUID, UserInfo> userMap = new HashMap<>();
-        if (!allUserIds.isEmpty()) {
-            try {
-                UserServiceGrpc.UserServiceBlockingStub userStub =
-                        UserServiceGrpc.newBlockingStub(userServiceChannel);
-                GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
-                        GetUsersByIdsRequest.newBuilder()
-                                .addAllUserId(allUserIds)
-                                .build()
-                );
+        Map<UUID, UserInfo> userMap = getUserMapByIds(allUserIds);
 
-                userMap = usersResponse.getUsersList().stream()
-                        .collect(Collectors.toMap(
-                                u -> UUID.fromString(u.getUserId()),
-                                u -> u
-                        ));
-            } catch (Exception e) {
-                log.error("Lỗi khi lấy thông tin user: {}", e.getMessage());
-            }
-        }
-
-        final Map<UUID, UserInfo> finalUserMap = userMap;
-        List<TalentMentorInfoResponse> talents = talentMembers.stream()
-                .map(pm -> {
-                    UserInfo userInfo = finalUserMap.get(pm.getUserId());
-                    if (userInfo != null) {
-                        return TalentMentorInfoResponse.builder()
-                                .userId(pm.getUserId())
-                                .name(userInfo.getFullName())
-                                .avatar(userInfo.getAvatarUrl())
-                                .email(userInfo.getEmail())
-                                .phone(userInfo.getPhone())
-                                .build();
-                    }
-                    return TalentMentorInfoResponse.builder()
-                            .userId(pm.getUserId())
-                            .name("Unknown")
-                            .avatar("")
-                            .email("")
-                            .phone("")
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        List<TalentMentorInfoResponse> mentors = mentorMembers.stream()
-                .map(pm -> {
-                    UserInfo userInfo = finalUserMap.get(pm.getUserId());
-                    if (userInfo != null) {
-                        return TalentMentorInfoResponse.builder()
-                                .userId(pm.getUserId())
-                                .name(userInfo.getFullName())
-                                .avatar(userInfo.getAvatarUrl())
-                                .email(userInfo.getEmail())
-                                .phone(userInfo.getPhone())
-                                .build();
-                    }
-                    return TalentMentorInfoResponse.builder()
-                            .userId(pm.getUserId())
-                            .name("Unknown")
-                            .avatar("")
-                            .email("")
-                            .phone("")
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
-                .id(milestone.getId())
-                .projectId(milestone.getProject().getId())
-                .projectName(projectName)
-                .title(milestone.getTitle())
-                .description(milestone.getDescription())
-                .startDate(milestone.getStartDate())
-                .endDate(milestone.getEndDate())
-                .status(milestone.getStatus())
-                .attachments(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
-                .talents(talents)
-                .mentors(mentors)
-                .build();
+        ProjectMilestoneResponse responseData = convertToProjectMilestoneResponse(
+                milestone,
+                milestoneMembers,
+                userMap
+        );
 
         return ApiResponse.<ProjectMilestoneResponse>builder()
                 .success(true)
@@ -642,6 +600,35 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return ApiResponse.success("Thêm attachments cho milestone thành công", responseData);
     }
 
+    @Override
+    public ApiResponse<List<MilestoneDocumentResponse>> getMilestoneDocuments(UUID milestoneId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(
+                        "Milestone với ID '" + milestoneId + "' không tồn tại"
+                ));
+
+        if (Boolean.TRUE.equals(milestone.getIsDeleted())) {
+            throw new BusinessException("Milestone với ID '" + milestoneId + "' đã bị xóa");
+        }
+
+        List<MilestoneAttachment> attachments = milestone.getAttachmentUrls() != null
+                ? milestone.getAttachmentUrls()
+                : new ArrayList<>();
+
+        List<MilestoneDocumentResponse> documents = attachments.stream()
+                .map(attachment -> MilestoneDocumentResponse.builder()
+                        .id(attachment.getId())
+                        .fileName(attachment.getFileName())
+                        .fileUrl(attachment.getUrl())
+                        .s3Key(null) // MilestoneAttachment không có s3Key, có thể để null hoặc extract từ URL
+                        .uploadedAt(milestone.getUpdatedAt() != null ? milestone.getUpdatedAt() : milestone.getCreatedAt())
+                        .entityId(milestoneId.toString())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("Lấy danh sách tài liệu milestone thành công", documents);
+    }
+
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {
         FeedbackResponse.FeedbackResponseBuilder builder = FeedbackResponse.builder()
                 .id(fb.getId())
@@ -653,10 +640,82 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return builder.build();
     }
 
-    private ProjectMilestoneResponse convertToProjectMilestoneResponse(ProjectMilestone milestone) {
+    private ProjectMilestoneResponse convertToProjectMilestoneResponse(ProjectMilestone milestone,
+                                                                       List<MilestoneMember> milestoneMembers,
+                                                                       Map<UUID, UserInfo> userMap) {
+        List<ProjectMember> projectMembers = milestoneMembers.stream()
+                .map(MilestoneMember::getProjectMember)
+                .distinct()
+                .toList();
+
+        List<ProjectMember> talentMembers = projectMembers.stream()
+                .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .toList();
+
+        List<ProjectMember> mentorMembers = projectMembers.stream()
+                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .toList();
+
+        List<TalentMentorInfoResponse> talents = talentMembers.stream()
+                .collect(Collectors.toMap(
+                        ProjectMember::getUserId,
+                        pm -> {
+                            UserInfo userInfo = userMap.get(pm.getUserId());
+                            if (userInfo != null) {
+                                return TalentMentorInfoResponse.builder()
+                                        .userId(pm.getUserId())
+                                        .name(userInfo.getFullName())
+                                        .avatar(userInfo.getAvatarUrl())
+                                        .email(userInfo.getEmail())
+                                        .phone(userInfo.getPhone())
+                                        .build();
+                            }
+                            return TalentMentorInfoResponse.builder()
+                                    .userId(pm.getUserId())
+                                    .name("Unknown")
+                                    .avatar("")
+                                    .email("")
+                                    .phone("")
+                                    .build();
+                        },
+                        (existing, replacement) -> existing
+                ))
+                .values()
+                .stream()
+                .toList();
+
+        List<TalentMentorInfoResponse> mentors = mentorMembers.stream()
+                .collect(Collectors.toMap(
+                        ProjectMember::getUserId,
+                        pm -> {
+                            UserInfo userInfo = userMap.get(pm.getUserId());
+                            if (userInfo != null) {
+                                return TalentMentorInfoResponse.builder()
+                                        .userId(pm.getUserId())
+                                        .name(userInfo.getFullName())
+                                        .avatar(userInfo.getAvatarUrl())
+                                        .email(userInfo.getEmail())
+                                        .phone(userInfo.getPhone())
+                                        .build();
+                            }
+                            return TalentMentorInfoResponse.builder()
+                                    .userId(pm.getUserId())
+                                    .name("Unknown")
+                                    .avatar("")
+                                    .email("")
+                                    .phone("")
+                                    .build();
+                        },
+                        (existing, replacement) -> existing
+                ))
+                .values()
+                .stream()
+                .toList();
+
         return ProjectMilestoneResponse.builder()
                 .id(milestone.getId())
                 .projectId(milestone.getProject().getId())
+                .projectName(milestone.getProject().getTitle())
                 .title(milestone.getTitle())
                 .description(milestone.getDescription())
                 .budget(milestone.getBudget())
@@ -664,6 +723,29 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())
                 .attachments(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
+                .talents(talents)
+                .mentors(mentors)
                 .build();
+    }
+
+    private Map<UUID, UserInfo> getUserMapByIds(List<UUID> userIds) {
+        if (userIds.isEmpty()) return Map.of();
+
+        try {
+            UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+            GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                    GetUsersByIdsRequest.newBuilder()
+                            .addAllUserId(userIds.stream().map(UUID::toString).toList())
+                            .build()
+            );
+            return usersResponse.getUsersList().stream()
+                    .collect(Collectors.toMap(
+                            u -> UUID.fromString(u.getUserId()),
+                            u -> u
+                    ));
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy thông tin user: {}", e.getMessage());
+            return Map.of();
+        }
     }
 }
