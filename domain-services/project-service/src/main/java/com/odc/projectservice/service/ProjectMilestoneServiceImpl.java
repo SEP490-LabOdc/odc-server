@@ -16,6 +16,7 @@ import com.odc.notification.v1.Target;
 import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
 import com.odc.projectservice.entity.*;
@@ -640,6 +641,35 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .build();
 
         return ApiResponse.success("Thêm attachments cho milestone thành công", responseData);
+    }
+
+    @Override
+    public ApiResponse<List<MilestoneDocumentResponse>> getMilestoneDocuments(UUID milestoneId) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(
+                        "Milestone với ID '" + milestoneId + "' không tồn tại"
+                ));
+
+        if (Boolean.TRUE.equals(milestone.getIsDeleted())) {
+            throw new BusinessException("Milestone với ID '" + milestoneId + "' đã bị xóa");
+        }
+
+        List<MilestoneAttachment> attachments = milestone.getAttachmentUrls() != null
+                ? milestone.getAttachmentUrls()
+                : new ArrayList<>();
+
+        List<MilestoneDocumentResponse> documents = attachments.stream()
+                .map(attachment -> MilestoneDocumentResponse.builder()
+                        .id(attachment.getId())
+                        .fileName(attachment.getFileName())
+                        .fileUrl(attachment.getUrl())
+                        .s3Key(null) // MilestoneAttachment không có s3Key, có thể để null hoặc extract từ URL
+                        .uploadedAt(milestone.getUpdatedAt() != null ? milestone.getUpdatedAt() : milestone.getCreatedAt())
+                        .entityId(milestoneId.toString())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("Lấy danh sách tài liệu milestone thành công", documents);
     }
 
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {

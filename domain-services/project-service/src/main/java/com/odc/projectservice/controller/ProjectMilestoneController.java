@@ -7,6 +7,7 @@ import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
 import com.odc.projectservice.dto.request.MilestoneRejectRequest;
 import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import jakarta.validation.Valid;
@@ -110,6 +111,14 @@ public class ProjectMilestoneController {
 
         ApiResponse<ProjectMilestoneResponse> response =
                 projectMilestoneService.addMilestoneAttachments(milestoneId, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/{milestoneId}/documents")
+    public ResponseEntity<ApiResponse<List<MilestoneDocumentResponse>>> getMilestoneDocuments(
+            @PathVariable UUID milestoneId) {
+        ApiResponse<List<MilestoneDocumentResponse>> response =
+                projectMilestoneService.getMilestoneDocuments(milestoneId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
