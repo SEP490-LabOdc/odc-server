@@ -98,11 +98,11 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .map(u -> {
                     if (!passwordEncoder.matches(request.getPassword(), u.getPasswordHash())) {
-                        throw new UnauthenticatedException("Không tồn tại email hoặc mật khẩu không đúng!");
+                        throw new BusinessException("Không tồn tại email hoặc mật khẩu không đúng!");
                     }
                     return u;
                 })
-                .orElseThrow(() -> new UnauthenticatedException("Email Không tồn tại !"));
+                .orElseThrow(() -> new  BusinessException("Email Không tồn tại !"));
 
         String redisKey = String.format("user:%s:refreshToken", user.getId().toString());
 
