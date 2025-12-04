@@ -4,12 +4,14 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
+import com.odc.projectservice.dto.response.GetMilestoneMember;
 import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.service.MilestoneMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -43,6 +45,17 @@ public class MilestoneMemberController {
     ) {
         return ResponseEntity.ok(
                 milestoneMemberService.getMilestoneMembers(milestoneId, isActive)
+        );
+    }
+
+    @GetMapping("/project-milestones/{milestoneId}/milestone-members")
+    public ResponseEntity<ApiResponse<List<GetMilestoneMember>>> getMilestoneMembers(
+            @PathVariable UUID milestoneId,
+            @RequestParam(value = "isActive", required = false) Boolean isActive,
+            @RequestParam(value = "role", required = false) String role
+    ) {
+        return ResponseEntity.ok(
+                milestoneMemberService.getMilestoneMembers(milestoneId, isActive, role)
         );
     }
 }

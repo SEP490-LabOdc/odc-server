@@ -235,4 +235,73 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
         return ApiResponse.success(response);
     }
+
+    @Override
+    public ApiResponse<List<GetMilestoneMember>> getMilestoneMembers(UUID milestoneId, Boolean isActive, String role) {
+        List<MilestoneMember> milestoneMembers;
+
+        // 1. Lấy dữ liệu thô từ DB
+        if (isActive == null) {
+            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+        } else {
+            milestoneMembers = milestoneMemberRepository.findByProjectMilestone_IdAndIsActive(milestoneId, isActive);
+        }
+
+        if (milestoneMembers.isEmpty()) {
+            return ApiResponse.success(List.of());
+        }
+
+        // 2. Lấy thông tin user từ Identity Service (gRPC)
+        List<String> userIds = milestoneMembers.stream()
+                .map(mm -> mm.getProjectMember().getUserId().toString())
+                .toList();
+
+        UserServiceGrpc.UserServiceBlockingStub stub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+        GetUsersByIdsResponse usersResponse = stub.getUsersByIds(
+                GetUsersByIdsRequest.newBuilder().addAllUserId(userIds).build()
+        );
+
+        Map<UUID, UserInfo> userMap = usersResponse.getUsersList().stream()
+                .collect(Collectors.toMap(
+                        u -> UUID.fromString(u.getUserId()),
+                        u -> u
+                ));
+
+        // 3. Map sang DTO và lọc theo Role
+        List<GetMilestoneMember> result = new ArrayList<>();
+
+        for (MilestoneMember mm : milestoneMembers) {
+            ProjectMember pm = mm.getProjectMember();
+
+            // Logic lọc theo Role (nếu có param role)
+            if (role != null && !role.trim().isEmpty()) {
+                if (!role.equalsIgnoreCase(pm.getRoleInProject())) {
+                    continue; // Bỏ qua nếu không đúng role
+                }
+            }
+
+            UserInfo userInfo = userMap.get(pm.getUserId());
+
+            GetMilestoneMember dto = new GetMilestoneMember();
+            dto.setProjectMemberId(pm.getId());
+            dto.setUserId(pm.getUserId());
+            dto.setJoinedAt(mm.getJoinedAt());
+            dto.setLeftAt(mm.getLeftAt());
+
+            // Nếu cần hiển thị role trong response để client biết,
+            // bạn nên thêm field 'role' vào GetMilestoneMember DTO.
+            // Tạm thời code này dùng DTO hiện tại.
+
+            if (userInfo != null) {
+                dto.setFullName(userInfo.getFullName());
+                dto.setEmail(userInfo.getEmail());
+                dto.setPhone(userInfo.getPhone());
+                dto.setAvatarUrl(userInfo.getAvatarUrl());
+            }
+
+            result.add(dto);
+        }
+
+        return ApiResponse.success(result);
+    }
 }
