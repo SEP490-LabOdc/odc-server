@@ -27,13 +27,14 @@ public class PaymentController {
     @PostMapping("/webhook")
     public ResponseEntity<ApiResponse<Void>> handlePayOSWebhook(@RequestBody Webhook webhookBody) {
         log.info("Received Webhook from PayOS: {}", webhookBody);
-        try {
-            // Chuyển xử lý vào Service
-            paymentService.processWebhook(webhookBody);
-            return ResponseEntity.ok(ApiResponse.success("Webhook processed successfully", null));
-        } catch (Exception e) {
-            log.error("Webhook processing failed", e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Webhook processing failed: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(null);
+//        try {
+//            // Chuyển xử lý vào Service
+//            paymentService.processWebhook(webhookBody);
+//            return ResponseEntity.ok(ApiResponse.success("Webhook processed successfully", null));
+//        } catch (Exception e) {
+//            log.error("Webhook processing failed", e);
+//            return ResponseEntity.badRequest().body(ApiResponse.error("Webhook processing failed: " + e.getMessage()));
+//        }
     }
 }
