@@ -48,7 +48,7 @@ public class MilestoneMemberController {
         );
     }
 
-    @GetMapping("/project-milestones/{milestoneId}/milestone-members")
+    @GetMapping("/project-milestones/{milestoneId}/milestone-members/by-role")
     public ResponseEntity<ApiResponse<List<GetMilestoneMember>>> getMilestoneMembers(
             @PathVariable UUID milestoneId,
             @RequestParam(value = "isActive", required = false) Boolean isActive,

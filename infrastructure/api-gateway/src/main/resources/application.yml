@@ -178,6 +178,13 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: transaction-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/transactions/**
+          filters:
+            - StripPrefix=0
+
         # Email Service
         - id: email-service
           uri: lb://email-service
