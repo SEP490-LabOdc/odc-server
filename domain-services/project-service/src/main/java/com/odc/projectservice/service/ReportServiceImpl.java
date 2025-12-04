@@ -52,7 +52,7 @@ public class ReportServiceImpl implements ReportService {
             ProjectStatus.PLANNING.toString(),
             ProjectStatus.ON_GOING.toString(),
             ProjectStatus.PAUSED.toString(),
-            ProjectStatus.COMPLETE.toString()
+            ProjectStatus.COMPLETED.toString()
     );
     private final ReportRepository reportRepository;
     private final ProjectRepository projectRepository;
