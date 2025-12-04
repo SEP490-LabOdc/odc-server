@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.ReportStatus;
 import com.odc.common.constant.ReportType;
 import com.odc.common.constant.Role;
@@ -58,6 +59,13 @@ public class ReportServiceImpl implements ReportService {
     @Qualifier("companyServiceChannel")
     private final ManagedChannel companyServiceChannel;
 
+    private static final Set<ProjectStatus> ALLOWED_REPORT_STATUSES = Set.of(
+            ProjectStatus.PLANNING,
+            ProjectStatus.ON_GOING,
+            ProjectStatus.PAUSED,
+            ProjectStatus.COMPLETE
+    );
+
     public ReportServiceImpl(ReportRepository reportRepository,
                              ProjectRepository projectRepository,
                              ProjectMemberRepository projectMemberRepository,
@@ -76,6 +84,20 @@ public class ReportServiceImpl implements ReportService {
     public ApiResponse<ReportResponse> createReport(UUID userId, CreateReportRequest request) {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new BusinessException("Dự án không tồn tại"));
+
+        ProjectStatus projectStatus;
+
+        try {
+            projectStatus = ProjectStatus.valueOf(project.getStatus());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Trạng thái dự án không hợp lệ: " + project.getStatus());
+        }
+
+        if (!ALLOWED_REPORT_STATUSES.contains(projectStatus)) {
+            throw new BusinessException(
+                    "Không thể tạo báo cáo khi dự án đang ở trạng thái: " + project.getStatus()
+            );
+        }
 
         // Validate Input
         if (ReportType.DAILY_REPORT.toString().equals(request.getReportType())) {
