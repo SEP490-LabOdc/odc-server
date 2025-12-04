@@ -227,12 +227,9 @@ public class ReportServiceImpl implements ReportService {
         if (Role.TALENT.toString().equalsIgnoreCase(role)) {
             return isLeader ? findFirstMentorId(project.getId()) : findLeaderId(project.getId());
         }
-        // Mentor -> Admin (System)
-        if (Role.MENTOR.toString().equalsIgnoreCase(role)) {
-            return null;
-        }
-        // Admin -> Company
-        if (Role.LAB_ADMIN.toString().equalsIgnoreCase(role) || Role.SYSTEM_ADMIN.toString().equalsIgnoreCase(role)) {
+
+        // Mentor/Lab Admin -> Company
+        if (Role.MENTOR.toString().equalsIgnoreCase(role) || Role.LAB_ADMIN.toString().equalsIgnoreCase(role)) {
             return getCompanyUserId(project.getCompanyId());
         }
         throw new BusinessException("Không xác định được luồng báo cáo cho role: " + role);
