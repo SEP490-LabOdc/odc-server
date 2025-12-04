@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.odc.payment.v1;
+
+option java_multiple_files = true;
+option java_package = "com.odc.payment.v1";
+option java_outer_classname = "PaymentSuccessEventProto";
+
+message PaymentSuccessEvent {
+  string milestone_id = 1;
+  string project_id = 2;
+  double amount = 3;
+  string order_code = 4;       // Mã đơn hàng bên PayOS (số long chuyển thành string)
+  string transaction_ref_id = 5; // Mã tham chiếu ngân hàng
+  int64 payment_date = 6;
+}
