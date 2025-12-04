@@ -61,10 +61,10 @@ public class ConfirmOtpEventHandler implements EventHandler {
             NotificationEvent notificationEvent = NotificationEvent.newBuilder()
                     .setId(UUID.randomUUID().toString())
                     .setType("COMPANY_REGISTRATION")
-                    .setTitle("New Company Registration Request")
-                    .setContent("A new company named \"" + company.getName() + "\" has just registered and is awaiting verification.")
+                    .setTitle("Có công ty đăng ký mới cần duyệt")
+                    .setContent("Công ty \"" + company.getName() + "\" vừa đăng ký và đang chờ xét duyệt.")
                     .putAllData(dataMap)
-                    .setDeepLink("/approve?id=" + company.getId())
+                    .setDeepLink("/lab-admin/companies/approve?id=" + company.getId())
                     .setPriority("HIGH")
                     .setTarget(target)
                     .addAllChannels(List.of(

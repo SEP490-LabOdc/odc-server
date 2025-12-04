@@ -507,7 +507,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                     .setTitle("Milestone bị khách hàng từ chối")
                     .setContent("Khách hàng đã từ chối milestone \"" + milestone.getTitle() + "\". Hãy xem feedback và cập nhật lại.")
                     .putAllData(dataMap)
-                    .setDeepLink("/projects/" + project.getId() + "/milestones/" + milestone.getId())
+                    .setDeepLink("/mentor/projects/" + project.getId() + "/" + milestone.getId())
                     .setPriority("HIGH")
                     .setTarget(Target.newBuilder()
                             .setUser(UserTarget.newBuilder()
