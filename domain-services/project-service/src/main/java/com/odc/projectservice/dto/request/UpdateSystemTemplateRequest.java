@@ -6,6 +6,7 @@ import lombok.Data;
 public class UpdateSystemTemplateRequest {
     private String name;
     private String type;
+    private String category;
     private String fileUrl;
     private String fileName;
     private String description;

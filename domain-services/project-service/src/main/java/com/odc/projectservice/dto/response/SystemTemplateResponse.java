@@ -12,6 +12,7 @@ public class SystemTemplateResponse {
     private UUID id;
     private String name;
     private String type;
+    private String category;
     private String fileUrl;
     private String fileName;
     private String description;
