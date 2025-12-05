@@ -71,9 +71,18 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public ApiResponse<CompanyResponse> registerCompany(CompanyRegisterRequest request) {
         // 1. Kiểm tra nghiệp vụ, dùng Exception tùy chỉnh
+        if (request.getEmail().equalsIgnoreCase(request.getContactPersonEmail())) {
+            throw new BusinessException("Email người liên hệ không được trùng với email công ty");
+        }
+
+        if (request.getPhone().equals(request.getContactPersonPhone())) {
+            throw new BusinessException("Số điện thoại người liên hệ không được trùng với số điện thoại công ty");
+        }
+
         companyRepository.findByEmail(request.getEmail()).ifPresent(c -> {
             throw new BusinessException("Email công ty đã tồn tại");
         });
+
         companyRepository.findByTaxCode(request.getTaxCode()).ifPresent(c -> {
             throw new BusinessException("Mã số thuế đã tồn tại");
         });
@@ -404,6 +413,14 @@ public class CompanyServiceImpl implements CompanyService {
                         .build())
                 .getResult()) {
             throw new BusinessException("Email người liên hệ đã tồn tại");
+        }
+
+        if (company.getEmail().equalsIgnoreCase(request.getContactPersonEmail())) {
+            throw new BusinessException("Email người liên hệ không được trùng với email công ty");
+        }
+
+        if (request.getPhone().equals(request.getContactPersonPhone())) {
+            throw new BusinessException("Số điện thoại người liên hệ không được trùng với số điện thoại công ty");
         }
 
         company.setName(request.getName());
