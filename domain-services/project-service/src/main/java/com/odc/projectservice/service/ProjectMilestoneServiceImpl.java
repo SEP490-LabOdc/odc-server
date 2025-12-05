@@ -378,25 +378,6 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         milestone.setStatus(ProjectMilestoneStatus.ON_GOING.toString());
         projectMilestoneRepository.save(milestone);
 
-        Project project = milestone.getProject();
-
-        boolean isFirstMilestone = projectMilestoneRepository
-                .findByProjectIdOrderByStartDateAsc(project.getId())
-                .stream()
-                .findFirst()
-                .map(first -> first.getId().equals(milestone.getId()))
-                .orElse(false);
-
-        if (isFirstMilestone) {
-            // Chỉ update nếu project chưa có startDate hoặc startDate lớn hơn today
-            if (project.getStartDate() == null || today.isBefore(project.getStartDate())) {
-                project.setStartDate(today);
-            }
-
-            // Lưu lại project
-            projectRepository.save(project);
-        }
-
         return ApiResponse.success("Thay đổi trạng thái của milestone thành công.", null);
     }
 
