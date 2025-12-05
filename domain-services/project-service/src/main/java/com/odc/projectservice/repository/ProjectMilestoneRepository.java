@@ -23,4 +23,6 @@ public interface ProjectMilestoneRepository extends JpaRepository<ProjectMilesto
                 AND m.startDate = :today
             """)
     List<ProjectMilestone> findMilestonesToStart(@Param("today") LocalDate today);
+
+    List<ProjectMilestone> findByProjectIdOrderByStartDateAsc(UUID projectId);
 }
