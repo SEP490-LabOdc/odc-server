@@ -32,4 +32,8 @@ public interface MilestoneMemberRepository extends JpaRepository<MilestoneMember
     Optional<MilestoneMember> findByProjectMilestone_IdAndProjectMember_Id(UUID milestoneId, UUID projectMemberId);
 
     List<MilestoneMember> findByProjectMilestone_IdInAndIsActive(List<UUID> milestoneIds, boolean isActive);
+
+    Optional<MilestoneMember> findByProjectMilestone_IdAndIdAndIsActive(UUID milestoneId, UUID milestoneMemberId, boolean isActive);
+
+    boolean existsByProjectMilestone_IdAndIsLeaderTrue(UUID milestoneId);
 }

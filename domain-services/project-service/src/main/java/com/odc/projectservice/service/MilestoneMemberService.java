@@ -4,6 +4,7 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
+import com.odc.projectservice.dto.request.UpdateMilestoneMemberRoleRequest;
 import com.odc.projectservice.dto.response.GetMilestoneMember;
 import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 
@@ -18,4 +19,6 @@ public interface MilestoneMemberService {
     ApiResponse<GetMilestoneMemberResponse> getMilestoneMembers(UUID milestoneId, Boolean isActive);
 
     ApiResponse<List<GetMilestoneMember>> getMilestoneMembers(UUID milestoneId, Boolean isActive, String role);
+
+    ApiResponse<Void> updateMilestoneMemberRole(UUID milestoneId, UUID userId, UpdateMilestoneMemberRoleRequest request);
 }

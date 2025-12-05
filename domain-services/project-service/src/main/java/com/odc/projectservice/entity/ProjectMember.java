@@ -22,9 +22,6 @@ public class ProjectMember extends BaseEntity {
     @Column(name = "role_in_project", length = 100)
     private String roleInProject;
 
-    @Column(name = "is_leader", nullable = false)
-    private boolean isLeader = false;
-
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 

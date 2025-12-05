@@ -7,6 +7,7 @@ import java.util.UUID;
 
 @Data
 public class GetMilestoneMember {
+    private UUID milestoneMemberId;
     private UUID projectMemberId;
     private UUID userId;
     private String fullName;

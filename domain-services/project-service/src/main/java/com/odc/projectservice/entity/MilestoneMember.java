@@ -23,6 +23,9 @@ public class MilestoneMember extends BaseEntity {
     @JoinColumn(name = "project_member_id", nullable = false)
     private ProjectMember projectMember;
 
+    @Column(name = "is_leader", nullable = false)
+    private boolean isLeader = false;
+
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 

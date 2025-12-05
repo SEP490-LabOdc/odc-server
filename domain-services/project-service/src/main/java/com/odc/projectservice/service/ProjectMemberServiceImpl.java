@@ -101,7 +101,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                     .userId(userId)
                     .project(project)
                     .roleInProject(Role.MENTOR.toString())
-                    .isLeader(false)
                     .build();
 
             projectMemberList.add(projectMember);
@@ -224,23 +223,14 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             }
 
             dto.setRoleName(pm.getRoleInProject());
-            dto.setIsLeader(pm.isLeader());
             dto.setJoinedAt(pm.getJoinedAt());
             dto.setLeftAt(pm.getLeftAt());
             dto.setIsActive(pm.getLeftAt() == null);
 
             return dto;
         }).sorted(
-                Comparator.comparing(GetProjectMemberByProjectIdResponse::getIsLeader).reversed()
-                        .thenComparing(dto -> {
-                            ProjectMember pm = finalProjectMemberList.stream()
-                                    .filter(p -> p.getId().equals(dto.getProjectMemberId()))
-                                    .findFirst()
-                                    .orElse(null);
-                            return pm != null ? pm.getRoleInProject() : "";
-                        }, Comparator.nullsLast(String::compareToIgnoreCase))
-                        .thenComparing(GetProjectMemberByProjectIdResponse::getJoinedAt,
-                                Comparator.nullsLast(LocalDateTime::compareTo))
+                Comparator.comparing(GetProjectMemberByProjectIdResponse::getJoinedAt,
+                        Comparator.nullsLast(LocalDateTime::compareTo))
         ).toList();
         return ApiResponse.success(result);
     }
@@ -257,7 +247,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new BusinessException("Mentor not in project");
         }
 
-        mentorMember.setLeader(request.getIsLeader());
         projectMemberRepository.save(mentorMember);
 
         log.info("Đã cập nhật isLeader={} cho mentor {} trong dự án {}",
@@ -292,17 +281,14 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
             for (ProjectMember leader : existingLeaders) {
                 if (!leader.getUserId().equals(talentId)) {
-                    leader.setLeader(false);
                     projectMemberRepository.save(leader);
                     log.info("Đã bỏ leader role từ talent {} trong dự án {}", leader.getUserId(), projectId);
                 }
             }
 
-            talentMember.setLeader(true);
             projectMemberRepository.save(talentMember);
             log.info("Đã đặt talent {} làm leader trong dự án {}", talentId, projectId);
         } else {
-            talentMember.setLeader(false);
             projectMemberRepository.save(talentMember);
             log.info("Đã bỏ leader role từ talent {} trong dự án {}", talentId, projectId);
         }

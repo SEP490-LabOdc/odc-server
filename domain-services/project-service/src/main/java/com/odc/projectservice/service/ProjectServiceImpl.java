@@ -315,11 +315,9 @@ public class ProjectServiceImpl implements ProjectService {
                             .name(userInfo != null ? userInfo.getFullName() :
                                     userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                             .roleName(Role.MENTOR.toString())
-                            .isLeader(pm.isLeader())
                             .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
                             .build();
                 })
-                .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
                 .toList();
 
         List<UserParticipantResponse> talents = talentMembers.stream()
@@ -330,11 +328,9 @@ public class ProjectServiceImpl implements ProjectService {
                             .name(userInfo != null ? userInfo.getFullName() :
                                     userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                             .roleName(Role.TALENT.toString())
-                            .isLeader(pm.isLeader())
                             .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
                             .build();
                 })
-                .sorted(Comparator.comparing((UserParticipantResponse t) -> !t.isLeader()))
                 .toList();
 
         UUID createdByUserId = null;
@@ -496,11 +492,9 @@ public class ProjectServiceImpl implements ProjectService {
                                         .name(userInfo != null ? userInfo.getFullName() :
                                                 finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown"))
                                         .roleName(Role.MENTOR.toString())
-                                        .isLeader(member.isLeader())
                                         .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
                                         .build();
                             })
-                            .sorted(Comparator.comparing((UserParticipantResponse p) -> !p.isLeader()))
                             .collect(Collectors.toList());
 
                     List<UserParticipantResponse> talents = members.stream()
@@ -512,11 +506,9 @@ public class ProjectServiceImpl implements ProjectService {
                                         .name(userInfo != null ? userInfo.getFullName() :
                                                 finalUserIdToNameMap.getOrDefault(member.getUserId().toString(), "Unknown"))
                                         .roleName(Role.TALENT.toString())
-                                        .isLeader(member.isLeader())
                                         .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
                                         .build();
                             })
-                            .sorted(Comparator.comparing((UserParticipantResponse p) -> !p.isLeader()))
                             .collect(Collectors.toList());
 
                     return convertToProjectResponse(project, mentors, talents, null, null, null,
@@ -618,12 +610,10 @@ public class ProjectServiceImpl implements ProjectService {
                             .id(member.getUserId())
                             .name(name)
                             .roleName(roleName)
-                            .isLeader(member.isLeader())
                             .build();
                 })
                 .filter(Objects::nonNull).sorted(Comparator
-                        .comparing((UserParticipantResponse p) -> !p.getRoleName().equals("MENTOR"))
-                        .thenComparing(p -> !p.isLeader())).collect(Collectors.toList());
+                        .comparing((UserParticipantResponse p) -> !p.getRoleName().equals("MENTOR"))).toList();
 
         return ApiResponse.<List<UserParticipantResponse>>builder()
                 .success(true)
@@ -668,9 +658,7 @@ public class ProjectServiceImpl implements ProjectService {
                             .id(pm.getUserId())
                             .name(userIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                             .roleName(Role.MENTOR.toString())
-                            .isLeader(pm.isLeader())
                             .build())
-                    .sorted(Comparator.comparing(p -> !p.isLeader()))
                     .toList();
 
             List<SkillResponse> skills = project.getSkills().stream()
@@ -959,9 +947,7 @@ public class ProjectServiceImpl implements ProjectService {
                                     .id(pm.getUserId())
                                     .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                                     .roleName(Role.MENTOR.toString())
-                                    .isLeader(pm.isLeader())
                                     .build())
-                            .sorted(Comparator.comparing((UserParticipantResponse m) -> !m.isLeader()))
                             .toList();
 
                     List<UserParticipantResponse> talents = talentMembers.stream()
@@ -969,9 +955,7 @@ public class ProjectServiceImpl implements ProjectService {
                                     .id(pm.getUserId())
                                     .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                                     .roleName(Role.TALENT.toString())
-                                    .isLeader(pm.isLeader())
                                     .build())
-                            .sorted(Comparator.comparing((UserParticipantResponse t) -> !t.isLeader()))
                             .toList();
 
                     UUID createdByUserId = null;
