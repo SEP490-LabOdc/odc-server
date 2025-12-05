@@ -36,6 +36,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -83,6 +84,22 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<ProjectResponse> createProject(UUID userId, CreateProjectRequest request) {
+        if (request.getStartDate() != null && request.getEndDate() != null) {
+            if (request.getEndDate().isBefore(request.getStartDate())) {
+                throw new BusinessException("Ngày kết thúc không được trước ngày bắt đầu");
+            }
+        }
+
+        // Nếu muốn không cho startDate trong quá khứ:
+        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Ngày bắt đầu không được ở trong quá khứ");
+        }
+
+        // Nếu muốn không cho endDate trong quá khứ:
+        if (request.getEndDate() != null && request.getEndDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Ngày kết thúc không được ở trong quá khứ");
+        }
+
         CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
                 CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
 
