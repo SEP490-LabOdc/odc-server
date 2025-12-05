@@ -306,7 +306,6 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 .project(application.getProject())
                 .userId(application.getUserId())
                 .roleInProject(Role.TALENT.toString())
-                .isLeader(false)
                 .joinedAt(LocalDateTime.now())
                 .build();
         projectMemberRepository.save(member);

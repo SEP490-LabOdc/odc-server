@@ -6,6 +6,7 @@ import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
+import com.odc.projectservice.dto.request.UpdateMilestoneMemberRoleRequest;
 import com.odc.projectservice.dto.response.GetMilestoneMember;
 import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.entity.MilestoneMember;
@@ -210,6 +211,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             UserInfo userInfo = userMap.get(pm.getUserId());
 
             GetMilestoneMember dto = new GetMilestoneMember();
+            dto.setMilestoneMemberId(mm.getId());
             dto.setProjectMemberId(pm.getId());
             dto.setUserId(pm.getUserId());
             dto.setJoinedAt(mm.getJoinedAt());
@@ -283,6 +285,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             UserInfo userInfo = userMap.get(pm.getUserId());
 
             GetMilestoneMember dto = new GetMilestoneMember();
+            dto.setMilestoneMemberId(mm.getId());
             dto.setProjectMemberId(pm.getId());
             dto.setUserId(pm.getUserId());
             dto.setJoinedAt(mm.getJoinedAt());
@@ -303,5 +306,33 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
         }
 
         return ApiResponse.success(result);
+    }
+
+    @Override
+    public ApiResponse<Void> updateMilestoneMemberRole(UUID milestoneId, UUID milestoneMemberId, UpdateMilestoneMemberRoleRequest request) {
+        MilestoneMember member = milestoneMemberRepository
+                .findByProjectMilestone_IdAndIdAndIsActive(milestoneId, milestoneMemberId, true)
+                .orElseThrow(() -> new BusinessException("Thành viên không thuộc milestone"));
+
+        if (request.isLeader()) {
+
+            // 3. Check milestone đã có leader chưa
+            boolean leaderExists = milestoneMemberRepository
+                    .existsByProjectMilestone_IdAndIsLeaderTrue(milestoneId);
+
+            // 4. Nếu đã có leader mà user hiện không phải leader → throw lỗi
+            if (leaderExists && !member.isLeader()) {
+                throw new BusinessException("Milestone đã có leader khác");
+            }
+
+            // 5. Nếu không ai là leader hoặc chính user muốn giữ leader → cho phép set
+            member.setLeader(true);
+        } else {
+            // Nếu request muốn set MEMBER (isLeader = false)
+            member.setLeader(false);
+        }
+
+        milestoneMemberRepository.save(member);
+        return ApiResponse.success(null);
     }
 }

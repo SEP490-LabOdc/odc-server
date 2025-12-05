@@ -420,7 +420,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         Project project = milestone.getProject();
         List<ProjectMember> targetMembers = projectMemberRepository.findByProjectId(project.getId()).stream()
-                .filter(pm -> pm.isLeader() || Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
                 .toList();
 
         if (!targetMembers.isEmpty()) {
@@ -486,8 +486,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         List<ProjectMember> targetMembers = projectMemberRepository.findByProjectId(project.getId())
                 .stream()
-                .filter(pm -> pm.isLeader() ||
-                        Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
+                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
                 .toList();
 
         if (!targetMembers.isEmpty()) {

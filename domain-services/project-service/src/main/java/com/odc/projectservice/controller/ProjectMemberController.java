@@ -2,7 +2,6 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
-import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.service.ProjectMemberService;
@@ -42,23 +41,5 @@ public class ProjectMemberController {
             @RequestParam(required = false) UUID milestoneId
     ) {
         return ResponseEntity.ok(projectMemberService.getProjectMembersByProjectId(projectId, milestoneId));
-    }
-
-    @PatchMapping("/projects/{projectId}/mentors/{mentorId}/leader")
-    public ResponseEntity<ApiResponse<UUID>> toggleMentorLeader(
-            @PathVariable UUID projectId,
-            @PathVariable UUID mentorId,
-            @Valid @RequestBody ToggleMentorLeaderRequest request) {
-        ApiResponse<UUID> response = projectMemberService.toggleMentorLeader(projectId, mentorId, request);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @PatchMapping("/projects/{projectId}/talents/{talentId}/leader")
-    public ResponseEntity<ApiResponse<UUID>> toggleTalentLeader(
-            @PathVariable UUID projectId,
-            @PathVariable UUID talentId,
-            @Valid @RequestBody ToggleMentorLeaderRequest request) {
-        ApiResponse<UUID> response = projectMemberService.toggleTalentLeader(projectId, talentId, request);
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

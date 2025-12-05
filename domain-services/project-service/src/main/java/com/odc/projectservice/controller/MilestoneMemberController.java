@@ -4,6 +4,7 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
+import com.odc.projectservice.dto.request.UpdateMilestoneMemberRoleRequest;
 import com.odc.projectservice.dto.response.GetMilestoneMember;
 import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.service.MilestoneMemberService;
@@ -56,6 +57,17 @@ public class MilestoneMemberController {
     ) {
         return ResponseEntity.ok(
                 milestoneMemberService.getMilestoneMembers(milestoneId, isActive, role)
+        );
+    }
+
+    @PatchMapping("/project-milestones/{milestoneId}/milestone-members/{milestoneMemberId}/role")
+    public ResponseEntity<ApiResponse<Void>> updateMilestoneMemberRole(
+            @PathVariable UUID milestoneId,
+            @PathVariable UUID milestoneMemberId,
+            @RequestBody UpdateMilestoneMemberRoleRequest request
+    ) {
+        return ResponseEntity.ok(
+                milestoneMemberService.updateMilestoneMemberRole(milestoneId, milestoneMemberId, request)
         );
     }
 }

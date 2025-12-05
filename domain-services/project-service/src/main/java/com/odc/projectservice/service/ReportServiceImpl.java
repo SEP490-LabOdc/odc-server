@@ -102,7 +102,7 @@ public class ReportServiceImpl implements ReportService {
         // Xác định Role người gửi
         ProjectMember sender = projectMemberRepository.findByProject_IdAndUserId(project.getId(), userId);
         String senderRole = (sender != null) ? sender.getRoleInProject() : getSystemRole();
-        boolean isLeader = (sender != null) && sender.isLeader();
+        boolean isLeader = (sender != null);
 
         // Định tuyến người nhận
         UUID recipientId = resolveRecipient(project, senderRole, isLeader);

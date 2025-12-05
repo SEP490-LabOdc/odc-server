@@ -10,6 +10,6 @@ public class GetProjectMemberByProjectIdResponse {
     private UUID projectMemberId;
     private UUID userId;
     private String fullName, email, phone, avatarUrl, roleName;
-    private Boolean isLeader, isActive;
+    private Boolean isActive;
     private LocalDateTime joinedAt, leftAt;
 }

@@ -13,6 +13,5 @@ public class UserParticipantResponse {
     private UUID id;
     private String name;
     private String roleName;
-    private boolean isLeader;
     private String avatar;
 }
