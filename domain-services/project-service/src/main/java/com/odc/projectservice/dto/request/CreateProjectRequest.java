@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,6 +21,10 @@ public class CreateProjectRequest {
 
     @Positive(message = "Ngân sách phải là một số dương")
     private BigDecimal budget;
+
+    private LocalDate startDate;
+
+    private LocalDate endDate;
 
     private Set<UUID> skillIds;
 }
