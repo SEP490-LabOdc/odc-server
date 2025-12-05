@@ -192,6 +192,7 @@ spring:
           filters:
             - StripPrefix=0
 
+
         # Email Service
         - id: email-service
           uri: lb://email-service
