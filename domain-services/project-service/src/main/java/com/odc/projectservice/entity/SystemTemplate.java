@@ -21,6 +21,9 @@ public class SystemTemplate extends BaseEntity {
     @Column(nullable = false)
     private String type; // Enum: REPORT, TASK_IMPORT, PROJECT_PLANNING
 
+    @Column
+    private String category; // Enum: PROJECT, REPORT
+
     @Column(nullable = false)
     private String fileUrl; // URL lấy từ File Service sau khi upload
 

@@ -39,9 +39,10 @@ public class SystemTemplateServiceImpl implements SystemTemplateService {
 
         SystemTemplate template = SystemTemplate.builder()
                 .name(request.getName())
-                .type(request.getType())
+                .type(request.getType().toUpperCase())
                 .fileUrl(request.getFileUrl())
                 .fileName(request.getFileName())
+                .category(request.getCategory().toUpperCase())
                 .description(request.getDescription())
                 .build();
 
@@ -59,6 +60,7 @@ public class SystemTemplateServiceImpl implements SystemTemplateService {
         if (request.getFileUrl() != null) template.setFileUrl(request.getFileUrl());
         if (request.getFileName() != null) template.setFileName(request.getFileName());
         if (request.getDescription() != null) template.setDescription(request.getDescription());
+        if (request.getCategory() != null) template.setCategory(request.getCategory());
 
         templateRepository.save(template);
         return ApiResponse.success("Cập nhật template thành công", mapToResponse(template));
@@ -109,6 +111,7 @@ public class SystemTemplateServiceImpl implements SystemTemplateService {
                 .id(entity.getId())
                 .name(entity.getName())
                 .type(entity.getType())
+                .category(entity.getCategory())
                 .fileUrl(entity.getFileUrl())
                 .fileName(entity.getFileName())
                 .description(entity.getDescription())

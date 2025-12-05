@@ -17,5 +17,8 @@ public class CreateSystemTemplateRequest {
     @NotBlank(message = "Tên file gốc không được để trống")
     private String fileName;
 
+    @NotBlank(message = "Tên nhóm template không được để trống (VD: PROJECT, REPORT)")
+    private String category;
+
     private String description;
 }
