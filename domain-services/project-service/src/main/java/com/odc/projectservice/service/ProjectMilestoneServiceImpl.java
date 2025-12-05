@@ -1,6 +1,7 @@
 package com.odc.projectservice.service;
 
 import com.odc.common.constant.ProjectMilestoneStatus;
+import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
@@ -361,24 +362,55 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     }
 
     @Override
-    public ApiResponse<Void> updateMilestoneStatusToOngoing(UUID milestoneId) {
+    public ApiResponse<ProjectMilestoneResponse> updateMilestoneStatusToOngoing(UUID milestoneId) {
+        UUID mentorId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
 
-        if (!milestone.getStatus().equals(ProjectMilestoneStatus.PENDING_START.toString())) {
+        Project project = milestone.getProject();
+
+        if (ProjectStatus.COMPLETED.toString().equalsIgnoreCase(project.getStatus())) {
+            throw new BusinessException("Không thể start milestone vì dự án đã hoàn thành");
+        }
+
+        ProjectMember mentorMember = projectMemberRepository
+                .findByProjectIdAndUserIdAndRole(project.getId(), mentorId, Role.MENTOR.toString());
+        if (mentorMember == null) {
+            throw new BusinessException("Bạn không phải mentor của dự án này");
+        }
+
+        if (!ProjectMilestoneStatus.PENDING_START.toString().equalsIgnoreCase(milestone.getStatus())) {
             throw new BusinessException("Không thể cập nhật trạng thái. Milestone hiện không ở trạng thái 'PENDING_START'.");
         }
 
         LocalDate today = LocalDate.now();
-
-        if (today.isBefore(milestone.getStartDate())) {
+        if (milestone.getStartDate() != null && today.isBefore(milestone.getStartDate())) {
             milestone.setStartDate(today);
         }
 
         milestone.setStatus(ProjectMilestoneStatus.ON_GOING.toString());
+        milestone.setUpdatedBy(mentorId.toString());
         projectMilestoneRepository.save(milestone);
 
-        return ApiResponse.success("Thay đổi trạng thái của milestone thành công.", null);
+        if (!ProjectStatus.ON_GOING.toString().equalsIgnoreCase(project.getStatus())) {
+            project.setStatus(ProjectStatus.ON_GOING.toString());
+            projectRepository.save(project);
+        }
+
+        ProjectMilestoneResponse responseData = ProjectMilestoneResponse.builder()
+                .id(milestone.getId())
+                .projectId(project.getId())
+                .title(milestone.getTitle())
+                .description(milestone.getDescription())
+                .budget(milestone.getBudget())
+                .startDate(milestone.getStartDate())
+                .endDate(milestone.getEndDate())
+                .status(milestone.getStatus())
+                .attachments(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
+                .build();
+
+        return ApiResponse.success("Thay đổi trạng thái của milestone thành công.", responseData);
     }
 
     @Override
