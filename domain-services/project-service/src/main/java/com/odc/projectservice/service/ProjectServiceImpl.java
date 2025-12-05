@@ -132,6 +132,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .budget(request.getBudget())
                 .remainingBudget(request.getBudget())
                 .skills(skills)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
                 .build();
 
         Project savedProject = projectRepository.save(project);
