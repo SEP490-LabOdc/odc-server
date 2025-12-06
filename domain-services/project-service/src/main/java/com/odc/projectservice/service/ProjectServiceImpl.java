@@ -912,39 +912,28 @@ public class ProjectServiceImpl implements ProjectService {
 
         allUserIds.addAll(createdByUserIds);
 
-        Map<String, String> userIdToNameMap = new HashMap<>();
         Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
 
         if (!allUserIds.isEmpty()) {
             try {
                 UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
 
-                GetNameResponse userNamesResponse = userStub.getName(
-                        GetNameRequest.newBuilder()
-                                .addAllIds(new ArrayList<>(allUserIds))
+                GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                        GetUsersByIdsRequest.newBuilder()
+                                .addAllUserId(allUserIds)
                                 .build()
                 );
-                userIdToNameMap = userNamesResponse.getMapMap();
 
-                if (!createdByUserIds.isEmpty()) {
-                    GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
-                            GetUsersByIdsRequest.newBuilder()
-                                    .addAllUserId(new ArrayList<>(createdByUserIds))
-                                    .build()
-                    );
-
-                    userIdToUserInfoMap = usersResponse.getUsersList().stream()
-                            .collect(Collectors.toMap(
-                                    u -> u.getUserId(),
-                                    u -> u
-                            ));
-                }
+                userIdToUserInfoMap = usersResponse.getUsersList().stream()
+                        .collect(Collectors.toMap(
+                                u -> u.getUserId(),
+                                u -> u
+                        ));
             } catch (Exception e) {
                 log.error("Không thể lấy thông tin user qua gRPC: {}", e.getMessage(), e);
             }
         }
 
-        final Map<String, String> finalUserIdToNameMap = userIdToNameMap;
         final Map<String, UserInfo> finalUserIdToUserInfoMap = userIdToUserInfoMap;
 
         List<ProjectResponse> projectResponses = projects.stream()
@@ -964,7 +953,7 @@ public class ProjectServiceImpl implements ProjectService {
                     List<UserParticipantResponse> mentors = mentorMembers.stream()
                             .map(pm -> UserParticipantResponse.builder()
                                     .id(pm.getUserId())
-                                    .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                                    .name(finalUserIdToUserInfoMap.get(pm.getUserId().toString()) == null ? "Unknown" : finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getFullName())
                                     .roleName(Role.MENTOR.toString())
                                     .avatar(finalUserIdToUserInfoMap.get(pm.getUserId().toString()) == null ? "" : finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getAvatarUrl())
                                     .build())
@@ -973,7 +962,7 @@ public class ProjectServiceImpl implements ProjectService {
                     List<UserParticipantResponse> talents = talentMembers.stream()
                             .map(pm -> UserParticipantResponse.builder()
                                     .id(pm.getUserId())
-                                    .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
+                                    .name(finalUserIdToUserInfoMap.get(pm.getUserId().toString()) == null ? "Unknown" : finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getFullName())
                                     .roleName(Role.TALENT.toString())
                                     .avatar(finalUserIdToUserInfoMap.get(pm.getUserId().toString()) == null ? "" : finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getAvatarUrl())
                                     .build())
@@ -991,7 +980,8 @@ public class ProjectServiceImpl implements ProjectService {
                                 createdByAvatar = userInfo.getAvatarUrl();
                             } else {
                                 // Fallback nếu không có trong map
-                                createdByName = finalUserIdToNameMap.getOrDefault(project.getCreatedBy(), "Unknown");
+                                createdByName = finalUserIdToUserInfoMap.get(createdByUserId.toString()) == null ? "Unknown" : finalUserIdToUserInfoMap.get(createdByUserId.toString()).getFullName();
+
                             }
                         } catch (Exception e) {
                             log.warn("Không thể lấy thông tin người tạo project: {}", e.getMessage());
