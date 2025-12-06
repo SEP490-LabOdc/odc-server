@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,6 +14,8 @@ public class UpdateProjectRequest {
     @NotBlank(message = "Tiêu đề dự án không được để trống")
     private String title;
     private String description;
+
+    private LocalDate startDate, endDate;
 
     @Positive(message = "Ngân sách phải là một số dương")
     private BigDecimal budget;
