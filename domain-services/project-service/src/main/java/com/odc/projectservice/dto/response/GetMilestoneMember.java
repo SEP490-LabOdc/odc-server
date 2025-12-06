@@ -17,5 +17,6 @@ public class GetMilestoneMember {
     private boolean isLeader;
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
+    private boolean isLeader;
 }
 

@@ -225,6 +225,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 dto.setAvatarUrl(userInfo.getAvatarUrl());
             }
 
+
             if (Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject())) {
                 talents.add(dto);
             } else if (Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject())) {
@@ -291,6 +292,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             dto.setUserId(pm.getUserId());
             dto.setJoinedAt(mm.getJoinedAt());
             dto.setLeftAt(mm.getLeftAt());
+            dto.setLeader(mm.isLeader());
 
             // Nếu cần hiển thị role trong response để client biết,
             // bạn nên thêm field 'role' vào GetMilestoneMember DTO.
