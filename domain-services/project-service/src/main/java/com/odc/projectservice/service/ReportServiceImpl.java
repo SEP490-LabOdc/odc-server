@@ -235,9 +235,9 @@ public class ReportServiceImpl implements ReportService {
 
     private UUID resolveRecipient(Project project, String role, boolean isLeader) {
         // Talent -> Leader
-        if (Role.TALENT.toString().equalsIgnoreCase(role)) {
-            return isLeader ? findFirstMentorId(project.getId()) : findLeaderId(project.getId());
-        }
+//        if (Role.TALENT.toString().equalsIgnoreCase(role)) {
+//            return isLeader ? findFirstMentorId(project.getId()) : findLeaderId(project.getId());
+//        }
 
         // Mentor/Lab Admin -> Company
         if (Role.MENTOR.toString().equalsIgnoreCase(role) || Role.LAB_ADMIN.toString().equalsIgnoreCase(role)) {
@@ -246,17 +246,17 @@ public class ReportServiceImpl implements ReportService {
         throw new BusinessException("Không xác định được luồng báo cáo cho role: " + role);
     }
 
-    private UUID findLeaderId(UUID projectId) {
-        List<ProjectMember> leaders = projectMemberRepository.findByProjectIdAndRoleAndIsLeaderTrue(projectId, Role.TALENT.toString());
-        if (leaders.isEmpty()) return findFirstMentorId(projectId);
-        return leaders.get(0).getUserId();
-    }
-
-    private UUID findFirstMentorId(UUID projectId) {
-        List<ProjectMember> mentors = projectMemberRepository.findByProjectIdAndRole(projectId, Role.MENTOR.toString());
-        if (mentors.isEmpty()) throw new BusinessException("Dự án chưa có Mentor");
-        return mentors.get(0).getUserId();
-    }
+//    private UUID findLeaderId(UUID projectId) {
+//        List<ProjectMember> leaders = projectMemberRepository.findByProjectIdAndRoleAndIsLeaderTrue(projectId, Role.TALENT.toString());
+//        if (leaders.isEmpty()) return findFirstMentorId(projectId);
+//        return leaders.get(0).getUserId();
+//    }
+//
+//    private UUID findFirstMentorId(UUID projectId) {
+//        List<ProjectMember> mentors = projectMemberRepository.findByProjectIdAndRole(projectId, Role.MENTOR.toString());
+//        if (mentors.isEmpty()) throw new BusinessException("Dự án chưa có Mentor");
+//        return mentors.get(0).getUserId();
+//    }
 
     private UUID getCompanyUserId(UUID companyId) {
         try {
