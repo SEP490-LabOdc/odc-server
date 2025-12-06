@@ -802,6 +802,7 @@ public class ProjectServiceImpl implements ProjectService {
                             .setCompanyId(project.getCompanyId().toString())
                             .setCompanyName(getCompanyByIdResponse != null ? getCompanyByIdResponse.getCompanyName() : "")
                             .setContactPersonEmail(getCompanyByIdResponse != null ? getCompanyByIdResponse.getContactPersonEmail() : "")
+                            .setNotes(request.getNotes())
                             .build()
             );
         }
