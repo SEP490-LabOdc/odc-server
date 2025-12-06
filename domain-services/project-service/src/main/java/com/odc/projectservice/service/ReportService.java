@@ -7,10 +7,11 @@ import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ReportService {
-    ApiResponse<ReportResponse> createReport(UUID userId, CreateReportRequest request);
+    ApiResponse<List<ReportResponse>> createReport(UUID userId, CreateReportRequest request);
 
     ApiResponse<ReportResponse> updateReport(UUID userId, UUID reportId, UpdateReportRequest request);
 
