@@ -16,5 +16,6 @@ public class GetMilestoneMember {
     private String avatarUrl;
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
+    private boolean isLeader;
 }
 
