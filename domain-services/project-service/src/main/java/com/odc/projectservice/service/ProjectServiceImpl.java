@@ -966,7 +966,7 @@ public class ProjectServiceImpl implements ProjectService {
                                     .id(pm.getUserId())
                                     .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                                     .roleName(Role.MENTOR.toString())
-                                    .avatar(finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getAvatarUrl())
+                                    .avatar(finalUserIdToUserInfoMap.get(pm.getUserId().toString()) == null ? "" : finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getAvatarUrl())
                                     .build())
                             .toList();
 
@@ -975,7 +975,7 @@ public class ProjectServiceImpl implements ProjectService {
                                     .id(pm.getUserId())
                                     .name(finalUserIdToNameMap.getOrDefault(pm.getUserId().toString(), "Unknown"))
                                     .roleName(Role.TALENT.toString())
-                                    .avatar(finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getAvatarUrl())
+                                    .avatar(finalUserIdToUserInfoMap.get(pm.getUserId().toString()) == null ? "" : finalUserIdToUserInfoMap.get(pm.getUserId().toString()).getAvatarUrl())
                                     .build())
                             .toList();
 
