@@ -15,7 +15,6 @@ import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
 import com.odc.projectservice.entity.Project;
-import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
 import com.odc.projectservice.entity.Report;
 import com.odc.projectservice.repository.ProjectMemberRepository;
@@ -78,7 +77,8 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ApiResponse<ReportResponse> createReport(UUID userId, CreateReportRequest request) {
+    public ApiResponse<List<ReportResponse>> createReport(UUID userId, CreateReportRequest request) {
+        // 1. Validate Project & Status
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new BusinessException("Dự án không tồn tại"));
 
@@ -88,7 +88,7 @@ public class ReportServiceImpl implements ReportService {
             );
         }
 
-        // Validate Input
+        // 2. Validate Input Content
         if (ReportType.DAILY_REPORT.toString().equals(request.getReportType())) {
             if (request.getContent() == null || request.getContent().trim().isEmpty()) {
                 throw new BusinessException("Daily Report yêu cầu nội dung text");
@@ -99,14 +99,7 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // Xác định Role người gửi
-        ProjectMember sender = projectMemberRepository.findByProject_IdAndUserId(project.getId(), userId);
-        String senderRole = (sender != null) ? sender.getRoleInProject() : getSystemRole();
-        boolean isLeader = (sender != null);
-
-        // Định tuyến người nhận
-        UUID recipientId = resolveRecipient(project, senderRole, isLeader);
-
+        // 3. Validate Milestone (nếu có)
         ProjectMilestone milestone = null;
         if (ReportType.MILESTONE_REPORT.toString().equals(request.getReportType())) {
             if (request.getMilestoneId() == null) {
@@ -115,29 +108,68 @@ public class ReportServiceImpl implements ReportService {
             milestone = projectMilestoneRepository.findById(request.getMilestoneId())
                     .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
 
-            // Validate milestone thuộc về project
             if (!milestone.getProject().getId().equals(project.getId())) {
                 throw new BusinessException("Milestone không thuộc về dự án này");
             }
         }
 
-        Report report = Report.builder()
-                .project(project)
-                .reporterId(userId)
-                .recipientId(recipientId)
-                .reportType(request.getReportType())
-                .content(request.getContent())
-                .attachmentsUrl(request.getAttachmentsUrl())
-                .reportingDate(LocalDate.now())
-                .status(ReportStatus.SUBMITTED.toString())
-                .milestone(milestone)
-                .build();
+        List<UUID> validRecipientIds = projectMemberRepository.findUserIdsByProjectIdAndUserIdIn(
+                project.getId(),
+                request.getRecipientIds()
+        );
 
-        Report savedReport = reportRepository.save(report);
+        // 2. Tìm ra những ID không nằm trong danh sách hợp lệ
+        List<UUID> invalidRecipientIds = request.getRecipientIds().stream()
+                .filter(id -> !validRecipientIds.contains(id))
+                .toList();
 
-        // Map response (Single object, safe to call gRPC directly or use helper)
+        // 3. Nếu có ID không hợp lệ, báo lỗi ngay lập tức (hoặc log warning tùy business)
+        if (!invalidRecipientIds.isEmpty()) {
+            throw new BusinessException("Các người dùng sau không phải thành viên dự án: " + invalidRecipientIds);
+        }
+
+        // 4. Lặp qua danh sách người nhận và tạo Report
+        List<Report> savedReports = new ArrayList<>();
+        List<UUID> recipientIds = request.getRecipientIds();
+
+
+        for (UUID recipientId : recipientIds) {
+            // Tránh trường hợp tự gửi cho chính mình (tùy nghiệp vụ)
+            if (recipientId.equals(userId)) {
+                throw new BusinessException("Bạn không thể tự gửi report cho chính mình.");
+            }
+
+            Report report = Report.builder()
+                    .project(project)
+                    .reporterId(userId)
+                    .recipientId(recipientId) // Set từng người nhận
+                    .reportType(request.getReportType())
+                    .content(request.getContent())
+                    .attachmentsUrl(request.getAttachmentsUrl())
+                    .reportingDate(LocalDate.now())
+                    .status(ReportStatus.SUBMITTED.toString())
+                    .milestone(milestone)
+                    .build();
+
+            savedReports.add(report);
+        }
+
+        if (savedReports.isEmpty()) {
+            throw new BusinessException("Danh sách người nhận không hợp lệ hoặc rỗng");
+        }
+
+        // Lưu Batch (Tối ưu hơn lưu từng cái trong vòng lặp)
+        List<Report> results = reportRepository.saveAll(savedReports);
+
+        // 5. Prepare Response (Fetch User Info 1 lần để tối ưu performance)
+        // Lấy thông tin người tạo (reporter)
         Map<String, UserInfo> userMap = fetchUserInfoBatch(List.of(userId));
-        return ApiResponse.success("Tạo báo cáo thành công", mapToResponse(savedReport, userMap));
+
+        List<ReportResponse> responseList = results.stream()
+                .map(r -> mapToResponse(r, userMap))
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("Đã gửi báo cáo thành công tới " + results.size() + " người nhận", responseList);
     }
 
     @Override

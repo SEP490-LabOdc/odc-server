@@ -3,10 +3,7 @@ package com.odc.projectservice.service;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
-import com.odc.projectservice.dto.request.CreateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
-import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.*;
 
 import java.util.List;
@@ -44,4 +41,8 @@ public interface ProjectService {
     ApiResponse<PaginatedResult<GetTalentApplicationResponse>> getTalentApplications(UUID userId, String search, int page, int size);
 
     ApiResponse<PaginatedResult<ProjectResponse>> getRelatedProjects(UUID projectId, int page, int size);
+
+    ApiResponse<Void> completeProject(UUID userId, UUID projectId);
+
+    ApiResponse<Void> closeProject(UUID userId, UUID projectId, CloseProjectRequest request);
 }

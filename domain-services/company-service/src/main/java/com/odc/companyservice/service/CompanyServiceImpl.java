@@ -298,6 +298,7 @@ public class CompanyServiceImpl implements CompanyService {
             List<String> incompleteChecklists = createChecklistRequest
                     .getItems()
                     .stream()
+                    .filter(c -> !c.getIsChecked())
                     .map(CreateChecklistItemRequest::getTemplateItemId)
                     .toList();
 
