@@ -189,7 +189,7 @@ public class ProjectServiceImpl implements ProjectService {
         if (request.getEndDate() != null && request.getEndDate().isBefore(LocalDate.now())) {
             throw new BusinessException("Ngày kết thúc không được ở trong quá khứ");
         }
-        
+
         Project existingProject = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
@@ -216,6 +216,8 @@ public class ProjectServiceImpl implements ProjectService {
         // TODO: BUDGET <> REMAINING BUDGET
         existingProject.setSkills(skills);
         existingProject.setStatus(ProjectStatus.PENDING.toString());
+        existingProject.setStartDate(request.getStartDate());
+        existingProject.setEndDate(request.getEndDate());
 
         Project updatedProject = projectRepository.save(existingProject);
         ProjectResponse responseData = convertToProjectResponse(updatedProject);
