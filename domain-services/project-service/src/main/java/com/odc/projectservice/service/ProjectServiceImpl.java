@@ -17,10 +17,7 @@ import com.odc.notification.v1.Channel;
 import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.RoleTarget;
 import com.odc.notification.v1.Target;
-import com.odc.projectservice.dto.request.CreateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
-import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.*;
 import com.odc.projectservice.repository.*;
@@ -1158,6 +1155,42 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.save(project);
 
         return ApiResponse.success("Đã hoàn thành dự án thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> closeProject(UUID userId, UUID projectId, CloseProjectRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities().isEmpty()) {
+            throw new BusinessException("Không có quyền truy cập");
+        }
+
+        String userRole = authentication.getAuthorities().iterator().next().getAuthority();
+        if (!Role.LAB_ADMIN.toString().equalsIgnoreCase(userRole)) {
+            throw new BusinessException("Chỉ lab-admin mới có quyền đóng dự án");
+        }
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        if (ProjectStatus.CLOSED.toString().equalsIgnoreCase(project.getStatus())) {
+            throw new BusinessException("Dự án đã ở trạng thái CLOSED");
+        }
+
+        project.setStatus(ProjectStatus.CLOSED.toString());
+        project.setUpdatedBy(userId.toString());
+
+        if (request != null && (request.getReason() != null || request.getContent() != null)) {
+            String closeReason = request.getReason() != null ? request.getReason() : request.getContent();
+            if (project.getDescription() != null && !project.getDescription().isEmpty()) {
+                project.setDescription(project.getDescription() + "\n\nLý do đóng dự án: " + closeReason);
+            } else {
+                project.setDescription("Lý do đóng dự án: " + closeReason);
+            }
+        }
+
+        projectRepository.save(project);
+
+        return ApiResponse.success("Đã đóng dự án thành công", null);
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {

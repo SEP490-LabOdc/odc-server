@@ -3,10 +3,7 @@ package com.odc.projectservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
-import com.odc.projectservice.dto.request.CreateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectOpenStatusRequest;
-import com.odc.projectservice.dto.request.UpdateProjectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectStatusRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.service.ProjectApplicationService;
 import com.odc.projectservice.service.ProjectDocumentService;
@@ -179,5 +176,15 @@ public class ProjectController {
     ) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectService.completeProject(userId, projectId));
+    }
+
+    @PreAuthorize("hasAuthority('LAB_ADMIN')")
+    @PatchMapping("/{projectId}/close")
+    public ResponseEntity<ApiResponse<Void>> closeProject(
+            @PathVariable UUID projectId,
+            @RequestBody(required = false) CloseProjectRequest request
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectService.closeProject(userId, projectId, request));
     }
 }
