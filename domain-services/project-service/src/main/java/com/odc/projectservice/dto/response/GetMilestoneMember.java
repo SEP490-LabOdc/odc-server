@@ -14,6 +14,7 @@ public class GetMilestoneMember {
     private String email;
     private String phone;
     private String avatarUrl;
+    private boolean isLeader;
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
 }

@@ -216,6 +216,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             dto.setUserId(pm.getUserId());
             dto.setJoinedAt(mm.getJoinedAt());
             dto.setLeftAt(mm.getLeftAt());
+            dto.setLeader(mm.isLeader());
 
             if (userInfo != null) {
                 dto.setFullName(userInfo.getFullName());

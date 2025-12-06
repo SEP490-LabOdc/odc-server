@@ -113,11 +113,25 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
+        List<UUID> validRecipientIds = projectMemberRepository.findUserIdsByProjectIdAndUserIdIn(
+                project.getId(),
+                request.getRecipientIds()
+        );
+
+        // 2. Tìm ra những ID không nằm trong danh sách hợp lệ
+        List<UUID> invalidRecipientIds = request.getRecipientIds().stream()
+                .filter(id -> !validRecipientIds.contains(id))
+                .toList();
+
+        // 3. Nếu có ID không hợp lệ, báo lỗi ngay lập tức (hoặc log warning tùy business)
+        if (!invalidRecipientIds.isEmpty()) {
+            throw new BusinessException("Các người dùng sau không phải thành viên dự án: " + invalidRecipientIds);
+        }
+
         // 4. Lặp qua danh sách người nhận và tạo Report
         List<Report> savedReports = new ArrayList<>();
         List<UUID> recipientIds = request.getRecipientIds();
 
-        // (Optional) Validate: Kiểm tra xem recipientIds có phải là member của project không nếu cần thiết
 
         for (UUID recipientId : recipientIds) {
             // Tránh trường hợp tự gửi cho chính mình (tùy nghiệp vụ)

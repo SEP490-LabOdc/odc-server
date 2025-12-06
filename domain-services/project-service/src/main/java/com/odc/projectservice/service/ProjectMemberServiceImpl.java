@@ -5,7 +5,6 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
-import com.odc.projectservice.dto.request.ToggleMentorLeaderRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.entity.MilestoneMember;
@@ -18,7 +17,6 @@ import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -162,8 +160,21 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Override
     public ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId, UUID milestoneId) {
-        List<ProjectMember> projectMemberList = projectMemberRepository.findByProjectId(projectId);
+        // 1. Lấy danh sách và khử trùng ngay lập tức dựa trên ProjectMember ID
+        List<ProjectMember> rawMembers = projectMemberRepository.findByProjectId(projectId);
 
+        // Sử dụng Map để loại bỏ các bản ghi trùng lặp (nếu có) dựa trên ID
+        List<ProjectMember> projectMemberList = new ArrayList<>(
+                rawMembers.stream()
+                        .collect(Collectors.toMap(
+                                ProjectMember::getId,
+                                pm -> pm,
+                                (existing, replacement) -> existing
+                        ))
+                        .values()
+        );
+
+        // 2. Logic lọc thành viên chưa tham gia Milestone (giữ nguyên logic của bạn)
         if (milestoneId != null) {
             List<MilestoneMember> milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
 
@@ -187,12 +198,13 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             return ApiResponse.success(List.of());
         }
 
-        final List<ProjectMember> finalProjectMemberList = projectMemberList;
-
+        // 3. Lấy danh sách User ID và khử trùng (distinct) để tối ưu gRPC call
         List<String> userIds = projectMemberList.stream()
                 .map(pm -> pm.getUserId().toString())
+                .distinct() // Thêm distinct để tránh gửi trùng ID sang User Service
                 .toList();
 
+        // 4. Gọi gRPC lấy thông tin User
         UserServiceGrpc.UserServiceBlockingStub stub =
                 UserServiceGrpc.newBlockingStub(userServiceChannel);
 
@@ -205,33 +217,37 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Map<UUID, UserInfo> userMap = usersResponse.getUsersList().stream()
                 .collect(Collectors.toMap(
                         u -> UUID.fromString(u.getUserId()),
-                        u -> u
+                        u -> u,
+                        (existing, replacement) -> existing // Handle trường hợp user map bị trùng key
                 ));
 
-        List<GetProjectMemberByProjectIdResponse> result = projectMemberList.stream().map(pm -> {
-            UserInfo userInfo = userMap.get(pm.getUserId());
+        // 5. Map sang DTO
+        List<GetProjectMemberByProjectIdResponse> result = projectMemberList.stream()
+                .map(pm -> {
+                    UserInfo userInfo = userMap.get(pm.getUserId());
 
-            GetProjectMemberByProjectIdResponse dto = new GetProjectMemberByProjectIdResponse();
-            dto.setProjectMemberId(pm.getId());
-            dto.setUserId(pm.getUserId());
+                    GetProjectMemberByProjectIdResponse dto = new GetProjectMemberByProjectIdResponse();
+                    dto.setProjectMemberId(pm.getId());
+                    dto.setUserId(pm.getUserId());
 
-            if (userInfo != null) {
-                dto.setFullName(userInfo.getFullName());
-                dto.setEmail(userInfo.getEmail());
-                dto.setPhone(userInfo.getPhone());
-                dto.setAvatarUrl(userInfo.getAvatarUrl());
-            }
+                    if (userInfo != null) {
+                        dto.setFullName(userInfo.getFullName());
+                        dto.setEmail(userInfo.getEmail());
+                        dto.setPhone(userInfo.getPhone());
+                        dto.setAvatarUrl(userInfo.getAvatarUrl());
+                    }
 
-            dto.setRoleName(pm.getRoleInProject());
-            dto.setJoinedAt(pm.getJoinedAt());
-            dto.setLeftAt(pm.getLeftAt());
-            dto.setIsActive(pm.getLeftAt() == null);
+                    dto.setRoleName(pm.getRoleInProject());
+                    dto.setJoinedAt(pm.getJoinedAt());
+                    dto.setLeftAt(pm.getLeftAt());
+                    dto.setIsActive(pm.getLeftAt() == null);
 
-            return dto;
-        }).sorted(
-                Comparator.comparing(GetProjectMemberByProjectIdResponse::getJoinedAt,
-                        Comparator.nullsLast(LocalDateTime::compareTo))
-        ).toList();
+                    return dto;
+                })
+                .sorted(Comparator.comparing(GetProjectMemberByProjectIdResponse::getJoinedAt,
+                        Comparator.nullsLast(LocalDateTime::compareTo)))
+                .toList();
+
         return ApiResponse.success(result);
     }
 }
