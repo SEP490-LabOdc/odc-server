@@ -171,4 +171,13 @@ public class ProjectController {
         ApiResponse<PaginatedResult<ProjectResponse>> response = projectService.getRelatedProjects(projectId, page, size);
         return ResponseEntity.ok(response);
     }
+
+    @PreAuthorize("hasAuthority('COMPANY')")
+    @PatchMapping("/{projectId}/complete")
+    public ResponseEntity<ApiResponse<Void>> completeProject(
+            @PathVariable UUID projectId
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectService.completeProject(userId, projectId));
+    }
 }

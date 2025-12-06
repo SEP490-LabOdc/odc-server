@@ -1,6 +1,7 @@
 package com.odc.projectservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.odc.common.constant.ProjectMilestoneStatus;
 import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
@@ -33,6 +34,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -1095,6 +1098,66 @@ public class ProjectServiceImpl implements ProjectService {
         });
 
         return ApiResponse.success("Lấy danh sách dự án liên quan thành công", PaginatedResult.from(responsePage));
+    }
+
+    @Override
+    public ApiResponse<Void> completeProject(UUID userId, UUID projectId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities().isEmpty()) {
+            throw new BusinessException("Không có quyền truy cập");
+        }
+
+        String userRole = authentication.getAuthorities().iterator().next().getAuthority();
+        if (!Role.COMPANY.toString().equalsIgnoreCase(userRole)) {
+            throw new BusinessException("Chỉ Company mới có quyền hoàn thành dự án");
+        }
+
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByUserIdRequest companyRequest = GetCompanyByUserIdRequest.newBuilder()
+                .setUserId(userId.toString())
+                .build();
+
+        GetCompanyByUserIdResponse companyResponse = companyStub.getCompanyByUserId(companyRequest);
+        UUID companyId = UUID.fromString(companyResponse.getCompanyId());
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        if (!project.getCompanyId().equals(companyId)) {
+            throw new BusinessException("Bạn không có quyền hoàn thành dự án này. Chỉ Company sở hữu dự án mới được phép.");
+        }
+
+        if (ProjectStatus.COMPLETED.toString().equalsIgnoreCase(project.getStatus())) {
+            throw new BusinessException("Dự án đã ở trạng thái COMPLETED");
+        }
+
+        List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectId(projectId);
+
+        if (milestones.isEmpty()) {
+            throw new BusinessException("Không thể hoàn thành dự án. Dự án chưa có milestone nào.");
+        }
+
+        List<ProjectMilestone> unpaidMilestones = milestones.stream()
+                .filter(m -> !ProjectMilestoneStatus.PAID.toString().equalsIgnoreCase(m.getStatus()))
+                .toList();
+
+        if (!unpaidMilestones.isEmpty()) {
+            String unpaidTitles = unpaidMilestones.stream()
+                    .map(ProjectMilestone::getTitle)
+                    .collect(Collectors.joining(", "));
+            throw new BusinessException(
+                    "Không thể hoàn thành dự án. Có " + unpaidMilestones.size() +
+                            " milestone chưa thanh toán: " + unpaidTitles
+            );
+        }
+
+        project.setStatus(ProjectStatus.COMPLETED.toString());
+        project.setUpdatedBy(userId.toString());
+        projectRepository.save(project);
+
+        return ApiResponse.success("Đã hoàn thành dự án thành công", null);
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {
