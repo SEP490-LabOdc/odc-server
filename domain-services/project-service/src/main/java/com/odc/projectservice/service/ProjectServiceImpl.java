@@ -174,6 +174,22 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ApiResponse<ProjectResponse> updateProject(UUID projectId, UpdateProjectRequest request) {
+        if (request.getStartDate() != null && request.getEndDate() != null) {
+            if (request.getEndDate().isBefore(request.getStartDate())) {
+                throw new BusinessException("Ngày kết thúc không được trước ngày bắt đầu");
+            }
+        }
+
+        // Nếu muốn không cho startDate trong quá khứ:
+        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Ngày bắt đầu không được ở trong quá khứ");
+        }
+
+        // Nếu muốn không cho endDate trong quá khứ:
+        if (request.getEndDate() != null && request.getEndDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Ngày kết thúc không được ở trong quá khứ");
+        }
+        
         Project existingProject = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
