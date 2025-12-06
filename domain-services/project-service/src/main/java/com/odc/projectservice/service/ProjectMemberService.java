@@ -15,8 +15,4 @@ public interface ProjectMemberService {
     ApiResponse<List<MentorResponse>> getAvailableMentors(UUID projectId);
 
     ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId, UUID milestoneId);
-
-    ApiResponse<UUID> toggleMentorLeader(UUID projectId, UUID mentorId, ToggleMentorLeaderRequest request);
-
-    ApiResponse<UUID> toggleTalentLeader(UUID projectId, UUID talentId, ToggleMentorLeaderRequest request);
 }
