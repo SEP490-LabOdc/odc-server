@@ -2,10 +2,10 @@ package com.odc.projectservice.grpc;
 
 import com.odc.common.constant.Role;
 import com.odc.projectservice.entity.ProjectMember;
+import com.odc.projectservice.entity.ProjectMilestone;
 import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.v1.GetProjectCountByMentorIdsRequest;
-import com.odc.projectservice.v1.GetProjectCountByMentorIdsResponse;
-import com.odc.projectservice.v1.ProjectServiceGrpc;
+import com.odc.projectservice.repository.ProjectMilestoneRepository;
+import com.odc.projectservice.v1.*;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +21,41 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProjectServiceGrpcImpl extends ProjectServiceGrpc.ProjectServiceImplBase {
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectMilestoneRepository projectMilestoneRepository;
+
+    @Override
+    public void getMilestoneById(GetMilestoneByIdRequest request,
+                                 StreamObserver<GetMilestoneByIdResponse> responseObserver) {
+        try {
+            // Parse UUID
+            UUID milestoneId = UUID.fromString(request.getMilestoneId());
+            log.info("[gRPC] getMilestoneById({}) called", milestoneId);
+
+            // Fetch milestone
+            ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Milestone với ID '" + milestoneId + "' không tồn tại"
+                    ));
+
+            // Build response
+            GetMilestoneByIdResponse response = GetMilestoneByIdResponse.newBuilder()
+                    .setId(milestone.getId().toString())
+                    .setTitle(milestone.getTitle())
+                    .setAmount(milestone.getBudget() == null ? 0.0 : milestone.getBudget().doubleValue())
+                    .setProjectId(milestone.getProject().getId().toString())
+                    .build();
+
+            log.info("[gRPC] getMilestoneById response = {}", response);
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("[gRPC] Error in getMilestoneById: {}", e.getMessage(), e);
+            responseObserver.onError(e);
+        }
+    }
+
 
     @Override
     public void getProjectCountByMentorIds(

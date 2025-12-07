@@ -7,6 +7,7 @@ option java_outer_classname = "ProjectServiceProto";
 
 service ProjectService {
   rpc GetProjectCountByMentorIds(GetProjectCountByMentorIdsRequest) returns (GetProjectCountByMentorIdsResponse);
+  rpc GetMilestoneById(GetMilestoneByIdRequest) returns (GetMilestoneByIdResponse);
 }
 
 message GetProjectCountByMentorIdsRequest {
@@ -15,4 +16,15 @@ message GetProjectCountByMentorIdsRequest {
 
 message GetProjectCountByMentorIdsResponse {
   map<string, int32> mentor_project_counts = 1;
+}
+
+message GetMilestoneByIdRequest {
+  string milestone_id = 1;
+}
+
+message GetMilestoneByIdResponse {
+  string id = 1;
+  string title = 2;
+  double amount = 3; // Số tiền dự kiến của milestone
+  string project_id = 4;
 }

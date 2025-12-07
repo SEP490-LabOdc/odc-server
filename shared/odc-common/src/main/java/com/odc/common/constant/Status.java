@@ -12,4 +12,6 @@ public enum Status {
     DISABLED,
     APPROVED,
     HIRING,
+    SUCCESS,
+    PAID,
 }
