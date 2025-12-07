@@ -160,7 +160,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             }
 
             mm.setLeftAt(LocalDateTime.now());
-            mm.setActive(true);
+            mm.setActive(false);
         }
 
         if (!errors.isEmpty()) {
