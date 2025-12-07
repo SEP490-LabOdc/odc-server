@@ -1,9 +1,15 @@
 package com.odc.paymentservice.service;
 
+import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
+import com.odc.paymentservice.dto.response.DisbursementCalculationResponse;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface DisbursementService {
-    void executeDisbursement(UUID disbursementId);
-    void distributeToMember(UUID leaderId, UUID memberId, UUID disbursementId, BigDecimal amount);
+    DisbursementCalculationResponse calculatePreview(UUID milestoneId, BigDecimal totalAmount);
+
+    void calculateDisbursement(CreateDisbursementRequest request);
+
+    DisbursementCalculationResponse executeDisbursement(UUID disbursementId);
 }

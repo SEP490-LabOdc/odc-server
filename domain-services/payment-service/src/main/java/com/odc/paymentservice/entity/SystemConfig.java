@@ -20,6 +20,10 @@ import java.util.Map;
 public class SystemConfig extends BaseEntity {
     @Type(JsonBinaryType.class)
     @Column(name = "properties", columnDefinition = "jsonb")
-    private Map<String, String> properties;
+    private Map<String, Object> properties;
+
+    @Column(name = "name", nullable = false, unique = true)
+    private String name;
+
     private String description;
 }
