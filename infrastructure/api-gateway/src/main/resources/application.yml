@@ -192,6 +192,19 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: disbursement-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/disbursement/**
+          filters:
+            - StripPrefix=0
+
+        - id: system-config-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/system-configs/**
+          filters:
+            - StripPrefix=0
 
         # Email Service
         - id: email-service
