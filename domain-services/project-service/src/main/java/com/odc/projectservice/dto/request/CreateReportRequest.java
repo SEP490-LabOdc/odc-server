@@ -19,5 +19,5 @@ public class CreateReportRequest {
 
     private List<String> attachmentsUrl; // Link file đính kèm
 
-    private List<UUID> recipientIds;
+    private UUID recipientId;
 }
