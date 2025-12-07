@@ -14,4 +14,6 @@ public interface ProjectMemberService {
     ApiResponse<List<MentorResponse>> getAvailableMentors(UUID projectId);
 
     ApiResponse<List<GetProjectMemberByProjectIdResponse>> getProjectMembersByProjectId(UUID projectId, UUID milestoneId);
+
+    ApiResponse<Void> removeMemberFromProject(UUID projectId, UUID projectMemberId);
 }
