@@ -12,13 +12,9 @@ import com.odc.projectservice.dto.request.CreateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
-import com.odc.projectservice.entity.Project;
-import com.odc.projectservice.entity.ProjectMilestone;
-import com.odc.projectservice.entity.Report;
-import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.repository.ProjectMilestoneRepository;
-import com.odc.projectservice.repository.ProjectRepository;
-import com.odc.projectservice.repository.ReportRepository;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
+import com.odc.projectservice.entity.*;
+import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
 import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
@@ -55,6 +51,7 @@ public class ReportServiceImpl implements ReportService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMilestoneRepository projectMilestoneRepository;
+    private final MilestoneMemberRepository milestoneMemberRepository;
     @Qualifier("userServiceChannel1")
     private final ManagedChannel userServiceChannel;
     @Qualifier("companyServiceChannel")
@@ -64,12 +61,14 @@ public class ReportServiceImpl implements ReportService {
                              ProjectRepository projectRepository,
                              ProjectMemberRepository projectMemberRepository,
                              ProjectMilestoneRepository projectMilestoneRepository,
+                             MilestoneMemberRepository milestoneMemberRepository,
                              ManagedChannel userServiceChannel,
                              ManagedChannel companyServiceChannel) {
         this.reportRepository = reportRepository;
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectMilestoneRepository = projectMilestoneRepository;
+        this.milestoneMemberRepository = milestoneMemberRepository;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }
@@ -275,6 +274,111 @@ public class ReportServiceImpl implements ReportService {
         Page<Report> reportPage = reportRepository.findByMilestone_Id(milestoneId, pageable);
 
         return ApiResponse.success(mapPageToResponse(reportPage));
+    }
+
+    @Override
+    public ApiResponse<List<UserParticipantResponse>> getReportRecipients(UUID projectId, UUID milestoneId) {
+        Project project;
+        Map<UUID, String> memberRoles = new HashMap<>(); // Map để lưu UserId -> Role trong dự án
+
+        // 1. Xác định danh sách thành viên dựa trên input (Milestone hoặc Project)
+        if (milestoneId != null) {
+            // -- LẤY THEO MILESTONE --
+            ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
+
+            project = milestone.getProject(); // Lấy project từ milestone để dùng sau này
+
+            // Lấy danh sách thành viên ĐANG ACTIVE trong milestone này
+            List<MilestoneMember> milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+
+            milestoneMembers.stream()
+                    .filter(MilestoneMember::isActive) // Chỉ lấy active
+                    .forEach(mm -> memberRoles.put(
+                            mm.getProjectMember().getUserId(),
+                            mm.getProjectMember().getRoleInProject()
+                    ));
+
+        } else if (projectId != null) {
+            // -- LẤY THEO PROJECT --
+            project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Dự án không tồn tại"));
+
+            // Lấy toàn bộ thành viên dự án
+            List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(projectId);
+
+            projectMembers.forEach(pm -> memberRoles.put(
+                    pm.getUserId(),
+                    pm.getRoleInProject()
+            ));
+
+        } else {
+            throw new BusinessException("Vui lòng cung cấp projectId hoặc milestoneId để lấy danh sách người nhận.");
+        }
+
+        // 2. Luôn lấy thêm thông tin Company Owner (Client)
+        Set<UUID> allUserIdsToFetch = new HashSet<>(memberRoles.keySet());
+        UUID companyOwnerId = null;
+
+        try {
+            CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                    CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+            // Gọi gRPC lấy thông tin công ty
+            GetCompanyByIdRequest companyRequest = GetCompanyByIdRequest.newBuilder()
+                    .setCompanyId(project.getCompanyId().toString())
+                    .build();
+
+            GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(companyRequest);
+
+            if (companyResponse.getUserId() != null && !companyResponse.getUserId().isEmpty()) {
+                companyOwnerId = UUID.fromString(companyResponse.getUserId());
+                allUserIdsToFetch.add(companyOwnerId); // Thêm vào danh sách cần fetch info
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy thông tin Company Owner từ Company Service: {}", e.getMessage());
+        }
+
+        // 3. Gọi User Service (gRPC) để lấy thông tin chi tiết (Tên, Avatar) cho tất cả ID
+        // Hàm fetchUserInfoBatch đã được tối ưu ở phần trước để gọi gRPC 1 lần
+        Map<String, UserInfo> userMap = fetchUserInfoBatch(new ArrayList<>(allUserIdsToFetch));
+
+        // 4. Map dữ liệu sang Response DTO
+        List<UserParticipantResponse> responses = new ArrayList<>();
+
+        // 4.1 Thêm Company Owner vào danh sách (Ưu tiên hiển thị nếu có)
+        if (companyOwnerId != null) {
+            UserInfo info = userMap.get(companyOwnerId.toString());
+            if (info != null) {
+                responses.add(UserParticipantResponse.builder()
+                        .id(companyOwnerId)
+                        .name(info.getFullName() + " (Khách hàng)") // Thêm hậu tố để FE dễ hiển thị
+                        .avatar(info.getAvatarUrl())
+                        .roleName(Role.COMPANY.toString()) // Role đặc biệt để FE nhận biết đây là Client
+                        .build());
+            }
+        }
+
+        // 4.2 Thêm các thành viên khác
+        for (Map.Entry<UUID, String> entry : memberRoles.entrySet()) {
+            UUID uid = entry.getKey();
+            String role = entry.getValue();
+
+            // Nếu Company Owner cũng nằm trong danh sách thành viên thì bỏ qua để tránh trùng (đã add ở trên)
+            if (uid.equals(companyOwnerId)) continue;
+
+            UserInfo info = userMap.get(uid.toString());
+            if (info != null) {
+                responses.add(UserParticipantResponse.builder()
+                        .id(uid)
+                        .name(info.getFullName())
+                        .avatar(info.getAvatarUrl())
+                        .roleName(role) // MENTOR, TALENT, LEADER...
+                        .build());
+            }
+        }
+
+        return ApiResponse.success("Lấy danh sách người nhận báo cáo thành công", responses);
     }
 
     @Override

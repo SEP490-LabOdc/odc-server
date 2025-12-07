@@ -6,7 +6,9 @@ import com.odc.projectservice.dto.request.CreateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ReportService {
@@ -25,4 +27,6 @@ public interface ReportService {
     ApiResponse<PaginatedResult<ReportResponse>> getProjectReports(UUID projectId, int page, int size);
 
     ApiResponse<PaginatedResult<ReportResponse>> getReportsByMilestoneId(UUID milestoneId, int page, int size);
+
+    ApiResponse<List<UserParticipantResponse>> getReportRecipients(UUID projectId, UUID milestoneId);
 }
