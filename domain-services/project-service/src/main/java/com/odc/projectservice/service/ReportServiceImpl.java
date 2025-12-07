@@ -1,9 +1,6 @@
 package com.odc.projectservice.service;
 
-import com.odc.common.constant.ProjectStatus;
-import com.odc.common.constant.ReportStatus;
-import com.odc.common.constant.ReportType;
-import com.odc.common.constant.Role;
+import com.odc.common.constant.*;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
@@ -198,18 +195,31 @@ public class ReportServiceImpl implements ReportService {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
 
-        // Check quyền: Recipient hoặc Admin (nếu recipient=null)
-        boolean isRecipient = report.getRecipientId() != null && report.getRecipientId().equals(userId);
-        boolean isAdminReviewingSystemReport = report.getRecipientId() == null && isUserAdmin();
+        ProjectMilestone projectMilestone = report.getMilestone();
+        if (projectMilestone != null &&
+                !projectMilestone.getId().equals(request.getMilestoneId())) {
+            throw new BusinessException("Report hiện tại không phải của milestone với id: " + request.getMilestoneId());
+        }
 
-        if (!isRecipient && !isAdminReviewingSystemReport) {
+        if (projectMilestone != null) {
+            if (Status.APPROVED.toString().equalsIgnoreCase(report.getStatus())) {
+                projectMilestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
+            } else {
+                projectMilestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
+            }
+            projectMilestoneRepository.save(projectMilestone);
+        }
+
+        boolean isRecipient = report.getRecipientId() != null && report.getRecipientId().equals(userId);
+
+        if (!isRecipient) {
             throw new BusinessException("Bạn không có quyền duyệt báo cáo này");
         }
 
         report.setStatus(request.getStatus());
-        report.setFeedback(request.getFeedback()); // Cần đảm bảo Entity có field 'feedback'
-
+        report.setFeedback(request.getFeedback());
         reportRepository.save(report);
+
         return ApiResponse.success("Đã cập nhật trạng thái báo cáo", null);
     }
 
