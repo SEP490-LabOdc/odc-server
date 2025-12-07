@@ -5,6 +5,7 @@ public enum ProjectMilestoneStatus {
     PENDING_START,
     UPDATE_REQUIRED,
     ON_GOING,
+    PENDING_COMPLETED,
     COMPLETED,
     PAID
 }

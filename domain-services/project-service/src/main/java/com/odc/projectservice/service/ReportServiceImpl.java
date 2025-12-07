@@ -1,26 +1,21 @@
 package com.odc.projectservice.service;
 
-import com.odc.common.constant.ProjectStatus;
-import com.odc.common.constant.ReportStatus;
-import com.odc.common.constant.ReportType;
-import com.odc.common.constant.Role;
+import com.odc.common.constant.*;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.common.util.EnumUtil;
 import com.odc.companyservice.v1.CompanyServiceGrpc;
 import com.odc.companyservice.v1.GetCompanyByIdRequest;
+import com.odc.companyservice.v1.GetCompanyByIdResponse;
 import com.odc.projectservice.dto.request.CreateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
-import com.odc.projectservice.entity.Project;
-import com.odc.projectservice.entity.ProjectMilestone;
-import com.odc.projectservice.entity.Report;
-import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.repository.ProjectMilestoneRepository;
-import com.odc.projectservice.repository.ProjectRepository;
-import com.odc.projectservice.repository.ReportRepository;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
+import com.odc.projectservice.entity.*;
+import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
 import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
@@ -57,6 +52,7 @@ public class ReportServiceImpl implements ReportService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMilestoneRepository projectMilestoneRepository;
+    private final MilestoneMemberRepository milestoneMemberRepository;
     @Qualifier("userServiceChannel1")
     private final ManagedChannel userServiceChannel;
     @Qualifier("companyServiceChannel")
@@ -66,22 +62,25 @@ public class ReportServiceImpl implements ReportService {
                              ProjectRepository projectRepository,
                              ProjectMemberRepository projectMemberRepository,
                              ProjectMilestoneRepository projectMilestoneRepository,
+                             MilestoneMemberRepository milestoneMemberRepository,
                              ManagedChannel userServiceChannel,
                              ManagedChannel companyServiceChannel) {
         this.reportRepository = reportRepository;
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectMilestoneRepository = projectMilestoneRepository;
+        this.milestoneMemberRepository = milestoneMemberRepository;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
     }
 
     @Override
-    public ApiResponse<List<ReportResponse>> createReport(UUID userId, CreateReportRequest request) {
+    public ApiResponse<ReportResponse> createReport(UUID userId, CreateReportRequest request) {
         // 1. Validate Project & Status
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new BusinessException("Dự án không tồn tại"));
 
+        // Kiểm tra trạng thái dự án có cho phép tạo report không
         if (!ALLOWED_REPORT_STATUSES.contains(project.getStatus())) {
             throw new BusinessException(
                     "Không thể tạo báo cáo khi dự án đang ở trạng thái: " + project.getStatus()
@@ -94,82 +93,93 @@ public class ReportServiceImpl implements ReportService {
                 throw new BusinessException("Daily Report yêu cầu nội dung text");
             }
         } else {
+            // Các loại report khác (Weekly, Milestone...) thường cần file đính kèm
             if (request.getAttachmentsUrl() == null || request.getAttachmentsUrl().isEmpty()) {
                 throw new BusinessException("Báo cáo này yêu cầu đính kèm file");
             }
         }
 
-        // 3. Validate Milestone (nếu có)
+        // 3. Xử lý Logic Milestone
         ProjectMilestone milestone = null;
-        if (ReportType.MILESTONE_REPORT.toString().equals(request.getReportType())) {
-            if (request.getMilestoneId() == null) {
-                throw new BusinessException("Báo cáo milestone yêu cầu phải có milestoneId");
-            }
+
+        // Nếu milestoneId != null -> Report cho Milestone cụ thể
+        if (request.getMilestoneId() != null) {
             milestone = projectMilestoneRepository.findById(request.getMilestoneId())
                     .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
 
+            // Kiểm tra milestone có thuộc dự án này không
             if (!milestone.getProject().getId().equals(project.getId())) {
                 throw new BusinessException("Milestone không thuộc về dự án này");
             }
-        }
 
-        List<UUID> validRecipientIds = projectMemberRepository.findUserIdsByProjectIdAndUserIdIn(
-                project.getId(),
-                request.getRecipientIds()
-        );
-
-        // 2. Tìm ra những ID không nằm trong danh sách hợp lệ
-        List<UUID> invalidRecipientIds = request.getRecipientIds().stream()
-                .filter(id -> !validRecipientIds.contains(id))
-                .toList();
-
-        // 3. Nếu có ID không hợp lệ, báo lỗi ngay lập tức (hoặc log warning tùy business)
-        if (!invalidRecipientIds.isEmpty()) {
-            throw new BusinessException("Các người dùng sau không phải thành viên dự án: " + invalidRecipientIds);
-        }
-
-        // 4. Lặp qua danh sách người nhận và tạo Report
-        List<Report> savedReports = new ArrayList<>();
-        List<UUID> recipientIds = request.getRecipientIds();
-
-
-        for (UUID recipientId : recipientIds) {
-            // Tránh trường hợp tự gửi cho chính mình (tùy nghiệp vụ)
-            if (recipientId.equals(userId)) {
-                throw new BusinessException("Bạn không thể tự gửi report cho chính mình.");
+            // Kiểm tra trạng thái Milestone phải là ON_GOING
+            if (!ProjectMilestoneStatus.ON_GOING.toString().equalsIgnoreCase(milestone.getStatus())) {
+                throw new BusinessException("Chỉ có thể báo cáo cho Milestone đang diễn ra (ON_GOING). Trạng thái hiện tại: " + milestone.getStatus());
             }
 
-            Report report = Report.builder()
-                    .project(project)
-                    .reporterId(userId)
-                    .recipientId(recipientId) // Set từng người nhận
-                    .reportType(request.getReportType())
-                    .content(request.getContent())
-                    .attachmentsUrl(request.getAttachmentsUrl())
-                    .reportingDate(LocalDate.now())
-                    .status(ReportStatus.SUBMITTED.toString())
-                    .milestone(milestone)
-                    .build();
+            milestone.setStatus(ProjectMilestoneStatus.PENDING_COMPLETED.toString());
+            projectMilestoneRepository.save(milestone);
+        }
+        // Nếu milestoneId == null -> Report cho cả dự án (Logic giữ nguyên, không cần xử lý milestone)
 
-            savedReports.add(report);
+        // 4. Validate Recipient (Người nhận)
+        if (request.getRecipientId() == null) {
+            throw new BusinessException("Người nhận báo cáo không được để trống");
         }
 
-        if (savedReports.isEmpty()) {
-            throw new BusinessException("Danh sách người nhận không hợp lệ hoặc rỗng");
+        // Kiểm tra người nhận có phải là thành viên dự án không
+        // Sử dụng existsByUserIdAndProjectId để tối ưu thay vì lấy list về lọc
+        boolean isRecipientInProject = projectMemberRepository.existsByUserIdAndProjectId(request.getRecipientId(), project.getId());
+
+        // Nếu không phải thành viên dự án, kiểm tra xem có phải là Client (Company Owner) không
+        if (!isRecipientInProject) {
+            boolean isCompanyOwner = false;
+            try {
+                // Logic kiểm tra company owner qua gRPC
+                CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                        CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+                GetCompanyByIdRequest companyRequest = GetCompanyByIdRequest.newBuilder()
+                        .setCompanyId(project.getCompanyId().toString())
+                        .build();
+
+                GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(companyRequest);
+
+                // So sánh recipientId với userId của chủ công ty
+                if (companyResponse.getUserId() != null &&
+                        companyResponse.getUserId().equalsIgnoreCase(request.getRecipientId().toString())) {
+                    isCompanyOwner = true;
+                }
+            } catch (Exception e) {
+                log.error("Lỗi khi kiểm tra Company Owner qua gRPC: {}", e.getMessage());
+            }
+
+            if (!isCompanyOwner) {
+                throw new BusinessException("Người nhận không phải là thành viên của dự án hoặc chủ sở hữu công ty");
+            }
         }
 
-        // Lưu Batch (Tối ưu hơn lưu từng cái trong vòng lặp)
-        List<Report> results = reportRepository.saveAll(savedReports);
+        if (request.getRecipientId().equals(userId)) {
+            throw new BusinessException("Bạn không thể tự gửi báo cáo cho chính mình.");
+        }
 
-        // 5. Prepare Response (Fetch User Info 1 lần để tối ưu performance)
-        // Lấy thông tin người tạo (reporter)
+        Report report = Report.builder()
+                .project(project)
+                .reporterId(userId)
+                .recipientId(request.getRecipientId())
+                .reportType(request.getReportType())
+                .content(request.getContent())
+                .attachmentsUrl(request.getAttachmentsUrl())
+                .reportingDate(LocalDate.now())
+                .status(ReportStatus.SUBMITTED.toString())
+                .milestone(milestone)
+                .build();
+
+        Report savedReport = reportRepository.save(report);
+
         Map<String, UserInfo> userMap = fetchUserInfoBatch(List.of(userId));
 
-        List<ReportResponse> responseList = results.stream()
-                .map(r -> mapToResponse(r, userMap))
-                .collect(Collectors.toList());
-
-        return ApiResponse.success("Đã gửi báo cáo thành công tới " + results.size() + " người nhận", responseList);
+        return ApiResponse.success("Tạo báo cáo thành công", mapToResponse(savedReport, userMap));
     }
 
     @Override
@@ -194,22 +204,43 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional // Đảm bảo tính toàn vẹn dữ liệu (Rollback nếu lỗi)
     public ApiResponse<Void> reviewReport(UUID userId, UUID reportId, UpdateReportStatusRequest request) {
+        // 1. Tìm báo cáo
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
 
-        // Check quyền: Recipient hoặc Admin (nếu recipient=null)
+        // 2. Validate quyền (Chỉ người nhận mới được duyệt)
+        // Lưu ý: recipientId trong DB là nullable, cần check null trước khi equals
         boolean isRecipient = report.getRecipientId() != null && report.getRecipientId().equals(userId);
-        boolean isAdminReviewingSystemReport = report.getRecipientId() == null && isUserAdmin();
 
-        if (!isRecipient && !isAdminReviewingSystemReport) {
+        // Mở rộng: Nếu muốn Admin cũng duyệt được thì thêm check role ở đây
+        if (!isRecipient) {
             throw new BusinessException("Bạn không có quyền duyệt báo cáo này");
         }
 
-        report.setStatus(request.getStatus());
-        report.setFeedback(request.getFeedback()); // Cần đảm bảo Entity có field 'feedback'
+        // 3. Validate Status hợp lệ (APPROVED / REJECTED)
+        // Helper EnumUtil đã có trong project common
+        if (!EnumUtil.isEnumValueExist(request.getStatus(), ReportStatus.class)) {
+            throw new BusinessException("Trạng thái duyệt không hợp lệ: " + request.getStatus());
+        }
 
+        // 4. Cập nhật Report
+        report.setStatus(request.getStatus());
+        report.setFeedback(request.getFeedback());
+        // report.setReviewedAt(LocalDateTime.now()); // Nên thêm field này vào Entity để tracking
         reportRepository.save(report);
+
+        // 5. Cập nhật trạng thái Milestone (Side effect)
+        // Chỉ thực hiện nếu báo cáo này gắn với một Milestone
+        ProjectMilestone milestone = report.getMilestone();
+        if (milestone != null) {
+            updateMilestoneStatus(milestone, request.getStatus());
+        }
+
+        // 6. (Optional) Gửi thông báo lại cho người tạo báo cáo (Mentor)
+        // notifyReporter(report);
+
         return ApiResponse.success("Đã cập nhật trạng thái báo cáo", null);
     }
 
@@ -255,6 +286,111 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public ApiResponse<List<UserParticipantResponse>> getReportRecipients(UUID projectId, UUID milestoneId) {
+        Project project;
+        Map<UUID, String> memberRoles = new HashMap<>(); // Map để lưu UserId -> Role trong dự án
+
+        // 1. Xác định danh sách thành viên dựa trên input (Milestone hoặc Project)
+        if (milestoneId != null) {
+            // -- LẤY THEO MILESTONE --
+            ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
+
+            project = milestone.getProject(); // Lấy project từ milestone để dùng sau này
+
+            // Lấy danh sách thành viên ĐANG ACTIVE trong milestone này
+            List<MilestoneMember> milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+
+            milestoneMembers.stream()
+                    .filter(MilestoneMember::isActive) // Chỉ lấy active
+                    .forEach(mm -> memberRoles.put(
+                            mm.getProjectMember().getUserId(),
+                            mm.getProjectMember().getRoleInProject()
+                    ));
+
+        } else if (projectId != null) {
+            // -- LẤY THEO PROJECT --
+            project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Dự án không tồn tại"));
+
+            // Lấy toàn bộ thành viên dự án
+            List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(projectId);
+
+            projectMembers.forEach(pm -> memberRoles.put(
+                    pm.getUserId(),
+                    pm.getRoleInProject()
+            ));
+
+        } else {
+            throw new BusinessException("Vui lòng cung cấp projectId hoặc milestoneId để lấy danh sách người nhận.");
+        }
+
+        // 2. Luôn lấy thêm thông tin Company Owner (Client)
+        Set<UUID> allUserIdsToFetch = new HashSet<>(memberRoles.keySet());
+        UUID companyOwnerId = null;
+
+        try {
+            CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                    CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+            // Gọi gRPC lấy thông tin công ty
+            GetCompanyByIdRequest companyRequest = GetCompanyByIdRequest.newBuilder()
+                    .setCompanyId(project.getCompanyId().toString())
+                    .build();
+
+            GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(companyRequest);
+
+            if (companyResponse.getUserId() != null && !companyResponse.getUserId().isEmpty()) {
+                companyOwnerId = UUID.fromString(companyResponse.getUserId());
+                allUserIdsToFetch.add(companyOwnerId); // Thêm vào danh sách cần fetch info
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy thông tin Company Owner từ Company Service: {}", e.getMessage());
+        }
+
+        // 3. Gọi User Service (gRPC) để lấy thông tin chi tiết (Tên, Avatar) cho tất cả ID
+        // Hàm fetchUserInfoBatch đã được tối ưu ở phần trước để gọi gRPC 1 lần
+        Map<String, UserInfo> userMap = fetchUserInfoBatch(new ArrayList<>(allUserIdsToFetch));
+
+        // 4. Map dữ liệu sang Response DTO
+        List<UserParticipantResponse> responses = new ArrayList<>();
+
+        // 4.1 Thêm Company Owner vào danh sách (Ưu tiên hiển thị nếu có)
+        if (companyOwnerId != null) {
+            UserInfo info = userMap.get(companyOwnerId.toString());
+            if (info != null) {
+                responses.add(UserParticipantResponse.builder()
+                        .id(companyOwnerId)
+                        .name(info.getFullName() + " (Khách hàng)") // Thêm hậu tố để FE dễ hiển thị
+                        .avatar(info.getAvatarUrl())
+                        .roleName(Role.COMPANY.toString()) // Role đặc biệt để FE nhận biết đây là Client
+                        .build());
+            }
+        }
+
+        // 4.2 Thêm các thành viên khác
+        for (Map.Entry<UUID, String> entry : memberRoles.entrySet()) {
+            UUID uid = entry.getKey();
+            String role = entry.getValue();
+
+            // Nếu Company Owner cũng nằm trong danh sách thành viên thì bỏ qua để tránh trùng (đã add ở trên)
+            if (uid.equals(companyOwnerId)) continue;
+
+            UserInfo info = userMap.get(uid.toString());
+            if (info != null) {
+                responses.add(UserParticipantResponse.builder()
+                        .id(uid)
+                        .name(info.getFullName())
+                        .avatar(info.getAvatarUrl())
+                        .roleName(role) // MENTOR, TALENT, LEADER...
+                        .build());
+            }
+        }
+
+        return ApiResponse.success("Lấy danh sách người nhận báo cáo thành công", responses);
+    }
+
+    @Override
     public ApiResponse<ReportResponse> getReportDetail(UUID reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
@@ -263,32 +399,16 @@ public class ReportServiceImpl implements ReportService {
         return ApiResponse.success(mapToResponse(report, userMap));
     }
 
-    // --- Helper Methods & Logic ---
-
-    private UUID resolveRecipient(Project project, String role, boolean isLeader) {
-        // Talent -> Leader
-//        if (Role.TALENT.toString().equalsIgnoreCase(role)) {
-//            return isLeader ? findFirstMentorId(project.getId()) : findLeaderId(project.getId());
-//        }
-
-        // Mentor/Lab Admin -> Company
-        if (Role.MENTOR.toString().equalsIgnoreCase(role) || Role.LAB_ADMIN.toString().equalsIgnoreCase(role)) {
-            return getCompanyUserId(project.getCompanyId());
+    private void updateMilestoneStatus(ProjectMilestone milestone, String reportStatus) {
+        if (ReportStatus.APPROVED.toString().equalsIgnoreCase(reportStatus)) {
+            // Nếu Client duyệt -> Milestone hoàn thành
+            milestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
+        } else if (ReportStatus.REJECTED.toString().equalsIgnoreCase(reportStatus)) {
+            // Nếu Client từ chối -> Yêu cầu Mentor sửa lại -> Trạng thái UPDATE_REQUIRED
+            milestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
         }
-        throw new BusinessException("Không xác định được luồng báo cáo cho role: " + role);
+        projectMilestoneRepository.save(milestone);
     }
-
-//    private UUID findLeaderId(UUID projectId) {
-//        List<ProjectMember> leaders = projectMemberRepository.findByProjectIdAndRoleAndIsLeaderTrue(projectId, Role.TALENT.toString());
-//        if (leaders.isEmpty()) return findFirstMentorId(projectId);
-//        return leaders.get(0).getUserId();
-//    }
-//
-//    private UUID findFirstMentorId(UUID projectId) {
-//        List<ProjectMember> mentors = projectMemberRepository.findByProjectIdAndRole(projectId, Role.MENTOR.toString());
-//        if (mentors.isEmpty()) throw new BusinessException("Dự án chưa có Mentor");
-//        return mentors.get(0).getUserId();
-//    }
 
     private UUID getCompanyUserId(UUID companyId) {
         try {

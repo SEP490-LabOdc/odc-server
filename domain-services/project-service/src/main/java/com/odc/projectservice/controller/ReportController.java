@@ -6,6 +6,7 @@ import com.odc.projectservice.dto.request.CreateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
 import com.odc.projectservice.dto.response.ReportResponse;
+import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.service.ReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<List<ReportResponse>>> createReport(@Valid @RequestBody CreateReportRequest request) {
+    public ResponseEntity<ApiResponse<ReportResponse>> createReport(@Valid @RequestBody CreateReportRequest request) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(reportService.createReport(userId, request));
     }
@@ -81,5 +82,13 @@ public class ReportController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(reportService.getReportsByMilestoneId(milestoneId, page, size));
+    }
+
+    @GetMapping("/recipients")
+    public ResponseEntity<ApiResponse<List<UserParticipantResponse>>> getRecipients(
+            @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) UUID milestoneId) {
+
+        return ResponseEntity.ok(reportService.getReportRecipients(projectId, milestoneId));
     }
 }
