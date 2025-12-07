@@ -1,16 +1,25 @@
 package com.odc.projectservice.grpc;
 
 import com.odc.common.constant.Role;
+import com.odc.common.exception.BusinessException;
+import com.odc.projectservice.entity.MilestoneMember;
 import com.odc.projectservice.entity.ProjectMember;
+import com.odc.projectservice.entity.ProjectMilestone;
+import com.odc.projectservice.repository.MilestoneMemberRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.v1.GetProjectCountByMentorIdsRequest;
-import com.odc.projectservice.v1.GetProjectCountByMentorIdsResponse;
-import com.odc.projectservice.v1.ProjectServiceGrpc;
+import com.odc.projectservice.repository.ProjectMilestoneRepository;
+import com.odc.projectservice.v1.*;
+import com.odc.userservice.v1.GetUsersByIdsRequest;
+import com.odc.userservice.v1.GetUsersByIdsResponse;
+import com.odc.userservice.v1.UserInfo;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +30,43 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProjectServiceGrpcImpl extends ProjectServiceGrpc.ProjectServiceImplBase {
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectMilestoneRepository projectMilestoneRepository;
+    private final ManagedChannel userServiceChannel1;
+    private final MilestoneMemberRepository milestoneMemberRepository;
+
+    @Override
+    public void getMilestoneById(GetMilestoneByIdRequest request,
+                                 StreamObserver<GetMilestoneByIdResponse> responseObserver) {
+        try {
+            // Parse UUID
+            UUID milestoneId = UUID.fromString(request.getMilestoneId());
+            log.info("[gRPC] getMilestoneById({}) called", milestoneId);
+
+            // Fetch milestone
+            ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Milestone với ID '" + milestoneId + "' không tồn tại"
+                    ));
+
+            // Build response
+            GetMilestoneByIdResponse response = GetMilestoneByIdResponse.newBuilder()
+                    .setId(milestone.getId().toString())
+                    .setTitle(milestone.getTitle())
+                    .setAmount(milestone.getBudget() == null ? 0.0 : milestone.getBudget().doubleValue())
+                    .setProjectId(milestone.getProject().getId().toString())
+                    .build();
+
+            log.info("[gRPC] getMilestoneById response = {}", response);
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("[gRPC] Error in getMilestoneById: {}", e.getMessage(), e);
+            responseObserver.onError(e);
+        }
+    }
+
 
     @Override
     public void getProjectCountByMentorIds(
@@ -70,5 +116,55 @@ public class ProjectServiceGrpcImpl extends ProjectServiceGrpc.ProjectServiceImp
             log.error("Error in getProjectCountByMentorIds: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
+    }
+
+    @Override
+    public void getLeaderInfo(GetLeaderInfoRequest request, StreamObserver<GetLeaderInfoResponse> responseObserver) {
+        ProjectMilestone projectMilestone = projectMilestoneRepository.findById(UUID.fromString(request.getMilestoneId()))
+                .orElseThrow(() -> new BusinessException("Project milestone not found in grpc method"));
+        List<MilestoneMember> milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(UUID.fromString(request.getMilestoneId()));
+
+        List<String> leaderUserIds = new ArrayList<>();
+        String mentorLeaderId = null;
+        String talentLeaderId = null;
+
+        for (MilestoneMember member : milestoneMembers) {
+            if (member.isLeader()) {
+                if (Role.MENTOR.toString().equals(member.getProjectMember().getRoleInProject())) {
+                    mentorLeaderId = member.getProjectMember().getUserId().toString();
+                } else if (Role.TALENT.toString().equals(member.getProjectMember().getRoleInProject())) {
+                    talentLeaderId = member.getProjectMember().getUserId().toString();
+                }
+            }
+        }
+
+        leaderUserIds.add(mentorLeaderId);
+        leaderUserIds.add(talentLeaderId);
+
+        UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub = UserServiceGrpc.newBlockingStub(userServiceChannel1);
+        GetUsersByIdsRequest userRequest = GetUsersByIdsRequest.newBuilder()
+                .addAllUserId(leaderUserIds)
+                .build();
+        GetUsersByIdsResponse userResponse = userServiceBlockingStub.getUsersByIds(userRequest);
+
+        List<LeaderInfo> leaders = new ArrayList<>();
+        for (UserInfo user : userResponse.getUsersList()) {
+            LeaderInfo leaderInfo = LeaderInfo.newBuilder()
+                    .setUserId(user.getUserId())
+                    .setFullName(user.getFullName())
+                    .setEmail(user.getEmail())
+                    .setAvatarUrl(user.getAvatarUrl())
+                    .setIsLeader(true)
+                    .setRoleInProject(leaderUserIds.get(0).equals(user.getUserId()) ? "MENTOR" : "TALENT")
+                    .build();
+            leaders.add(leaderInfo);
+        }
+
+        GetLeaderInfoResponse response = GetLeaderInfoResponse.newBuilder()
+                .addAllLeaders(leaders)
+                .setMilestoneStatus(projectMilestone.getStatus())
+                .build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 }

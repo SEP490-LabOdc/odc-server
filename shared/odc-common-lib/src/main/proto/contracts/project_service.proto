@@ -7,6 +7,8 @@ option java_outer_classname = "ProjectServiceProto";
 
 service ProjectService {
   rpc GetProjectCountByMentorIds(GetProjectCountByMentorIdsRequest) returns (GetProjectCountByMentorIdsResponse);
+  rpc GetMilestoneById(GetMilestoneByIdRequest) returns (GetMilestoneByIdResponse);
+  rpc GetLeaderInfo(GetLeaderInfoRequest) returns (GetLeaderInfoResponse);
 }
 
 message GetProjectCountByMentorIdsRequest {
@@ -15,4 +17,33 @@ message GetProjectCountByMentorIdsRequest {
 
 message GetProjectCountByMentorIdsResponse {
   map<string, int32> mentor_project_counts = 1;
+}
+
+message GetMilestoneByIdRequest {
+  string milestone_id = 1;
+}
+
+message GetMilestoneByIdResponse {
+  string id = 1;
+  string title = 2;
+  double amount = 3; // Số tiền dự kiến của milestone
+  string project_id = 4;
+}
+
+message GetLeaderInfoRequest {
+  string milestone_id = 1; // Project Milestone ID
+}
+
+message GetLeaderInfoResponse {
+  repeated LeaderInfo leaders = 1;
+  string milestone_status = 2;
+}
+
+message LeaderInfo {
+  string user_id = 1;
+  string full_name = 2;
+  string email = 3;
+  string avatar_url = 4;
+  string role_in_project = 5; // "MENTOR" or "TALENT"
+  bool is_leader = 6; // true if the person is a leader in the team
 }

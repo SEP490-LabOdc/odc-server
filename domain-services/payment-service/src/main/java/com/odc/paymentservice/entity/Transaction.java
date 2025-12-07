@@ -10,7 +10,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "transactions", indexes = {
         @Index(name = "idx_transaction_wallet", columnList = "wallet_id"),
-        @Index(name = "idx_transaction_ref", columnList = "ref_id")
+        @Index(name = "idx_transaction_project", columnList = "project_id"),
+        @Index(name = "idx_transaction_related_user", columnList = "related_user_id")
 })
 @Getter
 @Setter
@@ -21,35 +22,44 @@ public class Transaction extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id", nullable = false)
-    private Wallet wallet; // Ví bị tác động
+    private Wallet wallet; // Ví của người xem lịch sử này
 
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "type", nullable = false)
     private String type;
-    // Enum gợi ý:
-    // DEPOSIT (Nạp tiền từ PayOS),
-    // WITHDRAWAL (Rút tiền ra bank),
-    // TRANSFER (Chuyển tiền nội bộ),
-    // FEE (Thu phí)
+    // DEPOSIT, MILESTONE_PAYMENT, DISBURSEMENT_IN, ALLOCATION_OUT, ALLOCATION_IN, WITHDRAWAL
 
     @Column(name = "direction", nullable = false)
-    private String direction; // CREDIT (Cộng tiền +), DEBIT (Trừ tiền -)
+    private String direction; // CREDIT (+), DEBIT (-)
 
     @Column(name = "description", columnDefinition = "TEXT")
-    private String description; // Ví dụ: "Nhận tiền từ Milestone 1", "Chuyển tiền cho user A"
+    private String description;
 
-    // Các trường tham chiếu để biết transaction này sinh ra từ đâu
+    // --- TRACEABILITY ---
     @Column(name = "ref_id")
     private UUID refId; // ID của PaymentRequest, Disbursement, hoặc WithdrawalRequest
 
     @Column(name = "ref_type")
-    private String refType; // PAYMENT_REQUEST, DISBURSEMENT, WITHDRAWAL_REQUEST, INTERNAL_DISTRIBUTION
+    private String refType; // "PAYMENT_REQUEST", "DISBURSEMENT", "WITHDRAWAL"
+
+    // --- CONTEXT (Để query lịch sử nhanh) ---
+    @Column(name = "project_id")
+    private UUID projectId;
+
+    @Column(name = "milestone_id")
+    private UUID milestoneId;
+
+    @Column(name = "company_id")
+    private UUID companyId;
+
+    @Column(name = "related_user_id")
+    private UUID relatedUserId; // Người gửi/nhận tiền liên quan (để hiển thị "Nhận từ ai/Chuyển cho ai")
 
     @Column(name = "status")
-    private String status; // SUCCESS, FAILED, PENDING
+    private String status; // SUCCESS
 
     @Column(name = "balance_after", precision = 19, scale = 2)
-    private BigDecimal balanceAfter; // Số dư ví sau khi thực hiện giao dịch (để đối soát)
+    private BigDecimal balanceAfter;
 }
