@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.ProjectMilestoneStatus;
 import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
@@ -249,5 +250,45 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .toList();
 
         return ApiResponse.success(result);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public ApiResponse<Void> removeMemberFromProject(UUID projectId, UUID projectMemberId) {
+        // 1. Kiểm tra thành viên và dự án
+        ProjectMember member = projectMemberRepository.findById(projectMemberId)
+                .orElseThrow(() -> new BusinessException("Thành viên dự án không tồn tại"));
+
+        if (!member.getProject().getId().equals(projectId)) {
+            throw new BusinessException("Thành viên này không thuộc dự án hiện tại");
+        }
+
+        // Kiểm tra xem thành viên đã rời dự án chưa
+        if (member.getLeftAt() != null) {
+            throw new BusinessException("Thành viên này đã rời khỏi dự án");
+        }
+
+        // 2. Validate: Không được xóa nếu đang tham gia Milestone chưa kết thúc
+        List<String> activeStatuses = List.of(
+                ProjectMilestoneStatus.PENDING.toString(),
+                ProjectMilestoneStatus.PENDING_START.toString(),
+                ProjectMilestoneStatus.ON_GOING.toString(),
+                ProjectMilestoneStatus.UPDATE_REQUIRED.toString(),
+                ProjectMilestoneStatus.PENDING_COMPLETED.toString()
+        );
+
+        long activeMilestoneCount = milestoneMemberRepository.countActiveMilestonesForMember(projectMemberId, activeStatuses);
+
+        if (activeMilestoneCount > 0) {
+            throw new BusinessException("Không thể xóa thành viên này vì họ đang tham gia vào Milestone chưa kết thúc.");
+        }
+
+        // 3. Thực hiện Soft Delete (Rời dự án)
+        member.setLeftAt(LocalDateTime.now());
+        projectMemberRepository.save(member);
+
+        log.info("Removed member {} from project {}", projectMemberId, projectId);
+
+        return ApiResponse.success("Đã xóa thành viên khỏi dự án thành công", null);
     }
 }

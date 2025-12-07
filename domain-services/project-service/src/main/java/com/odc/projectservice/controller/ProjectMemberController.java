@@ -42,4 +42,15 @@ public class ProjectMemberController {
     ) {
         return ResponseEntity.ok(projectMemberService.getProjectMembersByProjectId(projectId, milestoneId));
     }
+
+    @DeleteMapping("/projects/{projectId}/members/{projectMemberId}")
+//    @PreAuthorize("hasAuthority('MENTOR') or hasAuthority('LAB_ADMIN')") // Chỉ Mentor hoặc Admin được xóa
+    public ResponseEntity<ApiResponse<Void>> removeMemberFromProject(
+            @PathVariable UUID projectId,
+            @PathVariable UUID projectMemberId
+    ) {
+        return ResponseEntity.ok(
+                projectMemberService.removeMemberFromProject(projectId, projectMemberId)
+        );
+    }
 }
