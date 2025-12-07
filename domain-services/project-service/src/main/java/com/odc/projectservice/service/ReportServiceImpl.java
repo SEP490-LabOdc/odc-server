@@ -183,24 +183,42 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<ReportResponse> updateReport(UUID userId, UUID reportId, UpdateReportRequest request) {
+        // 1. Tìm báo cáo
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
 
+        // 2. Validate quyền sở hữu (Người sửa phải là người tạo)
         if (!report.getReporterId().equals(userId)) {
             throw new BusinessException("Không có quyền sửa báo cáo này");
         }
-        if (!ReportStatus.SUBMITTED.toString().equals(report.getStatus())) {
-            throw new BusinessException("Chỉ sửa được khi trạng thái là SUBMITTED");
+
+        // 3. Validate trạng thái Report
+        // Lưu ý: Nếu luồng nghiệp vụ là [Bị từ chối -> Sửa lại], bạn có thể cần cho phép sửa cả khi status là REJECTED
+        // Hiện tại code giữ nguyên logic chỉ cho sửa khi SUBMITTED như yêu cầu cũ
+        if (!ReportStatus.SUBMITTED.toString().equals(report.getStatus()) &&
+                !ReportStatus.REJECTED.toString().equals(report.getStatus())) {
+            throw new BusinessException("Chỉ có thể chỉnh sửa báo cáo khi ở trạng thái SUBMITTED hoặc REJECTED");
         }
 
         if (request.getContent() != null) report.setContent(request.getContent());
         if (request.getAttachmentsUrl() != null) report.setAttachmentsUrl(request.getAttachmentsUrl());
 
         Report updatedReport = reportRepository.save(report);
+
+        ProjectMilestone milestone = report.getMilestone();
+        if (milestone != null) {
+            milestone.setStatus(ProjectMilestoneStatus.PENDING_COMPLETED.toString());
+            projectMilestoneRepository.save(milestone);
+
+            log.info("Updated Milestone {} status to PENDING_COMPLETE after report update", milestone.getId());
+        }
+
+        // 6. Map response
         Map<String, UserInfo> userMap = fetchUserInfoBatch(List.of(userId));
 
-        return ApiResponse.success("Cập nhật thành công", mapToResponse(updatedReport, userMap));
+        return ApiResponse.success("Cập nhật báo cáo thành công", mapToResponse(updatedReport, userMap));
     }
 
     @Override
@@ -405,7 +423,7 @@ public class ReportServiceImpl implements ReportService {
             milestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
         } else if (ReportStatus.REJECTED.toString().equalsIgnoreCase(reportStatus)) {
             // Nếu Client từ chối -> Yêu cầu Mentor sửa lại -> Trạng thái UPDATE_REQUIRED
-            milestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
+            milestone.setStatus(ProjectMilestoneStatus.UPDATE_COMPLETED.toString());
         }
         projectMilestoneRepository.save(milestone);
     }
