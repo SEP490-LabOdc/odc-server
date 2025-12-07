@@ -21,6 +21,7 @@ import com.odc.userservice.v1.UserInfo;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -132,6 +133,13 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy milestone với ID: " + request.getMilestoneId()));
 
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ProjectMember requester = projectMemberRepository
+                .findByProjectIdAndUserIdAndRole(milestone.getProject().getId(), userId, Role.MENTOR.toString());
+        if (requester == null) {
+            throw new BusinessException("Chỉ Mentor mới có quyền loại bỏ thành viên khỏi Milestone.");
+        }
+
         List<UUID> projectMemberIds = request.getProjectMemberIds();
         if (projectMemberIds == null || projectMemberIds.isEmpty()) {
             throw new BusinessException("Danh sách thành viên để loại bỏ không được để trống");
@@ -161,6 +169,10 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
             mm.setLeftAt(LocalDateTime.now());
             mm.setActive(false);
+
+            if (mm.isLeader()) {
+                mm.setLeader(false);
+            }
         }
 
         if (!errors.isEmpty()) {
@@ -318,20 +330,15 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .orElseThrow(() -> new BusinessException("Thành viên không thuộc milestone"));
 
         if (request.isLeader()) {
-
-            // 3. Check milestone đã có leader chưa
             boolean leaderExists = milestoneMemberRepository
                     .existsByProjectMilestone_IdAndIsLeaderTrue(milestoneId);
 
-            // 4. Nếu đã có leader mà user hiện không phải leader → throw lỗi
             if (leaderExists && !member.isLeader()) {
                 throw new BusinessException("Milestone đã có leader khác");
             }
 
-            // 5. Nếu không ai là leader hoặc chính user muốn giữ leader → cho phép set
             member.setLeader(true);
         } else {
-            // Nếu request muốn set MEMBER (isLeader = false)
             member.setLeader(false);
         }
 

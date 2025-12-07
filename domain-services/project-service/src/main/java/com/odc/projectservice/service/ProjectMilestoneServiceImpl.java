@@ -384,6 +384,25 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             throw new BusinessException("Không thể cập nhật trạng thái. Milestone hiện không ở trạng thái 'PENDING_START'.");
         }
 
+        List<MilestoneMember> activeMembers = milestoneMemberRepository.findByProjectMilestone_IdAndIsActive(milestoneId, true);
+
+        if (activeMembers.isEmpty()) {
+            throw new BusinessException("Không thể bắt đầu Milestone vì chưa có thành viên nào tham gia.");
+        }
+
+        boolean hasMentorLeader = activeMembers.stream().anyMatch(mm ->
+                mm.isLeader() && Role.MENTOR.toString().equalsIgnoreCase(mm.getProjectMember().getRoleInProject()));
+
+        boolean hasTalentLeader = activeMembers.stream().anyMatch(mm ->
+                mm.isLeader() && Role.TALENT.toString().equalsIgnoreCase(mm.getProjectMember().getRoleInProject()));
+
+        if (!hasMentorLeader) {
+            throw new BusinessException("Milestone cần ít nhất 1 Mentor làm Leader trước khi bắt đầu.");
+        }
+        if (!hasTalentLeader) {
+            throw new BusinessException("Milestone cần ít nhất 1 Talent làm Leader trước khi bắt đầu.");
+        }
+
         LocalDate today = LocalDate.now();
         if (milestone.getStartDate() != null && today.isBefore(milestone.getStartDate())) {
             milestone.setStartDate(today);
