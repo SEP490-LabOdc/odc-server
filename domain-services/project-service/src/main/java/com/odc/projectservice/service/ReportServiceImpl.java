@@ -5,6 +5,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.common.util.EnumUtil;
 import com.odc.companyservice.v1.CompanyServiceGrpc;
 import com.odc.companyservice.v1.GetCompanyByIdRequest;
 import com.odc.companyservice.v1.GetCompanyByIdResponse;
@@ -203,34 +204,42 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional // Đảm bảo tính toàn vẹn dữ liệu (Rollback nếu lỗi)
     public ApiResponse<Void> reviewReport(UUID userId, UUID reportId, UpdateReportStatusRequest request) {
+        // 1. Tìm báo cáo
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
 
-        ProjectMilestone projectMilestone = report.getMilestone();
-        if (projectMilestone != null &&
-                !projectMilestone.getId().equals(request.getMilestoneId())) {
-            throw new BusinessException("Report hiện tại không phải của milestone với id: " + request.getMilestoneId());
-        }
-
-        if (projectMilestone != null) {
-            if (Status.APPROVED.toString().equalsIgnoreCase(report.getStatus())) {
-                projectMilestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
-            } else {
-                projectMilestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
-            }
-            projectMilestoneRepository.save(projectMilestone);
-        }
-
+        // 2. Validate quyền (Chỉ người nhận mới được duyệt)
+        // Lưu ý: recipientId trong DB là nullable, cần check null trước khi equals
         boolean isRecipient = report.getRecipientId() != null && report.getRecipientId().equals(userId);
 
+        // Mở rộng: Nếu muốn Admin cũng duyệt được thì thêm check role ở đây
         if (!isRecipient) {
             throw new BusinessException("Bạn không có quyền duyệt báo cáo này");
         }
 
+        // 3. Validate Status hợp lệ (APPROVED / REJECTED)
+        // Helper EnumUtil đã có trong project common
+        if (!EnumUtil.isEnumValueExist(request.getStatus(), ReportStatus.class)) {
+            throw new BusinessException("Trạng thái duyệt không hợp lệ: " + request.getStatus());
+        }
+
+        // 4. Cập nhật Report
         report.setStatus(request.getStatus());
         report.setFeedback(request.getFeedback());
+        // report.setReviewedAt(LocalDateTime.now()); // Nên thêm field này vào Entity để tracking
         reportRepository.save(report);
+
+        // 5. Cập nhật trạng thái Milestone (Side effect)
+        // Chỉ thực hiện nếu báo cáo này gắn với một Milestone
+        ProjectMilestone milestone = report.getMilestone();
+        if (milestone != null) {
+            updateMilestoneStatus(milestone, request.getStatus());
+        }
+
+        // 6. (Optional) Gửi thông báo lại cho người tạo báo cáo (Mentor)
+        // notifyReporter(report);
 
         return ApiResponse.success("Đã cập nhật trạng thái báo cáo", null);
     }
@@ -390,32 +399,16 @@ public class ReportServiceImpl implements ReportService {
         return ApiResponse.success(mapToResponse(report, userMap));
     }
 
-    // --- Helper Methods & Logic ---
-
-    private UUID resolveRecipient(Project project, String role, boolean isLeader) {
-        // Talent -> Leader
-//        if (Role.TALENT.toString().equalsIgnoreCase(role)) {
-//            return isLeader ? findFirstMentorId(project.getId()) : findLeaderId(project.getId());
-//        }
-
-        // Mentor/Lab Admin -> Company
-        if (Role.MENTOR.toString().equalsIgnoreCase(role) || Role.LAB_ADMIN.toString().equalsIgnoreCase(role)) {
-            return getCompanyUserId(project.getCompanyId());
+    private void updateMilestoneStatus(ProjectMilestone milestone, String reportStatus) {
+        if (ReportStatus.APPROVED.toString().equalsIgnoreCase(reportStatus)) {
+            // Nếu Client duyệt -> Milestone hoàn thành
+            milestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
+        } else if (ReportStatus.REJECTED.toString().equalsIgnoreCase(reportStatus)) {
+            // Nếu Client từ chối -> Yêu cầu Mentor sửa lại -> Trạng thái UPDATE_REQUIRED
+            milestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
         }
-        throw new BusinessException("Không xác định được luồng báo cáo cho role: " + role);
+        projectMilestoneRepository.save(milestone);
     }
-
-//    private UUID findLeaderId(UUID projectId) {
-//        List<ProjectMember> leaders = projectMemberRepository.findByProjectIdAndRoleAndIsLeaderTrue(projectId, Role.TALENT.toString());
-//        if (leaders.isEmpty()) return findFirstMentorId(projectId);
-//        return leaders.get(0).getUserId();
-//    }
-//
-//    private UUID findFirstMentorId(UUID projectId) {
-//        List<ProjectMember> mentors = projectMemberRepository.findByProjectIdAndRole(projectId, Role.MENTOR.toString());
-//        if (mentors.isEmpty()) throw new BusinessException("Dự án chưa có Mentor");
-//        return mentors.get(0).getUserId();
-//    }
 
     private UUID getCompanyUserId(UUID companyId) {
         try {
