@@ -8,9 +8,9 @@ spring:
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:payment_db}
+    url: jdbc:postgresql://${DB_HOST:157.66.24.235}:${DB_PORT:5432}/${DB_NAME:payment_db}
     username: ${DB_USER:admin}
-    password: ${DB_PASSWORD:12345}
+    password: ${DB_PASSWORD:Labodc@1}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -110,17 +110,16 @@ springdoc:
 
 # REST Service Configuration
 grpc:
+  server:
+    address: 0.0.0.0
+    port: 9596
   client:
     user-service:
       address: ${USER-SERVICE-GRPC:0.0.0.0}
       port: 9091
-    company-service:
-      address: ${COMPANY-SERVICE-GRPC:0.0.0.0}
-      port: 9192
-
-  server:
-    address: 0.0.0.0
-    port: 9096
+    project-service:
+      address: ${PROJECT-SERVICE-GRPC:0.0.0.0}
+      port: 9094
 
 # PayOS Configuration
 payos:
