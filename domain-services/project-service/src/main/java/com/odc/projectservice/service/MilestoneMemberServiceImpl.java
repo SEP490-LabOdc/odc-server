@@ -67,6 +67,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .collect(Collectors.toMap(ProjectMember::getId, pm -> pm));
 
         List<String> errors = new ArrayList<>();
+        List<MilestoneMember> newMembers = new ArrayList<>();
 
         for (UUID pmId : projectMemberIds) {
             ProjectMember pm = projectMemberMap.get(pmId);
@@ -81,6 +82,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             }
             if (!pm.getRoleInProject().equalsIgnoreCase(allowedRole.toString())) {
                 errors.add("Thành viên với projectMemberId " + pmId + " không có vai trò " + allowedRole + " để thêm vào milestone");
+                continue;
             }
 
             MilestoneMember existing = milestoneMemberRepository
@@ -92,7 +94,6 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                     errors.add("Thành viên với userId " + pm.getUserId() + " đã tham gia milestone này trước đó");
                     continue;
                 }
-
                 existing.setActive(true);
                 existing.setJoinedAt(LocalDateTime.now());
                 existing.setLeftAt(null);
@@ -104,25 +105,17 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                         .joinedAt(LocalDateTime.now())
                         .isActive(true)
                         .build();
-                milestoneMemberRepository.save(mm);
+                newMembers.add(mm);
             }
         }
-
 
         if (!errors.isEmpty()) {
             throw new BusinessException(String.join("; ", errors));
         }
 
-        List<MilestoneMember> toSave = projectMembers.stream()
-                .map(pm -> MilestoneMember.builder()
-                        .projectMilestone(milestone)
-                        .projectMember(pm)
-                        .joinedAt(LocalDateTime.now())
-                        .isActive(true)
-                        .build())
-                .toList();
-
-        milestoneMemberRepository.saveAll(toSave);
+        if (!newMembers.isEmpty()) {
+            milestoneMemberRepository.saveAll(newMembers);
+        }
 
         return ApiResponse.success("Thêm thành công các thành viên vào milestone", null);
     }
