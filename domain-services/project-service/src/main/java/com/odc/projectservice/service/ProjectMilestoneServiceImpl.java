@@ -64,6 +64,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + request.getProjectId() + "' không tồn tại"));
 
+
         Optional<ProjectMilestone> latestMilestone = projectMilestoneRepository.findLatestByProjectId(request.getProjectId());
         if (latestMilestone.isPresent()) {
             ProjectMilestone latest = latestMilestone.get();
@@ -118,6 +119,23 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         project.setRemainingBudget(remainingBudget.subtract(milestoneBudget));
         projectRepository.save(project);
+
+        UUID currentUserId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        ProjectMember creatorMember = projectMemberRepository
+                .findByProject_IdAndUserId(project.getId(), currentUserId);
+
+        if (creatorMember == null)
+            throw new BusinessException("Bạn không thuộc dự án này");
+
+        MilestoneMember creatorMilestoneMember = MilestoneMember.builder()
+                .projectMilestone(savedMilestone)
+                .projectMember(creatorMember)
+                .isLeader(true)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        milestoneMemberRepository.save(creatorMilestoneMember);
 
         try {
             CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =

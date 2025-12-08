@@ -14,6 +14,7 @@ import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
 import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -120,51 +121,86 @@ public class ProjectServiceGrpcImpl extends ProjectServiceGrpc.ProjectServiceImp
 
     @Override
     public void getLeaderInfo(GetLeaderInfoRequest request, StreamObserver<GetLeaderInfoResponse> responseObserver) {
-        ProjectMilestone projectMilestone = projectMilestoneRepository.findById(UUID.fromString(request.getMilestoneId()))
-                .orElseThrow(() -> new BusinessException("Project milestone not found in grpc method"));
-        List<MilestoneMember> milestoneMembers = milestoneMemberRepository.findByProjectMilestone_Id(UUID.fromString(request.getMilestoneId()));
+        try {
+            UUID milestoneId = UUID.fromString(request.getMilestoneId());
+            ProjectMilestone projectMilestone = projectMilestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new BusinessException("Project milestone not found"));
 
-        List<String> leaderUserIds = new ArrayList<>();
-        String mentorLeaderId = null;
-        String talentLeaderId = null;
+            List<MilestoneMember> milestoneMembers =
+                    milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
 
-        for (MilestoneMember member : milestoneMembers) {
-            if (member.isLeader()) {
-                if (Role.MENTOR.toString().equals(member.getProjectMember().getRoleInProject())) {
-                    mentorLeaderId = member.getProjectMember().getUserId().toString();
-                } else if (Role.TALENT.toString().equals(member.getProjectMember().getRoleInProject())) {
-                    talentLeaderId = member.getProjectMember().getUserId().toString();
+            String mentorLeaderId = null;
+            String talentLeaderId = null;
+
+            for (MilestoneMember member : milestoneMembers) {
+                if (member.isLeader()) {
+                    String role = member.getProjectMember().getRoleInProject();
+                    String userId = member.getProjectMember().getUserId().toString();
+
+                    if (Role.MENTOR.toString().equals(role)) {
+                        mentorLeaderId = userId;
+                    } else if (Role.TALENT.toString().equals(role)) {
+                        talentLeaderId = userId;
+                    }
                 }
             }
-        }
 
-        leaderUserIds.add(mentorLeaderId);
-        leaderUserIds.add(talentLeaderId);
+            // --- FIX: Chỉ add userId nào KHÔNG null ---
+            List<String> leaderUserIds = new ArrayList<>();
+            if (mentorLeaderId != null) leaderUserIds.add(mentorLeaderId);
+            if (talentLeaderId != null) leaderUserIds.add(talentLeaderId);
 
-        UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub = UserServiceGrpc.newBlockingStub(userServiceChannel1);
-        GetUsersByIdsRequest userRequest = GetUsersByIdsRequest.newBuilder()
-                .addAllUserId(leaderUserIds)
-                .build();
-        GetUsersByIdsResponse userResponse = userServiceBlockingStub.getUsersByIds(userRequest);
+            // Không có leader nào
+            if (leaderUserIds.isEmpty()) {
+                GetLeaderInfoResponse response = GetLeaderInfoResponse.newBuilder()
+                        .setMilestoneStatus(projectMilestone.getStatus())
+                        .build();
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+                return;
+            }
 
-        List<LeaderInfo> leaders = new ArrayList<>();
-        for (UserInfo user : userResponse.getUsersList()) {
-            LeaderInfo leaderInfo = LeaderInfo.newBuilder()
-                    .setUserId(user.getUserId())
-                    .setFullName(user.getFullName())
-                    .setEmail(user.getEmail())
-                    .setAvatarUrl(user.getAvatarUrl())
-                    .setIsLeader(true)
-                    .setRoleInProject(leaderUserIds.get(0).equals(user.getUserId()) ? "MENTOR" : "TALENT")
+            // Call user service
+            UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub =
+                    UserServiceGrpc.newBlockingStub(userServiceChannel1);
+
+            GetUsersByIdsRequest userRequest = GetUsersByIdsRequest.newBuilder()
+                    .addAllUserId(leaderUserIds)
                     .build();
-            leaders.add(leaderInfo);
-        }
 
-        GetLeaderInfoResponse response = GetLeaderInfoResponse.newBuilder()
-                .addAllLeaders(leaders)
-                .setMilestoneStatus(projectMilestone.getStatus())
-                .build();
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+            GetUsersByIdsResponse userResponse = userServiceBlockingStub.getUsersByIds(userRequest);
+
+            List<LeaderInfo> leaders = new ArrayList<>();
+
+            for (UserInfo user : userResponse.getUsersList()) {
+                String roleInProject =
+                        user.getUserId().equals(mentorLeaderId) ? "MENTOR" : "TALENT";
+
+                LeaderInfo leaderInfo = LeaderInfo.newBuilder()
+                        .setUserId(user.getUserId())
+                        .setFullName(user.getFullName())
+                        .setEmail(user.getEmail())
+                        .setAvatarUrl(user.getAvatarUrl())
+                        .setIsLeader(true)
+                        .setRoleInProject(roleInProject)
+                        .build();
+
+                leaders.add(leaderInfo);
+            }
+
+            GetLeaderInfoResponse response = GetLeaderInfoResponse.newBuilder()
+                    .addAllLeaders(leaders)
+                    .setMilestoneStatus(projectMilestone.getStatus())
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            responseObserver.onError(
+                    Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException()
+            );
+        }
     }
+
 }
