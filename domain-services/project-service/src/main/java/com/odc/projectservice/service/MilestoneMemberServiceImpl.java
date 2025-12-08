@@ -222,6 +222,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             dto.setJoinedAt(mm.getJoinedAt());
             dto.setLeftAt(mm.getLeftAt());
             dto.setLeader(mm.isLeader());
+            dto.setIsActive(mm.isActive());
 
             if (userInfo != null) {
                 dto.setFullName(userInfo.getFullName());
@@ -298,6 +299,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             dto.setJoinedAt(mm.getJoinedAt());
             dto.setLeftAt(mm.getLeftAt());
             dto.setLeader(mm.isLeader());
+            dto.setIsActive(mm.isActive());
 
             // Nếu cần hiển thị role trong response để client biết,
             // bạn nên thêm field 'role' vào GetMilestoneMember DTO.
