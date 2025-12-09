@@ -1,9 +1,12 @@
 package com.odc.paymentservice.controller;
 
+import com.odc.common.constant.PaymentConstant;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.paymentservice.dto.request.SystemConfigRequest;
+import com.odc.paymentservice.dto.request.UpdateSystemConfigRequest;
 import com.odc.paymentservice.entity.SystemConfig;
+import com.odc.paymentservice.scheduler.DynamicFeeDistributionScheduler;
 import com.odc.paymentservice.service.SystemConfigService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.UUID;
 public class SystemConfigController {
 
     private final SystemConfigService service;
+    private final DynamicFeeDistributionScheduler dynamicFeeDistributionScheduler;
 
     @PostMapping
     public ResponseEntity<ApiResponse<SystemConfig>> create(@RequestBody @Valid SystemConfigRequest request) {
@@ -30,8 +34,17 @@ public class SystemConfigController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<SystemConfig>> update(
             @PathVariable UUID id,
-            @RequestBody @Valid SystemConfigRequest request) {
-        return ResponseEntity.ok(service.update(id, request));
+            @RequestBody @Valid UpdateSystemConfigRequest request) {
+
+        // 1. Cập nhật cấu hình
+        // (Giả định SystemConfigService đã được implement để xử lý Map<String, Object> properties)
+        SystemConfig updatedConfig = service.update(id, request);
+
+        // 2. LOGIC KIỂM TRA TÊN VÀ RESET SCHEDULER
+        if (PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME.equals(updatedConfig.getName()))
+            dynamicFeeDistributionScheduler.rescheduleTask();
+
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công config", updatedConfig));
     }
 
     @DeleteMapping("/{id}")

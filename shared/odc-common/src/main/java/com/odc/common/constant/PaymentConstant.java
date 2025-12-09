@@ -11,4 +11,6 @@ public class PaymentConstant {
     public static final String WITHDRAWAL_REQUEST = "WITHDRAWAL_REQUEST";
     public static final String TRANSACTION_TYPE_DISBURSEMENT = "TRANSACTION_TYPE_DISBURSEMENT";
     public static final String REF_TYPE_DISBURSEMENT = "DISBURSEMENT";
+    public static final String SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME = "fee-distribution";
+    public static final String SYSTEM_CONFIG_CRON_EXPRESSION_KEY = "cronExpression"; // Key để lấy Cron Expression từ Map properties
 }

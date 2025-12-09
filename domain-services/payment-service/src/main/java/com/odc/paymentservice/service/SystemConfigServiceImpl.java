@@ -4,6 +4,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.request.SystemConfigRequest;
+import com.odc.paymentservice.dto.request.UpdateSystemConfigRequest;
 import com.odc.paymentservice.entity.SystemConfig;
 import com.odc.paymentservice.repository.SystemConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,14 +34,13 @@ public class SystemConfigServiceImpl implements SystemConfigService {
     }
 
     @Override
-    public ApiResponse<SystemConfig> update(UUID id, SystemConfigRequest request) {
+    public SystemConfig update(UUID id, UpdateSystemConfigRequest request) {
         SystemConfig config = systemConfigRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Config không tồn tại"));
 
-        config.setName(request.getName());
         config.setDescription(request.getDescription());
         config.setProperties(request.getProperties());
-        return ApiResponse.success("Cập nhật thành công config", systemConfigRepository.save(config));
+        return systemConfigRepository.save(config);
     }
 
     @Override
