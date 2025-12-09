@@ -10,7 +10,10 @@ import java.util.UUID;
 
 public interface WithdrawalAdminService {
     ApiResponse<Page<WithdrawalResponse>> list(WithdrawalFilterRequest filter);
+
     ApiResponse<WithdrawalResponse> detail(UUID id);
+
     ApiResponse<WithdrawalResponse> approve(UUID id, AdminHandleWithdrawalRequest req);
+
     ApiResponse<WithdrawalResponse> reject(UUID id, AdminHandleWithdrawalRequest req);
 }

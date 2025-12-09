@@ -1,6 +1,8 @@
 package com.odc.paymentservice.service;
 
+import com.odc.common.dto.ApiResponse;
 import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
+import com.odc.paymentservice.dto.request.MilestoneDisbursementRequest;
 import com.odc.paymentservice.dto.response.DisbursementCalculationResponse;
 
 import java.math.BigDecimal;
@@ -12,4 +14,6 @@ public interface DisbursementService {
     void calculateDisbursement(CreateDisbursementRequest request);
 
     DisbursementCalculationResponse executeDisbursement(UUID disbursementId);
+
+    ApiResponse<Void> processMilestoneDisbursement(UUID milestoneId, MilestoneDisbursementRequest request);
 }

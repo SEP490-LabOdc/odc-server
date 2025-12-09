@@ -15,10 +15,10 @@ public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalReq
     Page<WithdrawalRequest> findByStatus(String status, Pageable pageable);
 
     @Query("""
-        select wr from WithdrawalRequest wr
-        where (:status is null or wr.status = :status)
-          and (:from is null or wr.createdAt >= :from)
-          and (:to is null or wr.createdAt <= :to)
-        """)
+            select wr from WithdrawalRequest wr
+            where (:status is null or wr.status = :status)
+              and (:from is null or wr.createdAt >= :from)
+              and (:to is null or wr.createdAt <= :to)
+            """)
     Page<WithdrawalRequest> search(String status, LocalDateTime from, LocalDateTime to, Pageable pageable);
 }

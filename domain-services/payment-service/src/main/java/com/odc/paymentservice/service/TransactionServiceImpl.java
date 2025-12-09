@@ -3,7 +3,6 @@ package com.odc.paymentservice.service;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.response.TransactionResponse;
-import com.odc.paymentservice.entity.PaymentRequest;
 import com.odc.paymentservice.entity.Transaction;
 import com.odc.paymentservice.repository.PaymentRequestRepository;
 import com.odc.paymentservice.repository.TransactionRepository;
