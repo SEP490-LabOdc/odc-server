@@ -127,7 +127,7 @@ public class ProjectServiceGrpcImpl extends ProjectServiceGrpc.ProjectServiceImp
                     .orElseThrow(() -> new BusinessException("Project milestone not found"));
 
             List<MilestoneMember> milestoneMembers =
-                    milestoneMemberRepository.findByProjectMilestone_Id(milestoneId);
+                    milestoneMemberRepository.findByProjectMilestoneIdWithProjectMember(milestoneId);
 
             String mentorLeaderId = null;
             String talentLeaderId = null;
