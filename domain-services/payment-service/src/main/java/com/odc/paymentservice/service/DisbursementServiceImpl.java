@@ -1,9 +1,14 @@
 package com.odc.paymentservice.service;
 
+import com.odc.common.constant.PaymentConstant;
 import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
+import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
+import com.odc.paymentservice.dto.request.MilestoneDisbursement;
+import com.odc.paymentservice.dto.request.MilestoneDisbursementRequest;
 import com.odc.paymentservice.dto.response.DisbursementCalculationResponse;
 import com.odc.paymentservice.dto.response.LeaderDisbursementInfo;
 import com.odc.paymentservice.entity.Disbursement;
@@ -20,6 +25,7 @@ import com.odc.projectservice.v1.LeaderInfo;
 import com.odc.projectservice.v1.ProjectServiceGrpc;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,6 +34,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DisbursementServiceImpl implements DisbursementService {
     private final SystemConfigRepository systemConfigRepository;
     private final ManagedChannel projectServiceChannel;
@@ -228,6 +235,69 @@ public class DisbursementServiceImpl implements DisbursementService {
                 .talentLeader(talentObj)
                 .status(disbursement.getStatus())
                 .build();
+    }
+
+    @Override
+    public ApiResponse<Void> processMilestoneDisbursement(UUID milestoneId, MilestoneDisbursementRequest request) {
+        // 1. Lấy thông tin Disbursement
+        Disbursement disbursement = disbursementRepository.findByMilestoneId(milestoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kết quả phân bổ tiền theo milestoneId: " + milestoneId));
+
+        // Kiểm tra trạng thái thanh toán đã hoàn tất
+        if (!Status.COMPLETED.toString().equals(disbursement.getStatus())) {
+            throw new BusinessException("Thanh toán cho milestone này vẫn chưa được hoàn tất (ID: " + milestoneId + ")");
+        }
+
+        BigDecimal totalAmountAvailable = disbursement.getTotalAmount();
+
+        // 2. Tính tổng số tiền được yêu cầu phân bổ
+        BigDecimal totalAmountRequested = request.getDisbursements().stream()
+                .map(MilestoneDisbursement::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 3. Validation: Kiểm tra tổng số tiền phân bổ
+        if (totalAmountRequested.compareTo(totalAmountAvailable) > 0) {
+            throw new BusinessException("Tổng số tiền phân bổ (" + totalAmountRequested
+                    + ") vượt quá tổng số tiền khả dụng của milestone (" + totalAmountAvailable + ")");
+        }
+
+        // 4. Thực hiện Transaction cho từng thành viên
+        for (MilestoneDisbursement memberDisbursement : request.getDisbursements()) {
+            UUID memberId = memberDisbursement.getUserId();
+            BigDecimal memberAmount = memberDisbursement.getAmount();
+
+            // Cập nhật Wallet của Member
+            Wallet memberWallet = walletRepository.findByOwnerId(memberId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Wallet cho thành viên ID: " + memberId));
+
+            memberWallet.setBalance(memberWallet.getBalance().add(memberAmount));
+            walletRepository.save(memberWallet);
+
+            // Ghi nhận Transaction
+            Transaction transaction = new Transaction();
+            transaction.setWallet(memberWallet);
+            transaction.setAmount(memberAmount);
+            transaction.setType(PaymentConstant.TRANSACTION_TYPE_DISBURSEMENT);
+            transaction.setStatus(Status.COMPLETED.toString());
+            transaction.setMilestoneId(milestoneId);
+            transaction.setRefId(disbursement.getId());
+            transaction.setRefType(PaymentConstant.REF_TYPE_DISBURSEMENT);
+            transaction.setDirection(PaymentConstant.CREDIT);
+            transaction.setRelatedUserId(memberId);
+            transaction.setBalanceAfter(memberWallet.getBalance().add(memberAmount));
+            transactionRepository.save(transaction);
+
+            log.info("Disbursed {} to member {} for milestone {}", memberAmount, memberId, milestoneId);
+        }
+
+        // 5. Cập nhật trạng thái Disbursement nếu phân bổ hết
+        if (totalAmountRequested.compareTo(totalAmountAvailable) == 0) {
+            // Cần thêm field distributed: boolean vào entity Disbursement để đánh dấu
+            // disbursement.setDistributed(true);
+            // disbursementRepository.save(disbursement);
+        }
+
+        return ApiResponse.success("Phân bổ tiền thành công", null);
     }
 
     private Wallet getOrCreateWallet(UUID userId) {

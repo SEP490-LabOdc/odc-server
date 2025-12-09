@@ -9,5 +9,6 @@ import java.util.UUID;
 
 public interface WalletService {
     ApiResponse<WalletResponse> getMyWallet(UUID userId);
+
     ApiResponse<WithdrawalResponse> createWithdrawalRequest(UUID userId, CreateWithdrawalRequest request);
 }

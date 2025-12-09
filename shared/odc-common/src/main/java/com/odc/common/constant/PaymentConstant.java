@@ -9,4 +9,6 @@ public class PaymentConstant {
     public static final String DEPOSIT = "DEPOSIT";
     public static final String WITHDRAWAL = "WITHDRAWAL";
     public static final String WITHDRAWAL_REQUEST = "WITHDRAWAL_REQUEST";
+    public static final String TRANSACTION_TYPE_DISBURSEMENT = "TRANSACTION_TYPE_DISBURSEMENT";
+    public static final String REF_TYPE_DISBURSEMENT = "DISBURSEMENT";
 }
