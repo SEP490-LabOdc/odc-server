@@ -15,4 +15,5 @@ public class TalentMentorInfoResponse {
     private String avatar;
     private String email;
     private String phone;
+    private Boolean isLeader;
 }
