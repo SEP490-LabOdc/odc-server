@@ -708,77 +708,23 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return builder.build();
     }
 
-    private ProjectMilestoneResponse convertToProjectMilestoneResponse(ProjectMilestone milestone,
-                                                                       List<MilestoneMember> milestoneMembers,
-                                                                       Map<UUID, UserInfo> userMap) {
-        List<ProjectMember> projectMembers = milestoneMembers.stream()
-                .map(MilestoneMember::getProjectMember)
-                .distinct()
-                .toList();
+    private ProjectMilestoneResponse convertToProjectMilestoneResponse(
+            ProjectMilestone milestone,
+            List<MilestoneMember> milestoneMembers,
+            Map<UUID, UserInfo> userMap) {
 
-        List<ProjectMember> talentMembers = projectMembers.stream()
-                .filter(pm -> Role.TALENT.toString().equalsIgnoreCase(pm.getRoleInProject()))
-                .toList();
-
-        List<ProjectMember> mentorMembers = projectMembers.stream()
-                .filter(pm -> Role.MENTOR.toString().equalsIgnoreCase(pm.getRoleInProject()))
-                .toList();
-
-        List<TalentMentorInfoResponse> talents = talentMembers.stream()
-                .collect(Collectors.toMap(
-                        ProjectMember::getUserId,
-                        pm -> {
-                            UserInfo userInfo = userMap.get(pm.getUserId());
-                            if (userInfo != null) {
-                                return TalentMentorInfoResponse.builder()
-                                        .userId(pm.getUserId())
-                                        .name(userInfo.getFullName())
-                                        .avatar(userInfo.getAvatarUrl())
-                                        .email(userInfo.getEmail())
-                                        .phone(userInfo.getPhone())
-                                        .build();
-                            }
-                            return TalentMentorInfoResponse.builder()
-                                    .userId(pm.getUserId())
-                                    .name("Unknown")
-                                    .avatar("")
-                                    .email("")
-                                    .phone("")
-                                    .build();
-                        },
-                        (existing, replacement) -> existing
-                ))
-                .values()
-                .stream()
-                .toList();
-
-        List<TalentMentorInfoResponse> mentors = mentorMembers.stream()
-                .collect(Collectors.toMap(
-                        ProjectMember::getUserId,
-                        pm -> {
-                            UserInfo userInfo = userMap.get(pm.getUserId());
-                            if (userInfo != null) {
-                                return TalentMentorInfoResponse.builder()
-                                        .userId(pm.getUserId())
-                                        .name(userInfo.getFullName())
-                                        .avatar(userInfo.getAvatarUrl())
-                                        .email(userInfo.getEmail())
-                                        .phone(userInfo.getPhone())
-                                        .build();
-                            }
-                            return TalentMentorInfoResponse.builder()
-                                    .userId(pm.getUserId())
-                                    .name("Unknown")
-                                    .avatar("")
-                                    .email("")
-                                    .phone("")
-                                    .build();
-                        },
-                        (existing, replacement) -> existing
-                ))
-                .values()
-                .stream()
-                .toList();
+        Map<Role, List<TalentMentorInfoResponse>> memberMap = milestoneMembers.stream()
+                .collect(Collectors.groupingBy(
+                        mm -> Role.valueOf(mm.getProjectMember().getRoleInProject()),
+                        Collectors.collectingAndThen(
+                                Collectors.toMap(
+                                        mm -> mm.getProjectMember().getUserId(),
+                                        mm -> buildMemberResponse(mm, userMap),
+                                        (existing, replacement) -> existing
+                                ),
+                                map -> map.values().stream().toList()
+                        )
+                ));
 
         return ProjectMilestoneResponse.builder()
                 .id(milestone.getId())
@@ -790,9 +736,30 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .startDate(milestone.getStartDate())
                 .endDate(milestone.getEndDate())
                 .status(milestone.getStatus())
-                .attachments(milestone.getAttachmentUrls() != null ? milestone.getAttachmentUrls() : List.of())
-                .talents(talents)
-                .mentors(mentors)
+                .attachments(
+                        milestone.getAttachmentUrls() != null
+                                ? milestone.getAttachmentUrls()
+                                : List.of()
+                )
+                .talents(memberMap.getOrDefault(Role.TALENT, List.of()))
+                .mentors(memberMap.getOrDefault(Role.MENTOR, List.of()))
+                .build();
+    }
+
+    private TalentMentorInfoResponse buildMemberResponse(
+            MilestoneMember mm,
+            Map<UUID, UserInfo> userMap) {
+
+        ProjectMember pm = mm.getProjectMember();
+        UserInfo userInfo = userMap.get(pm.getUserId());
+
+        return TalentMentorInfoResponse.builder()
+                .userId(pm.getUserId())
+                .name(userInfo != null ? userInfo.getFullName() : "Unknown")
+                .avatar(userInfo != null ? userInfo.getAvatarUrl() : "")
+                .email(userInfo != null ? userInfo.getEmail() : "")
+                .phone(userInfo != null ? userInfo.getPhone() : "")
+                .isLeader(mm.isLeader()) // ✅ milestone-level leader
                 .build();
     }
 
