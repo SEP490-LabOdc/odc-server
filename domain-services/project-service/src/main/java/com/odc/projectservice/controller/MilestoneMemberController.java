@@ -55,8 +55,9 @@ public class MilestoneMemberController {
             @RequestParam(value = "isActive", required = false) Boolean isActive,
             @RequestParam(value = "role", required = false) String role
     ) {
+        String standardRole = role.equalsIgnoreCase(Role.USER.toString()) ? Role.TALENT.toString() : Role.MENTOR.toString();
         return ResponseEntity.ok(
-                milestoneMemberService.getMilestoneMembers(milestoneId, isActive, role)
+                milestoneMemberService.getMilestoneMembers(milestoneId, isActive, standardRole)
         );
     }
 
