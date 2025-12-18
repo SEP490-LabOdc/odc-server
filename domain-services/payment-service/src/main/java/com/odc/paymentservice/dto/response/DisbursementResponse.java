@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -26,4 +27,6 @@ public class DisbursementResponse {
     private UUID talentLeaderId;
 
     private String status;
+
+    private LocalDateTime updatedAt;
 }
