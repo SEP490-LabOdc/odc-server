@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -30,11 +31,10 @@ public class DisbursementController {
     }
 
     @PostMapping("/calculate")
-    public ResponseEntity<Void> createDisbursement(
+    public ResponseEntity<ApiResponse<Map<String, String>>> createDisbursement(
             @RequestBody CreateDisbursementRequest request
     ) {
-        disbursementService.calculateDisbursement(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(disbursementService.calculateDisbursement(request));
     }
 
     @PostMapping("/execute/{disbursementId}")
