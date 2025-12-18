@@ -380,6 +380,7 @@ public class DisbursementServiceImpl implements DisbursementService {
                 .talentAmount(disbursement.getTalentAmount())
                 .talentLeaderId(disbursement.getTalentLeaderId())
                 .status(disbursement.getStatus())
+                .updatedAt(disbursement.getUpdatedAt())
                 .build();
 
         return ApiResponse.success(response);
