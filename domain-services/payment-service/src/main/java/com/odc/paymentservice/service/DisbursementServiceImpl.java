@@ -10,6 +10,7 @@ import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
 import com.odc.paymentservice.dto.request.MilestoneDisbursement;
 import com.odc.paymentservice.dto.request.MilestoneDisbursementRequest;
 import com.odc.paymentservice.dto.response.DisbursementCalculationResponse;
+import com.odc.paymentservice.dto.response.DisbursementResponse;
 import com.odc.paymentservice.dto.response.LeaderDisbursementInfo;
 import com.odc.paymentservice.entity.Disbursement;
 import com.odc.paymentservice.entity.SystemConfig;
@@ -357,6 +358,31 @@ public class DisbursementServiceImpl implements DisbursementService {
         }
 
         return ApiResponse.success("Phân bổ tiền thành công", null);
+    }
+
+    @Override
+    public ApiResponse<DisbursementResponse> getByMilestoneId(UUID milestoneId) {
+
+        Disbursement disbursement = disbursementRepository
+                .findByMilestoneId(milestoneId)
+                .orElseThrow(() ->
+                        new BusinessException("Chưa có thông tin giải ngân cho milestone: " + milestoneId)
+                );
+
+        DisbursementResponse response = DisbursementResponse.builder()
+                .disbursementId(disbursement.getId())
+                .milestoneId(disbursement.getMilestoneId())
+                .projectId(disbursement.getProjectId())
+                .totalAmount(disbursement.getTotalAmount())
+                .systemFee(disbursement.getSystemFee())
+                .mentorAmount(disbursement.getMentorAmount())
+                .mentorLeaderId(disbursement.getMentorLeaderId())
+                .talentAmount(disbursement.getTalentAmount())
+                .talentLeaderId(disbursement.getTalentLeaderId())
+                .status(disbursement.getStatus())
+                .build();
+
+        return ApiResponse.success(response);
     }
 
 

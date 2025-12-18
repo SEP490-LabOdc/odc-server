@@ -17,6 +17,7 @@ public class GetCompanyByIdResponse {
     private String taxCode;
     private String address;
     private String description;
+    private String logo;
     private String website;
     private String status;
     private String domain;

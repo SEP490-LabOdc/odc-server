@@ -16,6 +16,7 @@ public class CompanyResponse {
     private String phone;
     private String taxCode;
     private String address;
+    private String logo;
     private String description;
     private String website;
     private String status;
