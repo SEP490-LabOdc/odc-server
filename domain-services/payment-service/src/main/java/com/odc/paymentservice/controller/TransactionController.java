@@ -71,4 +71,25 @@ public class TransactionController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping("/my-transactions")
+    public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getMyTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir
+    ) {
+
+        Sort sort = sortDir.equalsIgnoreCase("ASC")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        ApiResponse<Page<TransactionResponse>> response =
+                transactionService.getMyTransactions(pageable);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }

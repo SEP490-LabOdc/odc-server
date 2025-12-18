@@ -4,6 +4,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
 import com.odc.paymentservice.dto.request.MilestoneDisbursementRequest;
 import com.odc.paymentservice.dto.response.DisbursementCalculationResponse;
+import com.odc.paymentservice.dto.response.DisbursementResponse;
 import com.odc.paymentservice.service.DisbursementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,4 +53,12 @@ public class DisbursementController {
     ) {
         return ResponseEntity.ok(disbursementService.processMilestoneDisbursement(milestoneId, request));
     }
+
+    @GetMapping("/milestones/{milestoneId}")
+    public ResponseEntity<ApiResponse<DisbursementResponse>> getDisbursementByMilestone(
+            @PathVariable UUID milestoneId
+    ) {
+        return ResponseEntity.ok(disbursementService.getByMilestoneId(milestoneId));
+    }
+
 }

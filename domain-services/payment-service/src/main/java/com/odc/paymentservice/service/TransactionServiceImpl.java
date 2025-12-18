@@ -4,12 +4,15 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.response.TransactionResponse;
 import com.odc.paymentservice.entity.Transaction;
+import com.odc.paymentservice.entity.Wallet;
 import com.odc.paymentservice.repository.PaymentRequestRepository;
 import com.odc.paymentservice.repository.TransactionRepository;
+import com.odc.paymentservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final PaymentRequestRepository paymentRequestRepository;
+    private final WalletRepository walletRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,6 +74,25 @@ public class TransactionServiceImpl implements TransactionService {
                 responsePage
         );
     }
+
+    @Override
+    public ApiResponse<Page<TransactionResponse>> getMyTransactions(Pageable pageable) {
+
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Wallet wallet = walletRepository.findByOwnerId(userId)
+                .orElseThrow(() ->
+                        new BusinessException("Wallet không tồn tại cho user: " + userId)
+                );
+
+        Page<Transaction> transactions =
+                transactionRepository.findByWalletId(wallet.getId(), pageable);
+
+        Page<TransactionResponse> responsePage = transactions.map(this::mapToResponse);
+
+        return ApiResponse.success(responsePage);
+    }
+
 
     private TransactionResponse mapToResponse(Transaction transaction) {
         TransactionResponse.TransactionResponseBuilder builder = TransactionResponse.builder()

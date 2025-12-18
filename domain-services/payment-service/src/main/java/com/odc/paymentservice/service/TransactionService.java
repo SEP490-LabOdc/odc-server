@@ -16,4 +16,7 @@ public interface TransactionService {
     ApiResponse<TransactionResponse> getTransactionDetail(UUID transactionId);
 
     ApiResponse<Page<TransactionResponse>> getAllTransactions(Pageable pageable);
+
+    ApiResponse<Page<TransactionResponse>> getMyTransactions(Pageable pageable);
+
 }
