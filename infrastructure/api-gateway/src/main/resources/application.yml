@@ -206,6 +206,13 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: admin-withdrawal-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/admin/withdrawal-requests/**
+          filters:
+            - StripPrefix=0
+
         # Email Service
         - id: email-service
           uri: lb://email-service
