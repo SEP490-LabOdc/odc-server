@@ -1204,6 +1204,33 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success("Đã đóng dự án thành công", null);
     }
 
+    @Override
+    public ApiResponse<GetCompanyProjectResponse> getProjectsByCompanyId(UUID companyId) {
+        CompanyServiceGrpc.CompanyServiceBlockingStub companyStub =
+                CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+        GetCompanyByIdRequest companyRequest = GetCompanyByIdRequest.newBuilder()
+                .setCompanyId(companyId.toString())
+                .build();
+
+        GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(companyRequest);
+
+        List<Project> projectList = projectRepository
+                .findByCompanyIdOrderByUpdatedAtDesc(companyId);
+
+        List<GetProjectResponse> projects = projectList.stream()
+                .map(this::convertToCompanyProjectResponse)
+                .toList();
+
+        GetCompanyProjectResponse response = GetCompanyProjectResponse.builder()
+                .companyId(companyId)
+                .companyName(companyResponse.getCompanyName())
+                .projectResponses(projects.isEmpty() ? List.of() : projects)
+                .build();
+
+        return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
+    }
+
     private ProjectResponse convertToProjectResponse(Project project) {
         return convertToProjectResponse(project, List.of(), List.of(), null, null, null, null, null, null);
     }

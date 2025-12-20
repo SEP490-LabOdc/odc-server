@@ -34,7 +34,8 @@ public class SecurityConfig {
 
     private static final String[] GET_ALL_PATHS = {
             "/api/v1/skills/**",
-            "/api/v1/projects/*/related"
+            "/api/v1/projects/*/related",
+            "/api/v1/projects/companies/**",
     };
     private static final String[] POST_ALL_PATHS = {
             "/api/v1/skills/search"
