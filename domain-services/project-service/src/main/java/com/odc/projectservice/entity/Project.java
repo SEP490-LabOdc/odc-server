@@ -55,6 +55,4 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project")
     private Set<ProjectApplication> applications = new HashSet<>();
-
-
 }
