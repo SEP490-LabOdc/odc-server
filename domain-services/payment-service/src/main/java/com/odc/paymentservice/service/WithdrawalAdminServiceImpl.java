@@ -53,7 +53,7 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
     @Transactional
     public ApiResponse<WithdrawalResponse> approve(UUID id, AdminHandleWithdrawalRequest req) {
         WithdrawalRequest wr = getOrThrow(id);
-        if (!"PENDING".equals(wr.getStatus())) {
+        if (!Status.PENDING.toString().equals(wr.getStatus())) {
             throw new BusinessException("Trạng thái không hợp lệ để duyệt");
         }
         Wallet wallet = wr.getWallet();
