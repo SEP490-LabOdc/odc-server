@@ -45,4 +45,6 @@ public interface ProjectService {
     ApiResponse<Void> completeProject(UUID userId, UUID projectId);
 
     ApiResponse<Void> closeProject(UUID userId, UUID projectId, CloseProjectRequest request);
+
+    ApiResponse<GetCompanyProjectResponse> getProjectsByCompanyId(UUID companyId);
 }

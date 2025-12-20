@@ -95,6 +95,11 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getProjectsByUserId(userId));
     }
 
+    @GetMapping("/companies/{companyId}")
+    public ResponseEntity<ApiResponse<GetCompanyProjectResponse>> getCompanyProjects(@PathVariable UUID companyId) {
+        return ResponseEntity.ok((projectService.getProjectsByCompanyId(companyId)));
+    }
+
     @GetMapping("/my-projects")
     public ResponseEntity<ApiResponse<List<ProjectResponse>>> getMyProjects(
             @RequestParam(required = false) String status) {  // Thêm query parameter
