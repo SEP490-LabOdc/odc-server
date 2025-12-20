@@ -92,7 +92,7 @@ public class WalletServiceImpl implements WalletService {
                 .wallet(wallet)
                 .amount(withdrawalAmount)
                 .bankInfo(bankInfo)
-                .status("PENDING")
+                .status(Status.PENDING.toString())
                 .scheduledAt(scheduledAt)
                 .build();
 

@@ -14,5 +14,6 @@ public enum Status {
     HIRING,
     SUCCESS,
     PAID,
-    LOCKED
+    LOCKED,
+    REJECTED,
 }

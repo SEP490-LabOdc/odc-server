@@ -63,7 +63,7 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
         wallet.setHeldBalance(wallet.getHeldBalance().subtract(amount));
         walletRepository.save(wallet);
 
-        wr.setStatus("APPROVED");
+        wr.setStatus(Status.APPROVED.toString());
         wr.setAdminNote(req.getAdminNote());
         wr.setProcessedAt(req.getProcessedAt() != null
                 ? LocalDateTime.parse(req.getProcessedAt())
@@ -102,7 +102,7 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
         wallet.setBalance(wallet.getBalance().add(amount));
         walletRepository.save(wallet);
 
-        wr.setStatus("REJECTED");
+        wr.setStatus(Status.REJECTED.toString());
         wr.setAdminNote(req.getAdminNote());
         wr.setProcessedAt(req.getProcessedAt() != null
                 ? LocalDateTime.parse(req.getProcessedAt())
