@@ -39,7 +39,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -63,7 +62,6 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + request.getProjectId() + "' không tồn tại"));
-
 
         Optional<ProjectMilestone> latestMilestone = projectMilestoneRepository.findLatestByProjectId(request.getProjectId());
         if (latestMilestone.isPresent()) {
@@ -96,8 +94,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 : BigDecimal.ZERO;
 
         BigDecimal percentageValue = BigDecimal.valueOf(request.getPercentage() / 100);
-        BigDecimal milestoneBudget = remainingBudget.multiply(percentageValue)
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal milestoneBudget = remainingBudget.multiply(percentageValue);
 
         if (remainingBudget.subtract(milestoneBudget).compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessException("Ngân sách còn lại của dự án không đủ để tạo milestone với "
@@ -117,6 +114,9 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         ProjectMilestone savedMilestone = projectMilestoneRepository.save(projectMilestone);
 
+        if (projectMilestoneRepository.countByProjectId(request.getProjectId()) == 1) {
+            project.setStatus(ProjectStatus.ON_GOING.toString());
+        }
         project.setRemainingBudget(remainingBudget.subtract(milestoneBudget));
         projectRepository.save(project);
 

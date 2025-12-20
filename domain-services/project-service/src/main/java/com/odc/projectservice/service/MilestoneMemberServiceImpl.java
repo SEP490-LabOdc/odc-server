@@ -326,7 +326,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
         if (request.isLeader()) {
             boolean leaderExists = milestoneMemberRepository
-                    .existsByProjectMilestone_IdAndIsLeaderTrue(milestoneId);
+                    .existsByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(milestoneId, member.getProjectMember().getRoleInProject());
 
             if (leaderExists && !member.isLeader()) {
                 throw new BusinessException("Milestone đã có leader khác");
