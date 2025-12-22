@@ -6,12 +6,17 @@ import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.common.util.EnumUtil;
-import com.odc.companyservice.v1.CompanyServiceGrpc;
-import com.odc.companyservice.v1.GetCompanyByIdRequest;
-import com.odc.companyservice.v1.GetCompanyByIdResponse;
+import com.odc.commonlib.event.EventPublisher;
+import com.odc.companyservice.v1.*;
+import com.odc.notification.v1.Channel;
+import com.odc.notification.v1.NotificationEvent;
+import com.odc.notification.v1.Target;
+import com.odc.notification.v1.UserTarget;
+import com.odc.projectservice.dto.request.CreateReportLabAdminRequest;
 import com.odc.projectservice.dto.request.CreateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
+import com.odc.projectservice.dto.response.GetReportToLabAdminResponse;
 import com.odc.projectservice.dto.response.ReportResponse;
 import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.entity.*;
@@ -57,6 +62,7 @@ public class ReportServiceImpl implements ReportService {
     private final ManagedChannel userServiceChannel;
     @Qualifier("companyServiceChannel")
     private final ManagedChannel companyServiceChannel;
+    private final EventPublisher eventPublisher;
 
     public ReportServiceImpl(ReportRepository reportRepository,
                              ProjectRepository projectRepository,
@@ -64,7 +70,8 @@ public class ReportServiceImpl implements ReportService {
                              ProjectMilestoneRepository projectMilestoneRepository,
                              MilestoneMemberRepository milestoneMemberRepository,
                              ManagedChannel userServiceChannel,
-                             ManagedChannel companyServiceChannel) {
+                             ManagedChannel companyServiceChannel,
+                             EventPublisher eventPublisher) {
         this.reportRepository = reportRepository;
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
@@ -72,6 +79,7 @@ public class ReportServiceImpl implements ReportService {
         this.milestoneMemberRepository = milestoneMemberRepository;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -197,7 +205,7 @@ public class ReportServiceImpl implements ReportService {
         // 3. Validate trạng thái Report
         // Lưu ý: Nếu luồng nghiệp vụ là [Bị từ chối -> Sửa lại], bạn có thể cần cho phép sửa cả khi status là REJECTED
         // Hiện tại code giữ nguyên logic chỉ cho sửa khi SUBMITTED như yêu cầu cũ
-        if (!ReportStatus.SUBMITTED.toString().equals(report.getStatus()) &&
+        if (!ReportStatus.PENDING_ADMIN_CHECK.toString().equals(report.getStatus()) &&
                 !ReportStatus.REJECTED.toString().equals(report.getStatus())) {
             throw new BusinessException("Chỉ có thể chỉnh sửa báo cáo khi ở trạng thái SUBMITTED hoặc REJECTED");
         }
@@ -261,6 +269,136 @@ public class ReportServiceImpl implements ReportService {
 
         return ApiResponse.success("Đã cập nhật trạng thái báo cáo", null);
     }
+
+    @Override
+    public ApiResponse<Void> reviewReportByLabAdmin(UUID userId, UUID reportId, UpdateReportStatusRequest request) {
+        // 1. Tìm báo cáo
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
+
+        if (!report.getStatus().equals(ReportStatus.PENDING_ADMIN_CHECK.toString())) {
+            throw new BusinessException("Báo cáo đã được duyệt.");
+        }
+
+        // 3. Validate Status hợp lệ (APPROVED / REJECTED)
+        // Helper EnumUtil đã có trong project common
+        if (!EnumUtil.isEnumValueExist(request.getStatus(), ReportStatus.class)) {
+            throw new BusinessException("Trạng thái duyệt không hợp lệ: " + request.getStatus());
+        }
+
+        // 4. Cập nhật Report
+        report.setStatus(request.getStatus());
+        report.setFeedback(request.getFeedback());
+        reportRepository.save(report);
+
+        UUID createdBy = UUID.fromString(report.getCreatedBy());
+
+        boolean isApproved = ReportStatus.APPROVED.toString().equals(report.getStatus());
+
+        NotificationEvent notificationEvent = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("REPORT_REVIEW")
+                .setTitle(isApproved
+                        ? "Báo cáo đã được duyệt"
+                        : "Báo cáo bị từ chối")
+                .setContent(isApproved
+                        ? "Báo cáo của bạn đã được Lab Admin duyệt thành công."
+                        : "Báo cáo của bạn đã bị từ chối. Vui lòng xem phản hồi và chỉnh sửa lại.")
+                .putAllData(Map.of(
+                        "reportId", report.getId().toString(),
+                        "status", report.getStatus(),
+                        "feedback", Optional.ofNullable(report.getFeedback()).orElse("")
+                ))
+                .setDeepLink("/reports/" + report.getId())
+                .setPriority("HIGH")
+                .setTarget(Target.newBuilder()
+                        .setUser(UserTarget.newBuilder()
+                                .addUserIds(createdBy.toString())
+                                .build())
+                        .build())
+                .addAllChannels(List.of(Channel.WEB))
+                .setCategory("REPORT")
+                .setCreatedAt(System.currentTimeMillis())
+                .build();
+
+        eventPublisher.publish("notifications", notificationEvent);
+
+        return ApiResponse.success("Đã cập nhật trạng thái báo cáo", null);
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<GetReportToLabAdminResponse>> getReportToLabAdmin(
+            Integer page, Integer pageSize) {
+
+        Pageable pageable = PageRequest.of(
+                page - 1,
+                pageSize,
+                Sort.by("reportingDate").descending()
+        );
+
+        Page<Report> reportPage =
+                reportRepository.findByStatus(
+                        ReportStatus.PENDING_ADMIN_CHECK.name(),
+                        pageable
+                );
+
+        if (reportPage.isEmpty()) {
+            return ApiResponse.success(PaginatedResult.from(Page.empty(pageable)));
+        }
+
+    /* =======================
+       1. Collect companyIds
+       ======================= */
+        List<UUID> companyIds = reportPage.getContent().stream()
+                .map(r -> r.getProject().getCompanyId())
+                .distinct()
+                .toList();
+
+        Map<String, CompanyInfo> companyInfoMap =
+                fetchCompanyInfoBatch(companyIds);
+
+    /* =======================
+       2. Collect userIds
+       ======================= */
+        Set<UUID> userIds = new HashSet<>();
+
+        // reporter
+        reportPage.getContent()
+                .forEach(r -> userIds.add(r.getReporterId()));
+
+        // user đại diện công ty
+        companyInfoMap.values().forEach(c ->
+                userIds.add(UUID.fromString(c.getUserId()))
+        );
+
+        Map<String, UserInfo> userInfoMap =
+                fetchUserInfoBatch(new ArrayList<>(userIds));
+
+    /* =======================
+       3. Mapping response
+       ======================= */
+        List<GetReportToLabAdminResponse> responses =
+                reportPage.getContent().stream()
+                        .map(report -> mapToResponse(
+                                report,
+                                companyInfoMap,
+                                userInfoMap
+                        ))
+                        .toList();
+
+        PaginatedResult<GetReportToLabAdminResponse> result =
+                PaginatedResult.<GetReportToLabAdminResponse>builder()
+                        .data(responses)
+                        .totalElements(reportPage.getTotalElements())
+                        .totalPages(reportPage.getTotalPages())
+                        .currentPage(reportPage.getNumber() + 1)
+                        .hasNext(reportPage.hasNext())
+                        .hasPrevious(reportPage.hasPrevious())
+                        .build();
+
+        return ApiResponse.success(result);
+    }
+
 
     @Override
     public ApiResponse<PaginatedResult<ReportResponse>> getReceivedReports(UUID userId, int page, int size) {
@@ -409,6 +547,65 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public ApiResponse<Void> createReportToLabAdmin(UUID userId, CreateReportLabAdminRequest request) {
+        // 1. Validate Project & Status
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new BusinessException("Dự án không tồn tại"));
+
+        // Kiểm tra trạng thái dự án có cho phép tạo report không
+        if (!ALLOWED_REPORT_STATUSES.contains(project.getStatus())) {
+            throw new BusinessException(
+                    "Không thể tạo báo cáo khi dự án đang ở trạng thái: " + project.getStatus()
+            );
+        }
+
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new BusinessException("Daily Report yêu cầu nội dung text");
+        }
+
+        // Các loại report khác (Weekly, Milestone...) thường cần file đính kèm
+        if (request.getAttachmentsUrl() == null || request.getAttachmentsUrl().isEmpty()) {
+            throw new BusinessException("Báo cáo này yêu cầu đính kèm file");
+        }
+
+        // 3. Xử lý Logic Milestone
+        ProjectMilestone milestone = null;
+
+        // Nếu milestoneId != null -> Report cho Milestone cụ thể
+        if (request.getMilestoneId() != null) {
+            milestone = projectMilestoneRepository.findById(request.getMilestoneId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Milestone không tồn tại"));
+
+            // Kiểm tra milestone có thuộc dự án này không
+            if (!milestone.getProject().getId().equals(project.getId())) {
+                throw new BusinessException("Milestone không thuộc về dự án này");
+            }
+
+            // Kiểm tra trạng thái Milestone phải là ON_GOING
+            if (!ProjectMilestoneStatus.ON_GOING.toString().equalsIgnoreCase(milestone.getStatus())) {
+                throw new BusinessException("Chỉ có thể báo cáo cho Milestone đang diễn ra (ON_GOING). Trạng thái hiện tại: " + milestone.getStatus());
+            }
+
+            milestone.setStatus(ProjectMilestoneStatus.PENDING_COMPLETED.toString());
+            projectMilestoneRepository.save(milestone);
+        }
+
+        Report report = Report.builder()
+                .project(project)
+                .reporterId(userId)
+                .reportType(request.getReportType())
+                .content(request.getContent())
+                .attachmentsUrl(request.getAttachmentsUrl())
+                .reportingDate(LocalDate.now())
+                .status(ReportStatus.PENDING_ADMIN_CHECK.toString())
+                .milestone(milestone)
+                .build();
+
+        reportRepository.save(report);
+        return ApiResponse.success("Tạo báo cáo thành công", null);
+    }
+
+    @Override
     public ApiResponse<ReportResponse> getReportDetail(UUID reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
@@ -490,6 +687,23 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
+    private Map<String, CompanyInfo> fetchCompanyInfoBatch(List<UUID> companyIds) {
+        if (companyIds.isEmpty()) return Map.of();
+        try {
+            List<String> stringIds = companyIds.stream().map(UUID::toString).toList();
+            var stub = CompanyServiceGrpc.newBlockingStub(companyServiceChannel);
+
+            GetInfoCompanyByCompanyIdsResponse response = stub.getCompaniesInfoByIds(
+                    GetInfoCompanyByCompanyIdsRequest.newBuilder().addAllIds(stringIds).build()
+            );
+
+            return response.getDataMap();
+        } catch (Exception e) {
+            log.error("gRPC Error fetching users: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
     private ReportResponse mapToResponse(Report r, Map<String, UserInfo> userMap) {
         String reporterIdKey = Optional.ofNullable(r.getReporterId()).map(UUID::toString).orElse("");
         UserInfo userInfo = userMap.get(reporterIdKey);
@@ -514,4 +728,54 @@ public class ReportServiceImpl implements ReportService {
                 .milestoneTitle(r.getMilestone() != null ? r.getMilestone().getTitle() : null)
                 .build();
     }
+
+    private GetReportToLabAdminResponse mapToResponse(
+            Report report,
+            Map<String, CompanyInfo> companyInfoMap,
+            Map<String, UserInfo> userInfoMap) {
+
+        UserInfo reporter =
+                userInfoMap.get(report.getReporterId().toString());
+
+        CompanyInfo company =
+                companyInfoMap.get(report.getProject().getCompanyId().toString());
+
+        UserInfo companyUser =
+                userInfoMap.get(company.getUserId());
+
+        return GetReportToLabAdminResponse.builder()
+                .id(report.getId())
+                .projectId(report.getProject().getId())
+                .projectName(report.getProject().getTitle())
+
+                .reporterId(report.getReporterId())
+                .reporterName(reporter != null ? reporter.getFullName() : null)
+                .reporterEmail(reporter != null ? reporter.getEmail() : null)
+                .reporterAvatar(reporter != null ? reporter.getAvatarUrl() : null)
+
+                .reportType(report.getReportType())
+                .status(report.getStatus())
+
+                .content(report.getContent())
+                .attachmentsUrl(report.getAttachmentsUrl())
+
+                .reportingDate(report.getReportingDate())
+                .createdAt(report.getCreatedAt())
+                .feedback(report.getFeedback())
+
+                .milestoneId(report.getMilestone() != null ? report.getMilestone().getId() : null)
+                .milestoneTitle(report.getMilestone() != null ? report.getMilestone().getTitle() : null)
+
+                .companyId(report.getProject().getCompanyId())
+                .companyName(company.getCompanyName())
+                .companyLogo(company.getCompanyLogo())
+                .companyEmail(company.getCompanyEmail())
+
+                .userCompanyId(company.getUserId())
+                .userCompanyEmail(companyUser.getEmail())
+                .userCompanyAvatar(companyUser.getAvatarUrl())
+
+                .build();
+    }
+
 }

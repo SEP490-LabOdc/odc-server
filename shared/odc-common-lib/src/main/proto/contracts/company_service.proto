@@ -9,6 +9,7 @@ service CompanyService {
   rpc GetCompanyByUserId(GetCompanyByUserIdRequest) returns (GetCompanyByUserIdResponse);
   rpc GetCompanyById(GetCompanyByIdRequest) returns (GetCompanyByIdResponse);
   rpc GetCompaniesByIds(GetCompaniesByIdsRequest) returns (GetCompaniesByIdsResponse);
+  rpc GetCompaniesInfoByIds(GetInfoCompanyByCompanyIdsRequest) returns (GetInfoCompanyByCompanyIdsResponse);
 }
 
 message GetCompanyByUserIdRequest {
@@ -36,4 +37,19 @@ message GetCompaniesByIdsRequest {
 
 message GetCompaniesByIdsResponse {
   map<string, string> company_names = 1;
+}
+
+message GetInfoCompanyByCompanyIdsRequest {
+  repeated string ids = 1;
+}
+
+message GetInfoCompanyByCompanyIdsResponse {
+  map<string, CompanyInfo> data = 1;
+}
+
+message CompanyInfo {
+  string company_name = 1;
+  string company_email = 2;
+  string company_logo = 3;
+  string user_id = 4;
 }
