@@ -2,9 +2,11 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
+import com.odc.projectservice.dto.request.CreateReportLabAdminRequest;
 import com.odc.projectservice.dto.request.CreateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportRequest;
 import com.odc.projectservice.dto.request.UpdateReportStatusRequest;
+import com.odc.projectservice.dto.response.GetReportToLabAdminResponse;
 import com.odc.projectservice.dto.response.ReportResponse;
 import com.odc.projectservice.dto.response.UserParticipantResponse;
 import com.odc.projectservice.service.ReportService;
@@ -24,10 +26,28 @@ public class ReportController {
 
     private final ReportService reportService;
 
+    @GetMapping("/for-lab-admin")
+    public ResponseEntity<ApiResponse<PaginatedResult<GetReportToLabAdminResponse>>>
+    getReportsToLabAdmin(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize
+    ) {
+        ApiResponse<PaginatedResult<GetReportToLabAdminResponse>> response =
+                reportService.getReportToLabAdmin(page, pageSize);
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<ReportResponse>> createReport(@Valid @RequestBody CreateReportRequest request) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(reportService.createReport(userId, request));
+    }
+
+    @PostMapping("/for-lab-admin")
+    public ResponseEntity<ApiResponse<Void>> createReportToLabAdmin(@Valid @RequestBody CreateReportLabAdminRequest request) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(reportService.createReportToLabAdmin(userId, request));
     }
 
     @PutMapping("/{id}")
@@ -44,6 +64,14 @@ public class ReportController {
             @Valid @RequestBody UpdateReportStatusRequest request) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(reportService.reviewReport(userId, id, request));
+    }
+
+    @PutMapping("/{id}/lab-admin-review")
+    public ResponseEntity<ApiResponse<Void>> reviewReportByLabAdmin(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateReportStatusRequest request) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(reportService.reviewReportByLabAdmin(userId, id, request));
     }
 
     @GetMapping("/received")

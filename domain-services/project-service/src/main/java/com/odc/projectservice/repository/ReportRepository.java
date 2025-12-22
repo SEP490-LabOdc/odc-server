@@ -23,4 +23,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     Page<Report> findByRecipientIdIsNull(Pageable pageable);
 
     Page<Report> findByMilestone_Id(UUID milestoneId, Pageable pageable);
+
+    Page<Report> findByStatus(String status, Pageable pageable);
 }
