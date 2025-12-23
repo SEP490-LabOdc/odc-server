@@ -37,4 +37,6 @@ public interface ReportService {
     ApiResponse<Void> reviewReportByLabAdmin(UUID userId, UUID reportId, UpdateReportStatusRequest request);
 
     ApiResponse<PaginatedResult<GetReportToLabAdminResponse>> getReportToLabAdmin(Integer page, Integer pageSize);
+
+    ApiResponse<Void> publishToCompany(UUID reportId, UUID userCompanyId);
 }

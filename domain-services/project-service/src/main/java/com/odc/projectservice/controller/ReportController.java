@@ -119,4 +119,11 @@ public class ReportController {
 
         return ResponseEntity.ok(reportService.getReportRecipients(projectId, milestoneId));
     }
+
+    @PutMapping("/{reportId}/publish-to-company/{userCompanyId}")
+    public ResponseEntity<ApiResponse<Void>> publishReportToCompany(
+            @PathVariable UUID reportId,
+            @PathVariable UUID userCompanyId) {
+        return ResponseEntity.ok(reportService.publishToCompany(reportId, userCompanyId));
+    }
 }

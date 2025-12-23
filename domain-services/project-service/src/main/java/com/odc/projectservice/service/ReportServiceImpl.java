@@ -399,6 +399,21 @@ public class ReportServiceImpl implements ReportService {
         return ApiResponse.success(result);
     }
 
+    @Override
+    public ApiResponse<Void> publishToCompany(UUID reportId, UUID userCompanyId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Báo cáo không tồn tại"));
+
+        if (!ReportStatus.PENDING_ADMIN_CHECK.name().equals(report.getStatus())) {
+            throw new BusinessException("Report phải được admin chấp nhận trước khi gửi cho công ty");
+        }
+
+        report.setRecipientId(userCompanyId);
+        report.setStatus(ReportStatus.PENDING_COMPANY_REVIEW.toString());
+        reportRepository.save(report);
+
+        return ApiResponse.success("Gửi báo cáo tới công ty thành công", null);
+    }
 
     @Override
     public ApiResponse<PaginatedResult<ReportResponse>> getReceivedReports(UUID userId, int page, int size) {
@@ -615,12 +630,13 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private void updateMilestoneStatus(ProjectMilestone milestone, String reportStatus) {
-        if (ReportStatus.APPROVED.toString().equalsIgnoreCase(reportStatus)) {
+        if (ReportStatus.COMPANY_APPROVED.toString().equalsIgnoreCase(reportStatus)) {
             // Nếu Client duyệt -> Milestone hoàn thành
             milestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
-        } else if (ReportStatus.REJECTED.toString().equalsIgnoreCase(reportStatus)) {
+        } else if (ReportStatus.COMPANY_REJECTED.toString().equalsIgnoreCase(reportStatus) ||
+                ReportStatus.ADMIN_REJECTED.toString().equalsIgnoreCase(reportStatus)) {
             // Nếu Client từ chối -> Yêu cầu Mentor sửa lại -> Trạng thái UPDATE_REQUIRED
-            milestone.setStatus(ProjectMilestoneStatus.UPDATE_COMPLETED.toString());
+            milestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
         }
         projectMilestoneRepository.save(milestone);
     }
