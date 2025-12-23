@@ -4,6 +4,7 @@ import com.odc.userservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,4 +27,14 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     List<UUID> findUserIdsByRoles(List<String> roles);
 
     List<User> findByIdIn(List<UUID> ids);
+
+    @Query("""
+                SELECT COUNT(u)
+                FROM User u
+                JOIN u.role r
+                WHERE r.name = :roleName
+                  AND u.isDeleted = false
+                  AND u.status = 'ACTIVE'
+            """)
+    Long countByRoleName(@Param("roleName") String roleName);
 }

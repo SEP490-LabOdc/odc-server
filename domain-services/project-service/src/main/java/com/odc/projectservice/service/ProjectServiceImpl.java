@@ -1248,6 +1248,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .pendingProjects(projectRepository.countByStatus(ProjectStatus.PENDING.toString()))
                 .activeProjects(projectRepository.countByStatus(ProjectStatus.ON_GOING.toString()))
                 .recruitingProjects(projectRepository.countRecruitingProjects())
+                .availableMentors(projectMemberRepository.countAvailableMentors())
+                .joinedStudents(projectMemberRepository.countJoinedStudents())
                 .build());
     }
 

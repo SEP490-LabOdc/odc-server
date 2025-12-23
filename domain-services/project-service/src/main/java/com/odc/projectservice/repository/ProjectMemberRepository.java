@@ -37,4 +37,34 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
 
     @Query("SELECT pm.userId FROM ProjectMember pm WHERE pm.project.id = :projectId AND pm.userId IN :userIds")
     List<UUID> findUserIdsByProjectIdAndUserIdIn(@Param("projectId") UUID projectId, @Param("userIds") List<UUID> userIds);
+
+    //                 WHERE p.status = 'ON_GOING' <=> add this condition if need filter by project status
+    @Query("""
+                SELECT COUNT(DISTINCT pm.userId)
+                FROM ProjectMember pm
+                JOIN pm.project p
+                  WHERE  p.status = 'ON_GOING'
+                  AND pm.leftAt IS NULL
+                  AND pm.roleInProject = 'TALENT'
+                  AND pm.isDeleted = false
+            """)
+    Long countJoinedStudents();
+
+    @Query(value = """
+                SELECT COUNT(*)
+                FROM (
+                    SELECT pm.user_id, COUNT(p.id) AS active_projects
+                    FROM project_members pm
+                    JOIN projects p ON pm.project_id = p.id
+                    WHERE pm.role_in_project = 'MENTOR'
+                      AND pm.left_at IS NULL
+                      AND pm.is_deleted = false
+                      AND p.status = 'ON_GOING'
+                      AND p.is_deleted = false
+                    GROUP BY pm.user_id
+                    HAVING COUNT(p.id) < 2
+                ) t
+            """, nativeQuery = true)
+    Long countAvailableMentors();
+
 }
