@@ -107,4 +107,11 @@ public class CompanyController {
                 ApiResponse.success(companyService.getNewCompaniesLast6Months())
         );
     }
+
+    @GetMapping("/dashboard/overview")
+    public ResponseEntity<ApiResponse<DashboardOverviewResponse>> getOverview() {
+        return ResponseEntity.ok(
+                ApiResponse.success(companyService.getOverview())
+        );
+    }
 }

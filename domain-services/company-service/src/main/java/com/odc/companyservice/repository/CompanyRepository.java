@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -38,8 +39,17 @@ public interface CompanyRepository extends JpaRepository<Company, UUID>, JpaSpec
                 LEFT JOIN companies c
                     ON TO_CHAR(c.created_at, 'YYYY-MM') = m.month
                     AND c.is_deleted = false
+                WHERE c.status = 'ACTIVE'
                 GROUP BY m.month
                 ORDER BY m.month
             """, nativeQuery = true)
     List<Object[]> countNewCompaniesLast6Months();
+
+    @Query("""
+                SELECT COUNT(c)
+                FROM Company c
+                WHERE c.status = :status
+                  AND c.isDeleted = false
+            """)
+    Long countByStatus(@Param("status") String status);
 }

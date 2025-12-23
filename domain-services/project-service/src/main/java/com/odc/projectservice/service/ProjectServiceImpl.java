@@ -1231,10 +1231,29 @@ public class ProjectServiceImpl implements ProjectService {
         return ApiResponse.success("Lấy danh sách dự án công ty thành công", response);
     }
 
+    @Override
+    public List<ProjectMonthlyStatisticResponse> getNewProjectsLast6Months() {
+        return projectRepository.countNewProjectsLast6Months()
+                .stream()
+                .map(row -> new ProjectMonthlyStatisticResponse(
+                        (String) row[0],
+                        ((Number) row[1]).longValue()
+                ))
+                .toList();
+    }
+
+    @Override
+    public ApiResponse<DashboardOverviewResponse> getOverview() {
+        return ApiResponse.success(DashboardOverviewResponse.builder()
+                .pendingProjects(projectRepository.countByStatus(ProjectStatus.PENDING.toString()))
+                .activeProjects(projectRepository.countByStatus(ProjectStatus.ON_GOING.toString()))
+                .recruitingProjects(projectRepository.countRecruitingProjects())
+                .build());
+    }
+
     private ProjectResponse convertToProjectResponse(Project project) {
         return convertToProjectResponse(project, List.of(), List.of(), null, null, null, null, null, null);
     }
-
 
     private ProjectResponse convertToProjectResponse(Project project, List<UserParticipantResponse> mentors, List<UserParticipantResponse> talents,
                                                      UUID createdBy, String createdByName, String createdByAvatar,

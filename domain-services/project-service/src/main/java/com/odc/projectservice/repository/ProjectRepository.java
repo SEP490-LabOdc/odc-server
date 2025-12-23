@@ -36,4 +36,43 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
             @Param("excludeProjectId") UUID excludeProjectId,
             Pageable pageable
     );
+
+    @Query(value = """
+                WITH months AS (
+                    SELECT TO_CHAR(
+                        date_trunc('month', CURRENT_DATE) - INTERVAL '5 month'
+                        + (INTERVAL '1 month' * gs),
+                        'YYYY-MM'
+                    ) AS month
+                    FROM generate_series(0, 5) gs
+                )
+                SELECT 
+                    m.month,
+                    COALESCE(COUNT(p.id), 0) AS total
+                FROM months m
+                LEFT JOIN projects p
+                    ON TO_CHAR(p.created_at, 'YYYY-MM') = m.month
+                    AND p.is_deleted = false
+                WHERE p.status = ''
+                GROUP BY m.month
+                ORDER BY m.month
+            """, nativeQuery = true)
+    List<Object[]> countNewProjectsLast6Months();
+
+    @Query("""
+                SELECT COUNT(p)
+                FROM Project p
+                WHERE p.status = :status
+                  AND p.isDeleted = false
+            """)
+    Long countByStatus(@Param("status") String status);
+
+    @Query("""
+                SELECT COUNT(p)
+                FROM Project p
+                WHERE p.isOpenForApplications = true
+                  AND p.isDeleted = false
+            """)
+    Long countRecruitingProjects();
+
 }

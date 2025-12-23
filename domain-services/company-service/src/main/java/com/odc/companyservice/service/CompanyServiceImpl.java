@@ -609,6 +609,14 @@ public class CompanyServiceImpl implements CompanyService {
                 .toList();
     }
 
+    @Override
+    public DashboardOverviewResponse getOverview() {
+        return DashboardOverviewResponse.builder()
+                .pendingCompanies(companyRepository.countByStatus(Status.PENDING.toString()))
+                .activeCompanies(companyRepository.countByStatus(Status.ACTIVE.toString()))
+                .build();
+    }
+
     private CompanyResponse mapToSearchResponse(Company company) {
         return CompanyResponse.builder()
                 .id(company.getId())

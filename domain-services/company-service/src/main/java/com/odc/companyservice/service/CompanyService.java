@@ -43,4 +43,6 @@ public interface CompanyService {
     ApiResponse<CompanyResponse> getCompanyByUserId(UUID userId);
 
     List<CompanyMonthlyStatisticResponse> getNewCompaniesLast6Months();
+
+    DashboardOverviewResponse getOverview();
 }
