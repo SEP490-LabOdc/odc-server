@@ -53,7 +53,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
                 LEFT JOIN projects p
                     ON TO_CHAR(p.created_at, 'YYYY-MM') = m.month
                     AND p.is_deleted = false
-                WHERE p.status = ''
                 GROUP BY m.month
                 ORDER BY m.month
             """, nativeQuery = true)
