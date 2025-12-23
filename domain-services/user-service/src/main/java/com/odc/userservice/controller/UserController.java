@@ -9,6 +9,7 @@ import com.odc.userservice.dto.request.UpdateRoleRequest;
 import com.odc.userservice.dto.request.UpdateUserRequest;
 import com.odc.userservice.dto.response.GetUserResponse;
 import com.odc.userservice.dto.response.MentorResponse;
+import com.odc.userservice.dto.response.UserDashboardStatisticResponse;
 import com.odc.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -98,5 +99,10 @@ public class UserController {
     @GetMapping("/mentors")
     public ResponseEntity<ApiResponse<List<MentorResponse>>> getMentors() {
         return ResponseEntity.ok(userService.getMentorsWithProjectCount());
+    }
+
+    @GetMapping("/dashboard/overview")
+    public ApiResponse<UserDashboardStatisticResponse> getUserStatistics() {
+        return ApiResponse.success(userService.getUserStatistics());
     }
 }

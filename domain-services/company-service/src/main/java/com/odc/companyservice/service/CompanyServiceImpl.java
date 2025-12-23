@@ -598,6 +598,25 @@ public class CompanyServiceImpl implements CompanyService {
         return ApiResponse.success("Lấy thông tin công ty thành công", responseData);
     }
 
+    @Override
+    public List<CompanyMonthlyStatisticResponse> getNewCompaniesLast6Months() {
+        return companyRepository.countNewCompaniesLast6Months()
+                .stream()
+                .map(row -> new CompanyMonthlyStatisticResponse(
+                        (String) row[0],
+                        ((Number) row[1]).longValue()
+                ))
+                .toList();
+    }
+
+    @Override
+    public DashboardOverviewResponse getOverview() {
+        return DashboardOverviewResponse.builder()
+                .pendingCompanies(companyRepository.countByStatus(Status.PENDING.toString()))
+                .activeCompanies(companyRepository.countByStatus(Status.ACTIVE.toString()))
+                .build();
+    }
+
     private CompanyResponse mapToSearchResponse(Company company) {
         return CompanyResponse.builder()
                 .id(company.getId())

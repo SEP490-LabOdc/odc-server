@@ -192,4 +192,19 @@ public class ProjectController {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectService.closeProject(userId, projectId, request));
     }
+
+    @GetMapping("/statistics/new-last-6-months")
+    // @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_ADMIN')")
+    public ResponseEntity<ApiResponse<List<ProjectMonthlyStatisticResponse>>> getNewProjectsLast6Months() {
+        return ResponseEntity.ok(
+                ApiResponse.success(projectService.getNewProjectsLast6Months())
+        );
+    }
+
+    @GetMapping("/dashboard/overview")
+    public ResponseEntity<ApiResponse<DashboardOverviewResponse>> getOverview() {
+        return ResponseEntity.ok(
+                projectService.getOverview()
+        );
+    }
 }

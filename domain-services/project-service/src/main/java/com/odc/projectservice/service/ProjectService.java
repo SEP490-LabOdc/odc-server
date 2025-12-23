@@ -47,4 +47,8 @@ public interface ProjectService {
     ApiResponse<Void> closeProject(UUID userId, UUID projectId, CloseProjectRequest request);
 
     ApiResponse<GetCompanyProjectResponse> getProjectsByCompanyId(UUID companyId);
+
+    List<ProjectMonthlyStatisticResponse> getNewProjectsLast6Months();
+
+    ApiResponse<DashboardOverviewResponse> getOverview();
 }

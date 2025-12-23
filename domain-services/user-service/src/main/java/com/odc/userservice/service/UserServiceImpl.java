@@ -16,6 +16,7 @@ import com.odc.userservice.dto.request.UpdateRoleRequest;
 import com.odc.userservice.dto.request.UpdateUserRequest;
 import com.odc.userservice.dto.response.GetUserResponse;
 import com.odc.userservice.dto.response.MentorResponse;
+import com.odc.userservice.dto.response.UserDashboardStatisticResponse;
 import com.odc.userservice.entity.Role;
 import com.odc.userservice.entity.User;
 import com.odc.userservice.repository.RoleRepository;
@@ -353,5 +354,13 @@ public class UserServiceImpl implements UserService {
             log.error("Error getting mentors with project count: {}", e.getMessage(), e);
             throw new BusinessException("Lỗi khi lấy danh sách mentor: " + e.getMessage());
         }
+    }
+
+    @Override
+    public UserDashboardStatisticResponse getUserStatistics() {
+        return UserDashboardStatisticResponse.builder()
+                .totalMentors(userRepository.countByRoleName(com.odc.common.constant.Role.MENTOR.toString()))
+                .totalStudents(userRepository.countByRoleName(com.odc.common.constant.Role.USER.toString()))
+                .build();
     }
 }

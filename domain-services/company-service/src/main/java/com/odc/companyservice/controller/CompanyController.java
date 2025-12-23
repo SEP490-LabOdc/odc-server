@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -98,5 +99,19 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse>> getCompanyByUserId(@PathVariable UUID userId) {
         ApiResponse<CompanyResponse> response = companyService.getCompanyByUserId(userId);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/statistics/new-last-6-months")
+    public ResponseEntity<ApiResponse<List<CompanyMonthlyStatisticResponse>>> getNewCompaniesLast6Months() {
+        return ResponseEntity.ok(
+                ApiResponse.success(companyService.getNewCompaniesLast6Months())
+        );
+    }
+
+    @GetMapping("/dashboard/overview")
+    public ResponseEntity<ApiResponse<DashboardOverviewResponse>> getOverview() {
+        return ResponseEntity.ok(
+                ApiResponse.success(companyService.getOverview())
+        );
     }
 }
