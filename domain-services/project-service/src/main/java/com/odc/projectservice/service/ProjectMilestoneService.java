@@ -2,13 +2,12 @@ package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
-import com.odc.projectservice.dto.request.AddMilestoneAttachmentsRequest;
-import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
-import com.odc.projectservice.dto.request.MilestoneRejectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.GetMilestoneExtensionRequestResponse;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -46,4 +45,25 @@ public interface ProjectMilestoneService {
     );
 
     ApiResponse<List<MilestoneDocumentResponse>> getMilestoneDocuments(UUID milestoneId);
+
+    ApiResponse<Void> createExtensionRequest(UUID userMentorId, UUID milestoneId, CreateExtensionRequest request);
+
+    ApiResponse<Void> updateStatusExtensionRequest(UUID userId, UUID id, UUID milestoneId, @Valid UpdateMilestoneExtensionStatusRequest request);
+
+    ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>>
+    getMyRequestsByMilestone(
+            UUID milestoneId,
+            UUID mentorId,
+            int page,
+            int size,
+            String sortDir);
+
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>>
+    getRequestsByMilestoneForCompany(
+            UUID projectId,
+            UUID milestoneId,
+            int page,
+            int size,
+            String sortDir,
+            UUID companyIdFromToken);
 }

@@ -7,5 +7,6 @@ public enum Role {
     USER,
     COMPANY,
     MENTOR,
-    TALENT
+    TALENT,
+    SYSTEM
 }

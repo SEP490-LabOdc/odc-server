@@ -2,11 +2,9 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
-import com.odc.projectservice.dto.request.AddMilestoneAttachmentsRequest;
-import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
-import com.odc.projectservice.dto.request.MilestoneRejectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.GetMilestoneExtensionRequestResponse;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.service.ProjectMilestoneService;
@@ -15,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -120,5 +119,60 @@ public class ProjectMilestoneController {
         ApiResponse<List<MilestoneDocumentResponse>> response =
                 projectMilestoneService.getMilestoneDocuments(milestoneId);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/{milestoneId}/extension-requests")
+    public ResponseEntity<ApiResponse<Void>> createMilestoneExtensionRequest(
+            @PathVariable UUID milestoneId,
+            @Valid @RequestBody CreateExtensionRequest request
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectMilestoneService.createExtensionRequest(userId, milestoneId, request));
+    }
+
+    @PatchMapping("/{milestoneId}/extension-requests/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateMilestoneExtensionRequest(
+            @PathVariable UUID milestoneId,
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateMilestoneExtensionStatusRequest request
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectMilestoneService.updateStatusExtensionRequest(userId, id, milestoneId, request));
+    }
+
+    @GetMapping("/{milestoneId}/extension-requests/my")
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getMyRequests(
+            @PathVariable UUID milestoneId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return projectMilestoneService.getMyRequestsByMilestone(
+                milestoneId,
+                userId,
+                page,
+                size,
+                sortDir
+        );
+    }
+
+    // Company
+    @GetMapping("/{milestoneId}/extension-requests")
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getRequestsForCompany(
+            @PathVariable UUID milestoneId,
+            @RequestParam UUID projectId,
+            @RequestParam UUID companyId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        return projectMilestoneService.getRequestsByMilestoneForCompany(
+                projectId,
+                milestoneId,
+                page,
+                size,
+                sortDir,
+                companyId
+        );
     }
 }

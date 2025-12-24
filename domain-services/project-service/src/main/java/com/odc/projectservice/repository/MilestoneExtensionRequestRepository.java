@@ -1,0 +1,28 @@
+package com.odc.projectservice.repository;
+
+import com.odc.projectservice.entity.MilestoneExtensionRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface MilestoneExtensionRequestRepository extends JpaRepository<MilestoneExtensionRequest, UUID> {
+    boolean existsByMilestone_IdAndStatus(UUID milestoneId, String string);
+
+    Optional<MilestoneExtensionRequest> findByIdAndMilestone_Id(UUID id, UUID milestoneId);
+
+    Page<MilestoneExtensionRequest> findByMilestone_IdAndRequestedBy(
+            UUID milestoneId,
+            UUID requestedBy,
+            Pageable pageable
+    );
+
+    Page<MilestoneExtensionRequest> findByMilestone_Id(
+            UUID milestoneId,
+            Pageable pageable
+    );
+}

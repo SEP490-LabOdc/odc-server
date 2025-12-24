@@ -1,9 +1,6 @@
 package com.odc.projectservice.service;
 
-import com.odc.common.constant.ProjectMilestoneStatus;
-import com.odc.common.constant.ProjectStatus;
-import com.odc.common.constant.Role;
-import com.odc.common.constant.Status;
+import com.odc.common.constant.*;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
@@ -16,10 +13,7 @@ import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
 import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.*;
-import com.odc.projectservice.dto.response.FeedbackResponse;
-import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
-import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
-import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
+import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.*;
 import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
@@ -57,6 +51,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ManagedChannel companyServiceChannel;
     private final EventPublisher eventPublisher;
     private final MilestoneFeedbackRepository milestoneFeedbackRepository;
+    private final MilestoneExtensionRequestRepository milestoneExtensionRequestRepository;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -132,6 +127,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .projectMilestone(savedMilestone)
                 .projectMember(creatorMember)
                 .isLeader(true)
+                .isActive(true)
                 .joinedAt(LocalDateTime.now())
                 .build();
 
@@ -697,6 +693,89 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return ApiResponse.success("Lấy danh sách tài liệu milestone thành công", documents);
     }
 
+    @Override
+    public ApiResponse<Void> createExtensionRequest(UUID userMentorId, UUID milestoneId, CreateExtensionRequest request) {
+        if (!request.getRequestedEndDate().isAfter(request.getCurrentEndDate())) {
+            throw new BusinessException("Ngày gia hạn phải lớn hơn ngày kết thúc hiện tại");
+        }
+
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(
+                        "Milestone với ID '" + milestoneId + "' không tồn tại"
+                ));
+
+        if (milestoneExtensionRequestRepository.existsByMilestone_IdAndStatus(milestoneId, MilestoneExtensionRequestStatus.PENDING.toString())) {
+            throw new BusinessException("Milestone này đã có 1 yêu cầu đang tròng quá trình duyệt");
+        }
+
+        MilestoneExtensionRequest milestoneExtensionRequest = MilestoneExtensionRequest
+                .builder()
+                .currentEndDate(request.getCurrentEndDate())
+                .requestedEndDate(request.getRequestedEndDate())
+                .requestReason(request.getRequestReason())
+                .requestedBy(userMentorId)
+                .milestone(milestone)
+                .status(MilestoneExtensionRequestStatus.PENDING.toString())
+                .build();
+
+        milestoneExtensionRequestRepository.save(milestoneExtensionRequest);
+        return ApiResponse.success("Gửi yêu cầu thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> updateStatusExtensionRequest(UUID userId, UUID id, UUID milestoneId, UpdateMilestoneExtensionStatusRequest request) {
+        if (request.getStatus() == MilestoneExtensionRequestStatus.REJECTED) {
+            if (request.getReason() == null || request.getReason().isBlank()) {
+                throw new BusinessException("Từ chối yêu cầu gia hạn phải có lý do");
+            }
+        }
+
+        MilestoneExtensionRequest entity = milestoneExtensionRequestRepository.findByIdAndMilestone_Id(id, milestoneId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy yêu cầu gia hạn"));
+
+        entity.setReviewedBy(userId);
+        entity.setReviewedAt(LocalDateTime.now());
+        entity.setReviewReason(request.getReason());
+        entity.setStatus(request.getStatus().toString());
+        milestoneExtensionRequestRepository.save(entity);
+        return ApiResponse.success("Cập nhật trạng thái thành công", null);
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getMyRequestsByMilestone(UUID milestoneId, UUID mentorId, int page, int size, String sortDir) {
+        Pageable pageable = buildPageable(page - 1, size, sortDir);
+
+        Page<GetMilestoneExtensionRequestResponse> result =
+                milestoneExtensionRequestRepository
+                        .findByMilestone_IdAndRequestedBy(milestoneId, mentorId, pageable)
+                        .map(this::toResponse);
+
+        return ApiResponse.success(PaginatedResult.from(result));
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getRequestsByMilestoneForCompany(UUID projectId, UUID milestoneId, int page, int size, String sortDir, UUID companyIdFromToken) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy milestone"));
+
+        if (!milestone.getProject().getId().equals(projectId)) {
+            throw new BusinessException("Milestone không thuộc về project");
+        }
+
+        if (!milestone.getProject().getCompanyId().equals(companyIdFromToken)) {
+            throw new BusinessException("Bạn không có quyền truy cập project hiện tại");
+        }
+
+        Pageable pageable = buildPageable(page - 1, size, sortDir);
+
+        Page<GetMilestoneExtensionRequestResponse> result =
+                milestoneExtensionRequestRepository
+                        .findByMilestone_Id(milestoneId, pageable)
+                        .map(this::toResponse);
+
+        return ApiResponse.success(PaginatedResult.from(result));
+    }
+
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {
         FeedbackResponse.FeedbackResponseBuilder builder = FeedbackResponse.builder()
                 .id(fb.getId())
@@ -783,4 +862,38 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             return Map.of();
         }
     }
+
+    private Pageable buildPageable(int page, int size, String sortDir) {
+        Sort sort = Sort.by("createdAt");
+        sort = "asc".equalsIgnoreCase(sortDir)
+                ? sort.ascending()
+                : sort.descending();
+
+        return PageRequest.of(page, size, sort);
+    }
+
+    private GetMilestoneExtensionRequestResponse toResponse(
+            MilestoneExtensionRequest e) {
+
+        ProjectMilestone milestone = e.getMilestone();
+        Project project = milestone.getProject();
+
+        return GetMilestoneExtensionRequestResponse.builder()
+                .id(e.getId())
+                .milestoneId(milestone.getId())
+                .milestoneTitle(milestone.getTitle())
+                .projectId(project.getId())
+                .projectTitle(project.getTitle())
+                .currentEndDate(e.getCurrentEndDate())
+                .requestedEndDate(e.getRequestedEndDate())
+                .requestReason(e.getRequestReason())
+                .status(e.getStatus())
+                .createdAt(e.getCreatedAt())
+                .requestedBy(e.getRequestedBy())
+                .reviewedAt(e.getReviewedAt())
+                .reviewedBy(e.getReviewedBy())
+                .reviewReason(e.getReviewReason())
+                .build();
+    }
+
 }
