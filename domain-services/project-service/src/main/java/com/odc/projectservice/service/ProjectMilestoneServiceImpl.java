@@ -701,11 +701,15 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         if (!request.getRequestedEndDate().isAfter(request.getCurrentEndDate())) {
             throw new BusinessException("Ngày gia hạn phải lớn hơn ngày kết thúc hiện tại");
         }
-        
+
         ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new BusinessException(
                         "Milestone với ID '" + milestoneId + "' không tồn tại"
                 ));
+
+        if (milestoneExtensionRequestRepository.existsByMilestone_IdAndStatus(milestoneId, MilestoneExtensionRequestStatus.PENDING.toString())) {
+            throw new BusinessException("Milestone này đã có 1 yêu cầu đang tròng quá trình duyệt");
+        }
 
         MilestoneExtensionRequest milestoneExtensionRequest = MilestoneExtensionRequest
                 .builder()
@@ -719,6 +723,25 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
 
         milestoneExtensionRequestRepository.save(milestoneExtensionRequest);
         return ApiResponse.success("Gửi yêu cầu thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> updateStatusExtensionRequest(UUID userId, UUID id, UUID milestoneId, UpdateMilestoneExtensionStatusRequest request) {
+        if (request.getStatus() == MilestoneExtensionRequestStatus.REJECTED) {
+            if (request.getReason() == null || request.getReason().isBlank()) {
+                throw new BusinessException("Từ chối yêu cầu gia hạn phải có lý do");
+            }
+        }
+
+        MilestoneExtensionRequest entity = milestoneExtensionRequestRepository.findByIdAndMilestone_Id(id, milestoneId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy yêu cầu gia hạn"));
+
+        entity.setReviewedBy(userId);
+        entity.setReviewedAt(LocalDateTime.now());
+        entity.setReviewReason(request.getReason());
+        entity.setStatus(request.getStatus().toString());
+        milestoneExtensionRequestRepository.save(entity);
+        return ApiResponse.success("Cập nhật trạng thái thành công", null);
     }
 
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {

@@ -6,6 +6,7 @@ import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -45,4 +46,6 @@ public interface ProjectMilestoneService {
     ApiResponse<List<MilestoneDocumentResponse>> getMilestoneDocuments(UUID milestoneId);
 
     ApiResponse<Void> createExtensionRequest(UUID userMentorId, UUID milestoneId, CreateExtensionRequest request);
+
+    ApiResponse<Void> updateStatusExtensionRequest(UUID userId, UUID id, UUID milestoneId, @Valid UpdateMilestoneExtensionStatusRequest request);
 }

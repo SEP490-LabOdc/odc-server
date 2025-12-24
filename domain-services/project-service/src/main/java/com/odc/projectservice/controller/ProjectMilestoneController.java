@@ -126,7 +126,16 @@ public class ProjectMilestoneController {
             @Valid @RequestBody CreateExtensionRequest request
     ) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         return ResponseEntity.ok(projectMilestoneService.createExtensionRequest(userId, milestoneId, request));
+    }
+
+    @PatchMapping("/{milestoneId}/extension-requests/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateMilestoneExtensionRequest(
+            @PathVariable UUID milestoneId,
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateMilestoneExtensionStatusRequest request
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(projectMilestoneService.updateStatusExtensionRequest(userId, id, milestoneId, request));
     }
 }
