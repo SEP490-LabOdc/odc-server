@@ -25,23 +25,24 @@ public interface CompanyRepository extends JpaRepository<Company, UUID>, JpaSpec
     Optional<Company> findByUserId(UUID userId);
 
     @Query(value = """
-                WITH months AS (
-                    SELECT TO_CHAR(
-                        date_trunc('month', CURRENT_DATE) - INTERVAL '5 month' + (INTERVAL '1 month' * gs),
-                        'YYYY-MM'
-                    ) AS month
-                    FROM generate_series(0, 5) gs
-                )
-                SELECT 
-                    m.month,
-                    COALESCE(COUNT(c.id), 0) AS total
-                FROM months m
-                LEFT JOIN companies c
-                    ON TO_CHAR(c.created_at, 'YYYY-MM') = m.month
-                    AND c.is_deleted = false
-                WHERE c.status = 'ACTIVE'
-                GROUP BY m.month
-                ORDER BY m.month
+                        WITH months AS (
+                SELECT TO_CHAR(
+                    date_trunc('month', CURRENT_DATE) - INTERVAL '5 month'
+                    + (INTERVAL '1 month' * gs),
+                    'YYYY-MM'
+                ) AS month
+                FROM generate_series(0, 5) gs
+            )
+            SELECT\s
+                m.month,
+                COALESCE(COUNT(c.id), 0) AS total
+            FROM months m
+            LEFT JOIN companies c
+                ON TO_CHAR(c.created_at, 'YYYY-MM') = m.month
+                AND c.is_deleted = false
+                AND c.status = 'ACTIVE'
+            GROUP BY m.month
+            ORDER BY m.month
             """, nativeQuery = true)
     List<Object[]> countNewCompaniesLast6Months();
 
