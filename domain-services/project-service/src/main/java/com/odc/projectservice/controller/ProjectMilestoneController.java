@@ -2,10 +2,7 @@ package com.odc.projectservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
-import com.odc.projectservice.dto.request.AddMilestoneAttachmentsRequest;
-import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
-import com.odc.projectservice.dto.request.MilestoneRejectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
@@ -15,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -120,5 +118,15 @@ public class ProjectMilestoneController {
         ApiResponse<List<MilestoneDocumentResponse>> response =
                 projectMilestoneService.getMilestoneDocuments(milestoneId);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/{milestoneId}/extension-requests")
+    public ResponseEntity<ApiResponse<Void>> createMilestoneExtensionRequest(
+            @PathVariable UUID milestoneId,
+            @Valid @RequestBody CreateExtensionRequest request
+    ) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return ResponseEntity.ok(projectMilestoneService.createExtensionRequest(userId, milestoneId, request));
     }
 }

@@ -2,10 +2,7 @@ package com.odc.projectservice.service;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
-import com.odc.projectservice.dto.request.AddMilestoneAttachmentsRequest;
-import com.odc.projectservice.dto.request.CreateProjectMilestoneRequest;
-import com.odc.projectservice.dto.request.MilestoneRejectRequest;
-import com.odc.projectservice.dto.request.UpdateProjectMilestoneRequest;
+import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
@@ -46,4 +43,6 @@ public interface ProjectMilestoneService {
     );
 
     ApiResponse<List<MilestoneDocumentResponse>> getMilestoneDocuments(UUID milestoneId);
+
+    ApiResponse<Void> createExtensionRequest(UUID userMentorId, UUID milestoneId, CreateExtensionRequest request);
 }

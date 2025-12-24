@@ -1,9 +1,6 @@
 package com.odc.projectservice.service;
 
-import com.odc.common.constant.ProjectMilestoneStatus;
-import com.odc.common.constant.ProjectStatus;
-import com.odc.common.constant.Role;
-import com.odc.common.constant.Status;
+import com.odc.common.constant.*;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
@@ -57,6 +54,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     private final ManagedChannel companyServiceChannel;
     private final EventPublisher eventPublisher;
     private final MilestoneFeedbackRepository milestoneFeedbackRepository;
+    private final MilestoneExtensionRequestRepository milestoneExtensionRequestRepository;
 
     @Override
     public ApiResponse<ProjectMilestoneResponse> createProjectMilestone(CreateProjectMilestoneRequest request) {
@@ -696,6 +694,31 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .collect(Collectors.toList());
 
         return ApiResponse.success("Lấy danh sách tài liệu milestone thành công", documents);
+    }
+
+    @Override
+    public ApiResponse<Void> createExtensionRequest(UUID userMentorId, UUID milestoneId, CreateExtensionRequest request) {
+        if (!request.getRequestedEndDate().isAfter(request.getCurrentEndDate())) {
+            throw new BusinessException("Ngày gia hạn phải lớn hơn ngày kết thúc hiện tại");
+        }
+        
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(
+                        "Milestone với ID '" + milestoneId + "' không tồn tại"
+                ));
+
+        MilestoneExtensionRequest milestoneExtensionRequest = MilestoneExtensionRequest
+                .builder()
+                .currentEndDate(request.getCurrentEndDate())
+                .requestedEndDate(request.getRequestedEndDate())
+                .requestReason(request.getRequestReason())
+                .requestedBy(userMentorId)
+                .milestone(milestone)
+                .status(MilestoneExtensionRequestStatus.PENDING.toString())
+                .build();
+
+        milestoneExtensionRequestRepository.save(milestoneExtensionRequest);
+        return ApiResponse.success("Gửi yêu cầu thành công", null);
     }
 
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {
