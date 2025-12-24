@@ -213,6 +213,13 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: system-wallet-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/system/wallets/**
+          filters:
+            - StripPrefix=0
+
         # Email Service
         - id: email-service
           uri: lb://email-service
