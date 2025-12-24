@@ -56,4 +56,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             @Param("refId") UUID refId,
             @Param("type") String type
     );
+
+    @Query("""
+                select coalesce(sum(t.amount), 0)
+                from Transaction t
+                where t.wallet.id = :walletId
+                  and t.direction = 'CREDIT'
+                  and t.status = 'SUCCESS'
+            """)
+    BigDecimal sumTotalRevenue(@Param("walletId") UUID walletId);
 }

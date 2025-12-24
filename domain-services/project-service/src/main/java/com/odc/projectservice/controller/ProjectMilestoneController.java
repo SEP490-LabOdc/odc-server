@@ -4,6 +4,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.FeedbackResponse;
+import com.odc.projectservice.dto.response.GetMilestoneExtensionRequestResponse;
 import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
 import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
 import com.odc.projectservice.service.ProjectMilestoneService;
@@ -137,5 +138,41 @@ public class ProjectMilestoneController {
     ) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(projectMilestoneService.updateStatusExtensionRequest(userId, id, milestoneId, request));
+    }
+
+    @GetMapping("/{milestoneId}/extension-requests/my")
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getMyRequests(
+            @PathVariable UUID milestoneId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return projectMilestoneService.getMyRequestsByMilestone(
+                milestoneId,
+                userId,
+                page,
+                size,
+                sortDir
+        );
+    }
+
+    // Company
+    @GetMapping("/{milestoneId}/extension-requests")
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getRequestsForCompany(
+            @PathVariable UUID milestoneId,
+            @RequestParam UUID projectId,
+            @RequestParam UUID companyId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        return projectMilestoneService.getRequestsByMilestoneForCompany(
+                projectId,
+                milestoneId,
+                page,
+                size,
+                sortDir,
+                companyId
+        );
     }
 }

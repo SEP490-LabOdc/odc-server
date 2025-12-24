@@ -13,10 +13,7 @@ import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
 import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.*;
-import com.odc.projectservice.dto.response.FeedbackResponse;
-import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
-import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
-import com.odc.projectservice.dto.response.TalentMentorInfoResponse;
+import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.*;
 import com.odc.projectservice.repository.*;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
@@ -744,6 +741,41 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         return ApiResponse.success("Cập nhật trạng thái thành công", null);
     }
 
+    @Override
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getMyRequestsByMilestone(UUID milestoneId, UUID mentorId, int page, int size, String sortDir) {
+        Pageable pageable = buildPageable(page - 1, size, sortDir);
+
+        Page<GetMilestoneExtensionRequestResponse> result =
+                milestoneExtensionRequestRepository
+                        .findByMilestone_IdAndRequestedBy(milestoneId, mentorId, pageable)
+                        .map(this::toResponse);
+
+        return ApiResponse.success(PaginatedResult.from(result));
+    }
+
+    @Override
+    public ApiResponse<PaginatedResult<GetMilestoneExtensionRequestResponse>> getRequestsByMilestoneForCompany(UUID projectId, UUID milestoneId, int page, int size, String sortDir, UUID companyIdFromToken) {
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy milestone"));
+
+        if (!milestone.getProject().getId().equals(projectId)) {
+            throw new BusinessException("Milestone không thuộc về project");
+        }
+
+        if (!milestone.getProject().getCompanyId().equals(companyIdFromToken)) {
+            throw new BusinessException("Bạn không có quyền truy cập project hiện tại");
+        }
+
+        Pageable pageable = buildPageable(page - 1, size, sortDir);
+
+        Page<GetMilestoneExtensionRequestResponse> result =
+                milestoneExtensionRequestRepository
+                        .findByMilestone_Id(milestoneId, pageable)
+                        .map(this::toResponse);
+
+        return ApiResponse.success(PaginatedResult.from(result));
+    }
+
     private FeedbackResponse mapToFeedbackResponse(MilestoneFeedback fb) {
         FeedbackResponse.FeedbackResponseBuilder builder = FeedbackResponse.builder()
                 .id(fb.getId())
@@ -830,4 +862,38 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             return Map.of();
         }
     }
+
+    private Pageable buildPageable(int page, int size, String sortDir) {
+        Sort sort = Sort.by("createdAt");
+        sort = "asc".equalsIgnoreCase(sortDir)
+                ? sort.ascending()
+                : sort.descending();
+
+        return PageRequest.of(page, size, sort);
+    }
+
+    private GetMilestoneExtensionRequestResponse toResponse(
+            MilestoneExtensionRequest e) {
+
+        ProjectMilestone milestone = e.getMilestone();
+        Project project = milestone.getProject();
+
+        return GetMilestoneExtensionRequestResponse.builder()
+                .id(e.getId())
+                .milestoneId(milestone.getId())
+                .milestoneTitle(milestone.getTitle())
+                .projectId(project.getId())
+                .projectTitle(project.getTitle())
+                .currentEndDate(e.getCurrentEndDate())
+                .requestedEndDate(e.getRequestedEndDate())
+                .requestReason(e.getRequestReason())
+                .status(e.getStatus())
+                .createdAt(e.getCreatedAt())
+                .requestedBy(e.getRequestedBy())
+                .reviewedAt(e.getReviewedAt())
+                .reviewedBy(e.getReviewedBy())
+                .reviewReason(e.getReviewReason())
+                .build();
+    }
+
 }

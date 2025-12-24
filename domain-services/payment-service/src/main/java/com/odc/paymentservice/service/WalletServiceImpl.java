@@ -6,6 +6,7 @@ import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.request.CreateWithdrawalRequest;
+import com.odc.paymentservice.dto.response.SystemWalletStatisticResponse;
 import com.odc.paymentservice.dto.response.WalletResponse;
 import com.odc.paymentservice.dto.response.WithdrawalResponse;
 import com.odc.paymentservice.entity.Transaction;
@@ -131,6 +132,24 @@ public class WalletServiceImpl implements WalletService {
                 .build();
 
         return ApiResponse.success("Tạo yêu cầu rút tiền thành công", response);
+    }
+
+    @Override
+    public ApiResponse<SystemWalletStatisticResponse> getSystemWalletStatistic() {
+        Wallet systemWallet = walletRepository
+                .findByOwnerType(Role.SYSTEM.toString())
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy ví hệ thống"));
+
+        BigDecimal totalRevenue =
+                transactionRepository.sumTotalRevenue(systemWallet.getId());
+
+        SystemWalletStatisticResponse response =
+                SystemWalletStatisticResponse.builder()
+                        .currentBalance(systemWallet.getBalance())
+                        .totalRevenue(totalRevenue)
+                        .build();
+
+        return ApiResponse.success(response);
     }
 
     /**
