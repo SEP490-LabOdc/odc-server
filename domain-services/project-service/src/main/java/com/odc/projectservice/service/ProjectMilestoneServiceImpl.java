@@ -132,6 +132,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
                 .projectMilestone(savedMilestone)
                 .projectMember(creatorMember)
                 .isLeader(true)
+                .isActive(true)
                 .joinedAt(LocalDateTime.now())
                 .build();
 
