@@ -61,8 +61,8 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         Optional<ProjectMilestone> latestMilestone = projectMilestoneRepository.findLatestByProjectId(request.getProjectId());
         if (latestMilestone.isPresent()) {
             ProjectMilestone latest = latestMilestone.get();
-            if (!Status.COMPLETED.toString().equalsIgnoreCase(latest.getStatus())) {
-                throw new BusinessException("Không thể tạo milestone mới. Milestone mới nhất chưa hoàn thành (status: " + latest.getStatus() + ")");
+            if (!Status.PAID.toString().equalsIgnoreCase(latest.getStatus())) {
+                throw new BusinessException("Không thể tạo milestone mới. Milestone mới nhất chưa hoàn thành!");
             }
         }
 
@@ -730,14 +730,23 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
             }
         }
 
+        ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy milestone"));
+
         MilestoneExtensionRequest entity = milestoneExtensionRequestRepository.findByIdAndMilestone_Id(id, milestoneId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy yêu cầu gia hạn"));
+
+        if(request.getStatus() == MilestoneExtensionRequestStatus.APPROVED) {
+            milestone.setEndDate(entity.getRequestedEndDate());
+            projectMilestoneRepository.save(milestone);
+        }
 
         entity.setReviewedBy(userId);
         entity.setReviewedAt(LocalDateTime.now());
         entity.setReviewReason(request.getReason());
         entity.setStatus(request.getStatus().toString());
         milestoneExtensionRequestRepository.save(entity);
+
         return ApiResponse.success("Cập nhật trạng thái thành công", null);
     }
 
