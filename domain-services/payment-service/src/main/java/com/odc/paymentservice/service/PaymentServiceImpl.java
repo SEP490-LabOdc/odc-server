@@ -145,7 +145,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void payMilestoneWithWallet(UUID userId, CreatePaymentForMilestoneRequest req) {
-        // A. Validate gRPC
+        // Validate gRPC
         var stub = ProjectServiceGrpc.newBlockingStub(projectServiceChannel);
         var milestone = stub.getMilestoneById(
                 GetMilestoneByIdRequest.newBuilder().setMilestoneId(req.getMilestoneId().toString()).build()
@@ -155,7 +155,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessException("Số tiền thanh toán không khớp với hệ thống!");
         }
 
-        // B. Trừ tiền ví User (Company)
+        // Trừ tiền ví User (Company)
         Wallet userWallet = getOrCreateWallet(userId);
         BigDecimal amount = BigDecimal.valueOf(req.getAmount());
         if (userWallet.getBalance().compareTo(amount) < 0) {
@@ -170,18 +170,39 @@ public class PaymentServiceImpl implements PaymentService {
                 UUID.fromString(milestone.getId()), "MILESTONE",
                 UUID.fromString(milestone.getProjectId()), UUID.fromString(milestone.getId()), null, null);
 
-        // C. Cộng tiền ví System (Giữ tiền)
-        Wallet systemWallet = getOrCreateSystemWallet();
-        systemWallet.setBalance(systemWallet.getBalance().add(amount));
-        walletRepository.save(systemWallet);
+        // Cộng tiền ví System (Giữ tiền)
+//        Wallet systemWallet = getOrCreateSystemWallet();
+//        systemWallet.setBalance(systemWallet.getBalance().add(amount));
+//        walletRepository.save(systemWallet);
 
         // Lưu Transaction CREDIT cho System (Để Admin audit)
-        createTransaction(systemWallet, amount, "MILESTONE_PAYMENT_HOLDING", "CREDIT",
-                "Giữ tiền thanh toán từ user " + userId,
-                UUID.fromString(milestone.getId()), "MILESTONE",
-                UUID.fromString(milestone.getProjectId()), UUID.fromString(milestone.getId()), null, userId);
+//        createTransaction(systemWallet, amount, "MILESTONE_PAYMENT_HOLDING", "CREDIT",
+//                "Giữ tiền thanh toán từ user " + userId,
+//                UUID.fromString(milestone.getId()), "MILESTONE",
+//                UUID.fromString(milestone.getProjectId()), UUID.fromString(milestone.getId()), null, userId);
 
-        // D. Bắn Event cập nhật trạng thái Milestone
+        // Cộng tiền vào ví Milestone
+        UUID milestoneId = UUID.fromString(milestone.getId());
+        Wallet milestoneWallet = getOrCreateMilestoneWallet(milestoneId);
+
+        milestoneWallet.setBalance(milestoneWallet.getBalance().add(amount));
+        walletRepository.save(milestoneWallet);
+
+        createTransaction(
+                milestoneWallet,
+                amount,
+                "MILESTONE_PAYMENT_RECEIVED",
+                "CREDIT",
+                "Nhận tiền thanh toán milestone",
+                milestoneId,
+                "MILESTONE",
+                UUID.fromString(milestone.getProjectId()),
+                milestoneId,
+                null,
+                userId
+        );
+
+        // Bắn Event cập nhật trạng thái Milestone
         PaymentSuccessEvent event = PaymentSuccessEvent.newBuilder()
                 .setMilestoneId(milestone.getId())
                 .setProjectId(milestone.getProjectId())
@@ -237,5 +258,17 @@ public class PaymentServiceImpl implements PaymentService {
                 .balanceAfter(wallet.getBalance())
                 .build();
         transactionRepository.save(tx);
+    }
+
+    private Wallet getOrCreateMilestoneWallet(UUID milestoneId) {
+        return walletRepository
+                .findByOwnerId(milestoneId)
+                .orElseGet(() -> {
+                    Wallet w = new Wallet();
+                    w.setOwnerId(milestoneId);
+                    w.setOwnerType("MILESTONE");
+                    w.setBalance(BigDecimal.ZERO);
+                    return walletRepository.save(w);
+                });
     }
 }
