@@ -62,7 +62,7 @@ public class WalletServiceImpl implements WalletService {
     @Transactional
     public ApiResponse<WalletResponse> addBankInfo(UUID userId, UpdateBankInfoRequest request) {
         Wallet wallet = walletRepository.findByOwnerId(userId)
-                .orElseGet(() -> createDefaultWallet(userId));
+                .orElseThrow(() -> new BusinessException("Ví không tồn tại. Vui lòng liên hệ quản trị viên."));
 
         if (Status.LOCKED.toString().equals(wallet.getStatus())) {
             throw new BusinessException("Ví của bạn đã bị khóa");
