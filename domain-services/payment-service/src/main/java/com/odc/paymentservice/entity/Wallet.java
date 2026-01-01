@@ -1,13 +1,17 @@
 package com.odc.paymentservice.entity;
 
 import com.odc.common.entity.BaseEntity;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Builder
@@ -38,4 +42,8 @@ public class Wallet extends BaseEntity {
 
     @Column(name = "status")
     private String status; // ACTIVE, LOCKED
+
+    @Type(JsonType.class)
+    @Column(name = "bank_infos", columnDefinition = "jsonb")
+    private List<BankInfo> bankInfos = new ArrayList<>();
 }

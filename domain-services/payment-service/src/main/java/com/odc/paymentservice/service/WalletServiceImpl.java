@@ -6,9 +6,11 @@ import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.request.CreateWithdrawalRequest;
+import com.odc.paymentservice.dto.request.UpdateBankInfoRequest;
 import com.odc.paymentservice.dto.response.SystemWalletStatisticResponse;
 import com.odc.paymentservice.dto.response.WalletResponse;
 import com.odc.paymentservice.dto.response.WithdrawalResponse;
+import com.odc.paymentservice.entity.BankInfo;
 import com.odc.paymentservice.entity.Transaction;
 import com.odc.paymentservice.entity.Wallet;
 import com.odc.paymentservice.entity.WithdrawalRequest;
@@ -24,9 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,9 +52,87 @@ public class WalletServiceImpl implements WalletService {
                 .heldBalance(wallet.getHeldBalance())
                 .currency(wallet.getCurrency())
                 .status(wallet.getStatus())
+                .bankInfos(wallet.getBankInfos())
                 .build();
 
         return ApiResponse.success("Lấy thông tin ví thành công", response);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<WalletResponse> addBankInfo(UUID userId, UpdateBankInfoRequest request) {
+        Wallet wallet = walletRepository.findByOwnerId(userId)
+                .orElseThrow(() -> new BusinessException("Ví không tồn tại. Vui lòng liên hệ quản trị viên."));
+
+        if (Status.LOCKED.toString().equals(wallet.getStatus())) {
+            throw new BusinessException("Ví của bạn đã bị khóa");
+        }
+
+        List<BankInfo> currentBankInfos = wallet.getBankInfos();
+        if (currentBankInfos == null) {
+            currentBankInfos = new ArrayList<>();
+        } else {
+            currentBankInfos = new ArrayList<>(currentBankInfos);
+        }
+
+        boolean exists = currentBankInfos.stream().anyMatch(info ->
+                info.getAccountNumber().equals(request.getAccountNumber()) &&
+                        info.getBankName().equalsIgnoreCase(request.getBankName()));
+
+        if (exists) {
+            throw new BusinessException("Tài khoản ngân hàng này đã tồn tại trong danh sách của bạn");
+        }
+
+        // Thêm mới
+        BankInfo newBankInfo = new BankInfo(
+                request.getBankName(),
+                request.getAccountNumber(),
+                request.getAccountHolderName().toUpperCase()
+        );
+        currentBankInfos.add(newBankInfo);
+
+        wallet.setBankInfos(currentBankInfos);
+        Wallet savedWallet = walletRepository.save(wallet);
+
+        WalletResponse response = WalletResponse.builder()
+                .bankInfos(savedWallet.getBankInfos())
+                .build();
+
+        return ApiResponse.success("Thêm thông tin ngân hàng thành công", response);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<WalletResponse> removeBankInfo(UUID userId, String accountNumber) {
+        Wallet wallet = walletRepository.findByOwnerId(userId)
+                .orElseThrow(() -> new BusinessException("Ví không tồn tại."));
+
+        if (Status.LOCKED.toString().equals(wallet.getStatus())) {
+            throw new BusinessException("Ví của bạn đã bị khóa");
+        }
+
+        List<BankInfo> currentBankInfos = wallet.getBankInfos();
+        if (currentBankInfos == null || currentBankInfos.isEmpty()) {
+            throw new BusinessException("Bạn chưa có thông tin ngân hàng nào để xóa");
+        }
+
+        // Filter out the bank info to delete
+        List<BankInfo> updatedBankInfos = currentBankInfos.stream()
+                .filter(info -> !(info.getAccountNumber().equals(accountNumber)))
+                .collect(Collectors.toList());
+
+        if (updatedBankInfos.size() == currentBankInfos.size()) {
+            throw new BusinessException("Không tìm thấy tài khoản ngân hàng tương ứng để xóa");
+        }
+
+        wallet.setBankInfos(updatedBankInfos);
+        Wallet savedWallet = walletRepository.save(wallet);
+
+        WalletResponse response = WalletResponse.builder()
+                .bankInfos(savedWallet.getBankInfos())
+                .build();
+
+        return ApiResponse.success("Xóa thông tin ngân hàng thành công", response);
     }
 
     @Override
@@ -219,6 +298,7 @@ public class WalletServiceImpl implements WalletService {
                 .heldBalance(BigDecimal.ZERO)
                 .currency("VND")
                 .status(Status.ACTIVE.toString())
+                .bankInfos(new ArrayList<>())
                 .build();
 
         return walletRepository.save(newWallet);
