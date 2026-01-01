@@ -14,6 +14,8 @@ public interface WalletService {
 
     ApiResponse<WalletResponse> addBankInfo(UUID userId, UpdateBankInfoRequest request);
 
+    ApiResponse<WalletResponse> removeBankInfo(UUID userId, String accountNumber);
+
     ApiResponse<WithdrawalResponse> createWithdrawalRequest(UUID userId, CreateWithdrawalRequest request);
 
     ApiResponse<SystemWalletStatisticResponse> getSystemWalletStatistic();

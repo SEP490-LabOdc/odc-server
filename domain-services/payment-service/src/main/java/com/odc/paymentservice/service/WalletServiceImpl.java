@@ -103,6 +103,40 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    public ApiResponse<WalletResponse> removeBankInfo(UUID userId, String accountNumber) {
+        Wallet wallet = walletRepository.findByOwnerId(userId)
+                .orElseThrow(() -> new BusinessException("Ví không tồn tại."));
+
+        if (Status.LOCKED.toString().equals(wallet.getStatus())) {
+            throw new BusinessException("Ví của bạn đã bị khóa");
+        }
+
+        List<BankInfo> currentBankInfos = wallet.getBankInfos();
+        if (currentBankInfos == null || currentBankInfos.isEmpty()) {
+            throw new BusinessException("Bạn chưa có thông tin ngân hàng nào để xóa");
+        }
+
+        // Filter out the bank info to delete
+        List<BankInfo> updatedBankInfos = currentBankInfos.stream()
+                .filter(info -> !(info.getAccountNumber().equals(accountNumber)))
+                .collect(Collectors.toList());
+
+        if (updatedBankInfos.size() == currentBankInfos.size()) {
+            throw new BusinessException("Không tìm thấy tài khoản ngân hàng tương ứng để xóa");
+        }
+
+        wallet.setBankInfos(updatedBankInfos);
+        Wallet savedWallet = walletRepository.save(wallet);
+
+        WalletResponse response = WalletResponse.builder()
+                .bankInfos(savedWallet.getBankInfos())
+                .build();
+
+        return ApiResponse.success("Xóa thông tin ngân hàng thành công", response);
+    }
+
+    @Override
+    @Transactional
     public ApiResponse<WithdrawalResponse> createWithdrawalRequest(UUID userId, CreateWithdrawalRequest request) {
         // Bước 1: Lấy thông tin Wallet của user
         Wallet wallet = walletRepository.findByOwnerId(userId)
@@ -264,6 +298,7 @@ public class WalletServiceImpl implements WalletService {
                 .heldBalance(BigDecimal.ZERO)
                 .currency("VND")
                 .status(Status.ACTIVE.toString())
+                .bankInfos(new ArrayList<>())
                 .build();
 
         return walletRepository.save(newWallet);
