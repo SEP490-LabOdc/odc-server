@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -172,25 +173,27 @@ public class DisbursementServiceImpl implements DisbursementService {
         BigDecimal totalOut = disbursement.getMentorAmount().add(disbursement.getTalentAmount());
         systemWallet.setBalance(systemWallet.getBalance().subtract(totalOut));
 
-        // Cộng ví Mentor Leader
-        Wallet mentorWallet = getOrCreateWallet(disbursement.getMentorLeaderId());
-        mentorWallet.setBalance(mentorWallet.getBalance().add(disbursement.getMentorAmount()));
-        createTransaction(mentorWallet, disbursement.getMentorAmount(), "CREDIT", "DISBURSEMENT_IN",
+        // Cộng ví Team Mentor
+        Wallet teamMentorWallet = getOrCreateTeamWallet(disbursement.getMilestoneId(), "TEAM_MENTOR");
+        teamMentorWallet.setBalance(teamMentorWallet.getBalance().add(disbursement.getMentorAmount()));
+
+        createTransaction(teamMentorWallet, disbursement.getMentorAmount(), "CREDIT", "DISBURSEMENT_IN",
                 "Nhận tiền giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
                 disbursement.getProjectId(), disbursement.getMilestoneId());
 
-        // Cộng ví Talent Leader
-        Wallet talentWallet = getOrCreateWallet(disbursement.getTalentLeaderId());
-        talentWallet.setBalance(talentWallet.getBalance().add(disbursement.getTalentAmount()));
-        createTransaction(talentWallet, disbursement.getTalentAmount(), "CREDIT", "DISBURSEMENT_IN",
+        // Cộng ví Team Talent
+        Wallet teamTalentWallet = getOrCreateTeamWallet(disbursement.getMilestoneId(), "TEAM_TALENT");
+        teamTalentWallet.setBalance(teamTalentWallet.getBalance().add(disbursement.getTalentAmount()));
+
+        createTransaction(teamTalentWallet, disbursement.getTalentAmount(), "CREDIT", "DISBURSEMENT_IN",
                 "Nhận tiền giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
                 disbursement.getProjectId(), disbursement.getMilestoneId());
 
         disbursement.setStatus(Status.COMPLETED.toString());
         disbursementRepository.save(disbursement);
         walletRepository.save(systemWallet);
-        walletRepository.save(mentorWallet);
-        walletRepository.save(talentWallet);
+        walletRepository.save(teamMentorWallet);
+        walletRepository.save(teamTalentWallet);
 
         LeaderInfo mentor = null;
         LeaderInfo talent = null;
@@ -386,6 +389,20 @@ public class DisbursementServiceImpl implements DisbursementService {
         return ApiResponse.success(response);
     }
 
+    private Wallet getOrCreateTeamWallet(UUID ownerId, String ownerType) {
+        return walletRepository.findByOwnerIdAndOwnerType(ownerId, ownerType)
+                .orElseGet(() -> {
+                    Wallet newWallet = new Wallet();
+                    newWallet.setOwnerId(ownerId);
+                    newWallet.setOwnerType(ownerType);
+                    newWallet.setBalance(BigDecimal.ZERO);
+                    newWallet.setHeldBalance(BigDecimal.ZERO);
+                    newWallet.setCurrency("VND");
+                    newWallet.setStatus(Status.ACTIVE.toString());
+                    newWallet.setBankInfos(new ArrayList<>());
+                    return walletRepository.save(newWallet);
+                });
+    }
 
     private Wallet getOrCreateWallet(UUID userId) {
         return walletRepository.findByOwnerId(userId)

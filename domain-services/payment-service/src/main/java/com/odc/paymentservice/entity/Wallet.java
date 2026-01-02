@@ -24,7 +24,7 @@ import java.util.UUID;
         @Index(name = "idx_wallet_owner", columnList = "owner_id")
 })
 public class Wallet extends BaseEntity {
-    @Column(name = "owner_id", nullable = false, unique = true)
+    @Column(name = "owner_id", nullable = false)
     private UUID ownerId; // userId hoặc companyId
 
     @Column(name = "owner_type", nullable = false)
