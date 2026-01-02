@@ -168,12 +168,23 @@ public class DisbursementServiceImpl implements DisbursementService {
                 .setMilestoneId(disbursement.getMilestoneId().toString())
                 .build());
 
-        Wallet systemWallet = walletRepository.findByOwnerType("SYSTEM").orElseThrow();
-        // Trừ ví System (Tổng Mentor + Talent)
-        BigDecimal totalOut = disbursement.getMentorAmount().add(disbursement.getTalentAmount());
+        Wallet systemWallet = walletRepository.findByOwnerType("MILESTONE").orElseThrow();
+        // Minus talent amount + mentor amount + system fee from milestone wallet
+        BigDecimal totalOut = disbursement.getMentorAmount().add(disbursement.getTalentAmount()).add(disbursement.getSystemFee());
+        if (systemWallet.getBalance().compareTo(totalOut) < 0) {
+            throw new BusinessException("Số dư ví hệ thống không đủ để thực hiện giải ngân");
+        }
         systemWallet.setBalance(systemWallet.getBalance().subtract(totalOut));
 
-        // Cộng ví Team Mentor
+        // Add system fee to system wallet
+        Wallet systemFeeWallet = getOrCreateSystemWallet();
+        systemFeeWallet.setBalance(systemFeeWallet.getBalance().add(disbursement.getSystemFee()));
+
+        createTransaction(systemFeeWallet, disbursement.getSystemFee(), "CREDIT", "DISBURSEMENT_IN",
+                "Nhận phí hệ thống từ giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
+                disbursement.getProjectId(), disbursement.getMilestoneId());
+
+        // Add mentor amount to team mentor wallet
         Wallet teamMentorWallet = getOrCreateTeamWallet(disbursement.getMilestoneId(), "TEAM_MENTOR");
         teamMentorWallet.setBalance(teamMentorWallet.getBalance().add(disbursement.getMentorAmount()));
 
@@ -181,7 +192,7 @@ public class DisbursementServiceImpl implements DisbursementService {
                 "Nhận tiền giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
                 disbursement.getProjectId(), disbursement.getMilestoneId());
 
-        // Cộng ví Team Talent
+        // Add talent amount to team talent wallet
         Wallet teamTalentWallet = getOrCreateTeamWallet(disbursement.getMilestoneId(), "TEAM_TALENT");
         teamTalentWallet.setBalance(teamTalentWallet.getBalance().add(disbursement.getTalentAmount()));
 
