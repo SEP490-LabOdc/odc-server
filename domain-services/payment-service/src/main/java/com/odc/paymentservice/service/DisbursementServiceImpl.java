@@ -166,7 +166,7 @@ public class DisbursementServiceImpl implements DisbursementService {
                 .setMilestoneId(disbursement.getMilestoneId().toString())
                 .build());
 
-        Wallet systemWallet = walletRepository.findByOwnerType("MILESTONE").orElseThrow();
+        Wallet systemWallet = walletRepository.findByOwnerIdAndOwnerType(disbursement.getMilestoneId(), "MILESTONE").orElseThrow();
         // Minus talent amount + mentor amount + system fee from milestone wallet
         BigDecimal totalOut = disbursement.getMentorAmount().add(disbursement.getTalentAmount()).add(disbursement.getSystemFee());
         if (systemWallet.getBalance().compareTo(totalOut) < 0) {
