@@ -19,4 +19,6 @@ public interface WalletService {
     ApiResponse<WithdrawalResponse> createWithdrawalRequest(UUID userId, CreateWithdrawalRequest request);
 
     ApiResponse<SystemWalletStatisticResponse> getSystemWalletStatistic();
+
+    ApiResponse<WalletResponse> getMilestoneWallet(UUID milestoneId);
 }

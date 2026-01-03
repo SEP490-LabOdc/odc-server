@@ -9,6 +9,7 @@ import com.odc.paymentservice.service.DisbursementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -51,7 +52,8 @@ public class DisbursementController {
             @PathVariable UUID milestoneId,
             @RequestBody @Valid MilestoneDisbursementRequest request
     ) {
-        return ResponseEntity.ok(disbursementService.processMilestoneDisbursement(milestoneId, request));
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(disbursementService.processMilestoneDisbursement(milestoneId, userId, request));
     }
 
     @GetMapping("/milestones/{milestoneId}")

@@ -5,7 +5,6 @@ import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
-import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
 import com.odc.paymentservice.dto.request.MilestoneDisbursement;
 import com.odc.paymentservice.dto.request.MilestoneDisbursementRequest;
@@ -32,10 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -259,116 +257,96 @@ public class DisbursementServiceImpl implements DisbursementService {
 
     @Override
     @Transactional
-    public ApiResponse<Void> processMilestoneDisbursement(
-            UUID milestoneId,
-            MilestoneDisbursementRequest request
-    ) {
-        // 1. Lấy Disbursement
+    public ApiResponse<Void> processMilestoneDisbursement(UUID milestoneId, UUID userId, MilestoneDisbursementRequest request) {
+        // 1. Validate Input
+        if (request.getDisbursements() == null || request.getDisbursements().isEmpty()) {
+            throw new BusinessException("Danh sách phân bổ không được trống");
+        }
+
+        UUID sourceWalletId = request.getWalletId();
+        List<MilestoneDisbursement> payload = request.getDisbursements();
+
+        // 2. Fetch Source Wallet (Milestone Team Wallet)
+        Wallet sourceWallet = walletRepository.findById(sourceWalletId)
+                .orElseThrow(() -> new BusinessException("Ví nguồn không tồn tại"));
+
+        // Optional: Validate that the source wallet belongs to the correct Milestone and Owner Type
+        // Assuming wallet.ownerId stored the milestoneId for TEAM wallets
+        if (!sourceWallet.getOwnerId().equals(milestoneId)) {
+            throw new BusinessException("Ví này không thuộc về cột mốc hiện tại");
+        }
+
         Disbursement disbursement = disbursementRepository.findByMilestoneId(milestoneId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Không tìm thấy Disbursement cho milestoneId: " + milestoneId));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy thông tin giải ngân cho cột mốc này."));
 
-        if (!Status.COMPLETED.toString().equals(disbursement.getStatus())) {
-            throw new BusinessException(
-                    "Milestone chưa hoàn tất thanh toán: " + milestoneId);
+        String ownerType = sourceWallet.getOwnerType(); // TEAM_MENTOR or TEAM_TALENT
+        if ("TEAM_MENTOR".equals(ownerType)) {
+            if (!userId.equals(disbursement.getMentorLeaderId())) {
+                throw new BusinessException("Bạn không phải là trưởng nhóm.");
+            }
+        } else if ("TEAM_TALENT".equals(ownerType)) {
+            if (!userId.equals(disbursement.getTalentLeaderId())) {
+                throw new BusinessException("Bạn không phải là trưởng nhóm.");
+            }
+        } else {
+            throw new BusinessException("Loại ví không hợp lệ để thực hiện phân bổ");
         }
 
-        // 2. Thu thập userIds
-        Set<UUID> userIds = request.getDisbursements()
-                .stream()
-                .map(MilestoneDisbursement::getUserId)
-                .collect(Collectors.toSet());
-
-        boolean isMentorFlow = userIds.contains(disbursement.getMentorLeaderId());
-        boolean isTalentFlow = userIds.contains(disbursement.getTalentLeaderId());
-
-        if (isMentorFlow && isTalentFlow) {
-            throw new BusinessException("Không thể chia tiền cho cả Mentor và Talent trong cùng 1 request");
-        }
-
-        if (!isMentorFlow && !isTalentFlow) {
-            throw new BusinessException("Request không thuộc Mentor Team hoặc Talent Team");
-        }
-
-        if (isMentorFlow) {
-
-        }
-        // 3. Xác định leader & số tiền khả dụng
-        UUID leaderId = isMentorFlow
-                ? disbursement.getMentorLeaderId()
-                : disbursement.getTalentLeaderId();
-
-        BigDecimal totalAvailable = isMentorFlow
-                ? disbursement.getMentorAmount()
-                : disbursement.getTalentAmount();
-
-        // 4. Tổng tiền request
-        BigDecimal totalRequested = request.getDisbursements()
-                .stream()
+        // 4. Calculate Total Out
+        BigDecimal totalOut = payload.stream()
                 .map(MilestoneDisbursement::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (totalRequested.compareTo(totalAvailable) > 0) {
-            throw new BusinessException("Số tiền leader nhận được từ milestone không đủ để phân bổ cho các thành viên khác.");
+        // 5. Check Balance
+        if (sourceWallet.getBalance().compareTo(totalOut) < 0) {
+            throw new BusinessException("Số dư quỹ nhóm không đủ để thực hiện phân bổ (Số dư: "
+                    + sourceWallet.getBalance() + ", Tổng chi: " + totalOut + ")");
         }
 
-        // 5. Lấy ví leader
-        Wallet leaderWallet = walletRepository.findByOwnerId(leaderId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Không tìm thấy ví của leader: " + leaderId));
+        // 6. Deduct from Source Wallet
+        sourceWallet.setBalance(sourceWallet.getBalance().subtract(totalOut));
+        walletRepository.save(sourceWallet);
 
-        // 6. Thực hiện disbursement
-        for (MilestoneDisbursement item : request.getDisbursements()) {
+        // Record Debit Transaction for Source Wallet
+        createTransaction(
+                sourceWallet,
+                totalOut,
+                "DISBURSEMENT_DISTRIBUTION",
+                PaymentConstant.DEBIT,
+                "Phân bổ tiền cho thành viên",
+                userId,
+                "MILESTONE",
+                null,
+                milestoneId
+        );
+
+        // 7. Process Each Recipient
+        for (MilestoneDisbursement item : payload) {
             UUID memberId = item.getUserId();
             BigDecimal amount = item.getAmount();
 
-            if (memberId.equals(leaderId)) {
-                throw new BusinessException("Leader không thể tự phân bổ tiền cho chính mình");
-            }
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) continue;
 
-            // ---- DEBIT leader ----
-            leaderWallet.setBalance(leaderWallet.getBalance().subtract(amount));
-            walletRepository.save(leaderWallet);
-
-            Transaction leaderTx = Transaction.builder()
-                    .wallet(leaderWallet)
-                    .amount(amount)
-                    .type(PaymentConstant.TRANSACTION_TYPE_DISBURSEMENT)
-                    .direction(PaymentConstant.DEBIT)
-                    .status(Status.COMPLETED.toString())
-                    .milestoneId(milestoneId)
-                    .refId(disbursement.getId())
-                    .refType(PaymentConstant.REF_TYPE_DISBURSEMENT)
-                    .relatedUserId(memberId)
-                    .balanceAfter(leaderWallet.getBalance())
-                    .build();
-
-            transactionRepository.save(leaderTx);
-
-            // ---- CREDIT member ----
+            // Fetch or Create Member Wallet
             Wallet memberWallet = walletRepository.findByOwnerId(memberId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Không tìm thấy ví member: " + memberId));
+                    .orElseThrow(() -> new BusinessException("Thành viên với ID " + memberId + " không có ví trong hệ thống"));
 
+            // Add to Member Wallet
             memberWallet.setBalance(memberWallet.getBalance().add(amount));
             walletRepository.save(memberWallet);
 
-            Transaction memberTx = Transaction.builder()
-                    .wallet(memberWallet)
-                    .amount(amount)
-                    .type(PaymentConstant.TRANSACTION_TYPE_DISBURSEMENT)
-                    .direction(PaymentConstant.CREDIT)
-                    .status(Status.COMPLETED.toString())
-                    .milestoneId(milestoneId)
-                    .refId(disbursement.getId())
-                    .refType(PaymentConstant.REF_TYPE_DISBURSEMENT)
-                    .relatedUserId(leaderId)
-                    .balanceAfter(memberWallet.getBalance())
-                    .build();
-
-            transactionRepository.save(memberTx);
-
-            log.info("Leader {} disbursed {} to member {}", leaderId, amount, memberId);
+            // Record Credit Transaction for Member
+            createTransaction(
+                    memberWallet,
+                    amount,
+                    "DISBURSEMENT_RECEIVED",
+                    PaymentConstant.CREDIT,
+                    "Nhận tiền phân bổ từ cột mốc",
+                    milestoneId,
+                    "MILESTONE",
+                    null,
+                    milestoneId
+            );
         }
 
         return ApiResponse.success("Phân bổ tiền thành công", null);
@@ -380,7 +358,7 @@ public class DisbursementServiceImpl implements DisbursementService {
         Disbursement disbursement = disbursementRepository
                 .findByMilestoneId(milestoneId)
                 .orElseThrow(() ->
-                        new BusinessException("Chưa có thông tin giải ngân cho milestone: " + milestoneId)
+                        new BusinessException("Chưa có thông tin giải ngân cho cột mốc.")
                 );
 
         DisbursementResponse response = DisbursementResponse.builder()
@@ -452,8 +430,10 @@ public class DisbursementServiceImpl implements DisbursementService {
                 .type(type)
                 .direction(direction)
                 .description(desc)
-                .refId(refId).refType(refType)
-                .projectId(projectId).milestoneId(milestoneId)
+                .refId(refId)
+                .refType(refType)
+                .projectId(projectId)
+                .milestoneId(milestoneId)
                 .status(Status.SUCCESS.toString())
                 .balanceAfter(wallet.getBalance())
                 .build();

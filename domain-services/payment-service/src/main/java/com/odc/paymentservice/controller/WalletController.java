@@ -47,4 +47,11 @@ public class WalletController {
         ApiResponse<WalletResponse> response = walletService.removeBankInfo(userId, accountNumber);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/milestones/{milestoneId}")
+    public ResponseEntity<ApiResponse<WalletResponse>> getMilestoneWallet(
+            @PathVariable UUID milestoneId
+    ) {
+        return ResponseEntity.ok(walletService.getMilestoneWallet(milestoneId));
+    }
 }
