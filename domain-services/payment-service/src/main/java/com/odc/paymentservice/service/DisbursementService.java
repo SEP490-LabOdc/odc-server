@@ -17,7 +17,7 @@ public interface DisbursementService {
 
     DisbursementCalculationResponse executeDisbursement(UUID disbursementId);
 
-    ApiResponse<Void> processMilestoneDisbursement(UUID milestoneId, MilestoneDisbursementRequest request);
+    ApiResponse<Void> processMilestoneDisbursement(UUID milestoneId, UUID userId, MilestoneDisbursementRequest request);
 
     ApiResponse<DisbursementResponse> getByMilestoneId(UUID milestoneId);
 }

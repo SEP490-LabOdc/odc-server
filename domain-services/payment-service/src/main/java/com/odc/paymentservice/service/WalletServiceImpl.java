@@ -231,6 +231,52 @@ public class WalletServiceImpl implements WalletService {
         return ApiResponse.success(response);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<WalletResponse> getMilestoneWallet(UUID milestoneId) {
+        // 1. Get Current User Role from Security Context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentRole = null;
+
+        if (authentication != null && !authentication.getAuthorities().isEmpty()) {
+            currentRole = authentication.getAuthorities().iterator().next().getAuthority();
+        }
+
+        if (currentRole == null) {
+            throw new BusinessException("Không xác định được quyền của người dùng");
+        }
+
+        // 2. Determine Owner Type based on Role
+        String ownerType;
+        if (Role.MENTOR.toString().equals(currentRole)) {
+            ownerType = "TEAM_MENTOR";
+        } else if (Role.TALENT.toString().equals(currentRole)) {
+            ownerType = "TEAM_TALENT";
+        } else {
+            // Restrict access to only Mentor and Talent for this specific team wallet
+            throw new BusinessException("Bạn không có quyền xem ví team của milestone này (Chỉ dành cho Mentor và Talent)");
+        }
+
+        // 3. Find the Wallet
+        // Assuming walletRepository has findByOwnerIdAndOwnerType (used in DisbursementServiceImpl)
+        Wallet wallet = walletRepository.findByOwnerIdAndOwnerType(milestoneId, ownerType)
+                .orElseThrow(() -> new BusinessException("Chưa tìm thấy ví team cho milestone này (Có thể chưa được giải ngân)"));
+
+        // 4. Build Response
+        WalletResponse response = WalletResponse.builder()
+                .id(wallet.getId())
+                .ownerId(wallet.getOwnerId())
+                .ownerType(wallet.getOwnerType())
+                .balance(wallet.getBalance())
+                .heldBalance(wallet.getHeldBalance())
+                .currency(wallet.getCurrency())
+                .status(wallet.getStatus())
+                .bankInfos(wallet.getBankInfos())
+                .build();
+
+        return ApiResponse.success("Lấy thông tin ví milestone thành công", response);
+    }
+
     /**
      * Tính ngày scheduledAt: ngày 15 hàng tháng
      * Nếu hôm nay đã qua ngày 15 thì lấy ngày 15 tháng sau
