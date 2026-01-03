@@ -2,6 +2,7 @@ package com.odc.paymentservice.controller;
 
 import com.odc.common.dto.ApiResponse;
 import com.odc.paymentservice.dto.request.CreateWithdrawalRequest;
+import com.odc.paymentservice.dto.request.UpdateBankInfoRequest;
 import com.odc.paymentservice.dto.response.WalletResponse;
 import com.odc.paymentservice.dto.response.WithdrawalResponse;
 import com.odc.paymentservice.service.WalletService;
@@ -30,5 +31,27 @@ public class WalletController {
             @Valid @RequestBody CreateWithdrawalRequest request) {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(walletService.createWithdrawalRequest(userId, request));
+    }
+
+    @PostMapping("/bank-info")
+    public ResponseEntity<ApiResponse<WalletResponse>> updateBankInfos(
+            @Valid @RequestBody UpdateBankInfoRequest request) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(walletService.addBankInfo(userId, request));
+    }
+
+    @DeleteMapping("/bank-info/{accountNumber}")
+    public ResponseEntity<ApiResponse<WalletResponse>> removeBankInfo(
+            @PathVariable("accountNumber") String accountNumber) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ApiResponse<WalletResponse> response = walletService.removeBankInfo(userId, accountNumber);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/milestones/{milestoneId}")
+    public ResponseEntity<ApiResponse<WalletResponse>> getMilestoneWallet(
+            @PathVariable UUID milestoneId
+    ) {
+        return ResponseEntity.ok(walletService.getMilestoneWallet(milestoneId));
     }
 }

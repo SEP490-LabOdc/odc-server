@@ -1,9 +1,11 @@
 package com.odc.paymentservice.dto.response;
 
+import com.odc.paymentservice.entity.BankInfo;
 import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -16,4 +18,5 @@ public class WalletResponse {
     private BigDecimal heldBalance;
     private String currency;
     private String status;
+    private List<BankInfo> bankInfos;
 }

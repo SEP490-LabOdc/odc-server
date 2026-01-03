@@ -18,6 +18,7 @@ public class GetCompanyByIdResponse {
     private String address;
     private String description;
     private String logo;
+    private String banner;
     private String website;
     private String status;
     private String domain;

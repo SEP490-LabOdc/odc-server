@@ -49,9 +49,6 @@ public class PaymentSuccessHandler implements EventHandler {
 
             // 4. Cập nhật trạng thái sang PAID
             milestone.setStatus(ProjectMilestoneStatus.PAID.toString());
-
-            // (Optional) Bạn có thể thêm logic log lại lịch sử thay đổi trạng thái nếu cần
-
             milestoneRepository.save(milestone);
 
             log.info("Successfully updated milestone {} status to PAID", milestoneId);
