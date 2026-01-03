@@ -39,4 +39,12 @@ public class WalletController {
         UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(walletService.addBankInfo(userId, request));
     }
+
+    @DeleteMapping("/bank-info/{accountNumber}")
+    public ResponseEntity<ApiResponse<WalletResponse>> removeBankInfo(
+            @PathVariable("accountNumber") String accountNumber) {
+        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ApiResponse<WalletResponse> response = walletService.removeBankInfo(userId, accountNumber);
+        return ResponseEntity.ok(response);
+    }
 }
