@@ -250,7 +250,7 @@ public class WalletServiceImpl implements WalletService {
         String ownerType;
         if (Role.MENTOR.toString().equals(currentRole)) {
             ownerType = "TEAM_MENTOR";
-        } else if (Role.TALENT.toString().equals(currentRole)) {
+        } else if (Role.USER.toString().equals(currentRole)) {
             ownerType = "TEAM_TALENT";
         } else {
             // Restrict access to only Mentor and Talent for this specific team wallet
