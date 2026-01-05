@@ -22,6 +22,8 @@ public interface CompanyService {
 
     ApiResponse<GetCompanyByIdResponse> getCompanyById(UUID id);
 
+    ApiResponse<PublicCompanyResponse> getPublicCompanyById(UUID id);
+
     ApiResponse<Void> deleteCompany(UUID id);
 
     void updateRegisterCompanyStatus(UUID id, Status status);
