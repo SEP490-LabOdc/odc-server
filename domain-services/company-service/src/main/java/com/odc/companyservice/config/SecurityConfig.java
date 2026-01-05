@@ -30,7 +30,8 @@ public class SecurityConfig {
             "/company-service/swagger/**"
     };
     private static final String[] GET_PERMIT_PATHS = {
-            "/api/v1/companies"
+            "/api/v1/companies",
+            "/api/v1/companies/public/**"
     };
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
