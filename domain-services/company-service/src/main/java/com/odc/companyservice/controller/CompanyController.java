@@ -67,6 +67,11 @@ public class CompanyController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @GetMapping("/public/{id}")
+    public ResponseEntity<ApiResponse<PublicCompanyResponse>> getPublicCompanyDetail(@PathVariable UUID id) {
+        return ResponseEntity.ok(companyService.getPublicCompanyById(id));
+    }
+
     @GetMapping("/{id}/checklists")
     public ResponseEntity<ApiResponse<GetCompanyChecklistResponse>> getCompanyChecklists(@PathVariable UUID id) {
         return ResponseEntity.ok(companyService.getCompanyChecklistByCompanyId(id));

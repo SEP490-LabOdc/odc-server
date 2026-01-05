@@ -241,6 +241,40 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
+    public ApiResponse<PublicCompanyResponse> getPublicCompanyById(UUID id) {
+        // 1. Find company (throw exception if not found)
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy công ty."));
+
+        // 2. Check status (Optional but recommended: only show ACTIVE companies publicly)
+        if (!Status.ACTIVE.toString().equals(company.getStatus())) {
+            throw new BusinessException("Công ty không hoạt động hoặc không tồn tại.");
+        }
+
+        // 3. Map to safe DTO
+        PublicCompanyResponse response = PublicCompanyResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .address(company.getAddress())
+                .description(company.getDescription())
+                .website(company.getWebsite())
+                .logo(company.getLogo())
+                .banner(company.getBanner())
+                .domain(company.getDomain())
+                .createdAt(company.getCreatedAt())
+                .build();
+
+        return ApiResponse.<PublicCompanyResponse>builder()
+                .success(true)
+                .message("Successfully retrieved public company info")
+                .data(response)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @Override
     public ApiResponse<Void> deleteCompany(UUID id) {
         // 1. Kiểm tra công ty có tồn tại không
         Company company = companyRepository.findById(id)
@@ -683,6 +717,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .address(company.getAddress())
                 .description(company.getDescription())
                 .logo(company.getLogo())
+                .banner(company.getBanner())
                 .website(company.getWebsite())
                 .status(company.getStatus())
                 .domain(company.getDomain())
