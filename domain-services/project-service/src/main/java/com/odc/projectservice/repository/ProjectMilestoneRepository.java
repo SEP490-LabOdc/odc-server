@@ -27,4 +27,6 @@ public interface ProjectMilestoneRepository extends JpaRepository<ProjectMilesto
     List<ProjectMilestone> findByProjectIdOrderByStartDateAsc(UUID projectId);
 
     long countByProjectId(UUID projectId);
+
+    List<ProjectMilestone> findByProjectIdAndStatus(UUID projectId, String status);
 }

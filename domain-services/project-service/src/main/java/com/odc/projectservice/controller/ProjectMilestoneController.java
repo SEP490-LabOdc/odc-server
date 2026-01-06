@@ -3,10 +3,7 @@ package com.odc.projectservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.projectservice.dto.request.*;
-import com.odc.projectservice.dto.response.FeedbackResponse;
-import com.odc.projectservice.dto.response.GetMilestoneExtensionRequestResponse;
-import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
-import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
+import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.service.ProjectMilestoneService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +47,13 @@ public class ProjectMilestoneController {
     public ResponseEntity<ApiResponse<ProjectMilestoneResponse>> getProjectMilestoneById(
             @PathVariable UUID milestoneId) {
         ApiResponse<ProjectMilestoneResponse> response = projectMilestoneService.getProjectMilestoneById(milestoneId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/{projectId}/paid")
+    public ResponseEntity<ApiResponse<List<PaidProjectMilestoneResponse>>> getPaidMilestonesByProjectId(
+            @PathVariable UUID projectId) {
+        ApiResponse<List<PaidProjectMilestoneResponse>> response = projectMilestoneService.getPaidMilestonesByProjectId(projectId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

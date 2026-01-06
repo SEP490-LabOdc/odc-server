@@ -332,6 +332,37 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     }
 
     @Override
+    public ApiResponse<List<PaidProjectMilestoneResponse>> getPaidMilestonesByProjectId(UUID projectId) {
+        // 1. Check if project exists
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        // 2. Fetch milestones with status PAID
+        // Note: Ensure findByProjectIdAndStatus is defined in your repository as per previous step
+        List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectIdAndStatus(
+                projectId,
+                ProjectMilestoneStatus.PAID.toString()
+        );
+
+        // 3. Map to PaidProjectMilestoneResponse (No need to fetch members/users/attachments)
+        List<PaidProjectMilestoneResponse> responseList = milestones.stream()
+                .map(m -> PaidProjectMilestoneResponse.builder()
+                        .id(m.getId())
+                        .projectId(project.getId())
+                        .projectName(project.getTitle())
+                        .title(m.getTitle())
+                        .budget(m.getBudget())
+                        .description(m.getDescription())
+                        .startDate(m.getStartDate())
+                        .endDate(m.getEndDate())
+                        .status(m.getStatus())
+                        .build())
+                .toList();
+
+        return ApiResponse.success("Lấy danh sách milestone đã thanh toán thành công", responseList);
+    }
+
+    @Override
     public ApiResponse<ProjectMilestoneResponse> getProjectMilestoneById(UUID milestoneId) {
         ProjectMilestone milestone = projectMilestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new BusinessException("Milestone với ID '" + milestoneId + "' không tồn tại"));
@@ -736,7 +767,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         MilestoneExtensionRequest entity = milestoneExtensionRequestRepository.findByIdAndMilestone_Id(id, milestoneId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy yêu cầu gia hạn"));
 
-        if(request.getStatus() == MilestoneExtensionRequestStatus.APPROVED) {
+        if (request.getStatus() == MilestoneExtensionRequestStatus.APPROVED) {
             milestone.setEndDate(entity.getRequestedEndDate());
             projectMilestoneRepository.save(milestone);
         }
