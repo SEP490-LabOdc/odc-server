@@ -3,10 +3,7 @@ package com.odc.projectservice.service;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.projectservice.dto.request.*;
-import com.odc.projectservice.dto.response.FeedbackResponse;
-import com.odc.projectservice.dto.response.GetMilestoneExtensionRequestResponse;
-import com.odc.projectservice.dto.response.MilestoneDocumentResponse;
-import com.odc.projectservice.dto.response.ProjectMilestoneResponse;
+import com.odc.projectservice.dto.response.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -20,6 +17,8 @@ public interface ProjectMilestoneService {
     ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestones();
 
     ApiResponse<List<ProjectMilestoneResponse>> getAllProjectMilestonesByProjectId(UUID projectId);
+
+    ApiResponse<List<PaidProjectMilestoneResponse>> getPaidMilestonesByProjectId(UUID projectId);
 
     ApiResponse<ProjectMilestoneResponse> getProjectMilestoneById(UUID milestoneId);
 
