@@ -335,16 +335,15 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
     public ApiResponse<List<PaidProjectMilestoneResponse>> getPaidMilestonesByProjectId(UUID projectId) {
         // 1. Check if project exists
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+                .orElseThrow(() -> new BusinessException("Dự án với không tồn tại."));
 
         // 2. Fetch milestones with status PAID
-        // Note: Ensure findByProjectIdAndStatus is defined in your repository as per previous step
         List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectIdAndStatus(
                 projectId,
                 ProjectMilestoneStatus.PAID.toString()
         );
 
-        // 3. Map to PaidProjectMilestoneResponse (No need to fetch members/users/attachments)
+        // 3. Map to PaidProjectMilestoneResponse
         List<PaidProjectMilestoneResponse> responseList = milestones.stream()
                 .map(m -> PaidProjectMilestoneResponse.builder()
                         .id(m.getId())
