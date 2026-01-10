@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -13,4 +14,6 @@ public interface SkillRepository extends JpaRepository<Skill, UUID>, JpaSpecific
     Optional<Skill> findByName(String name);
 
     boolean existsByName(String name);
+
+    Set<Skill> findAllByIdInAndIsDeleted(Set<UUID> ids, boolean isDeleted);
 }

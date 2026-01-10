@@ -51,7 +51,6 @@ public class ProjectServiceImpl implements ProjectService {
     private final SkillRepository skillRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
-    private final ProjectDocumentRepository projectDocumentRepository;
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final EventPublisher eventPublisher;
     private final ManagedChannel userServiceChannel;
@@ -64,7 +63,6 @@ public class ProjectServiceImpl implements ProjectService {
             SkillRepository skillRepository,
             ProjectMemberRepository projectMemberRepository,
             ProjectApplicationRepository projectApplicationRepository,
-            ProjectDocumentRepository projectDocumentRepository,
             ProjectMilestoneRepository projectMilestoneRepository,
             EventPublisher eventPublisher,
             ObjectMapper objectMapper,
@@ -74,7 +72,6 @@ public class ProjectServiceImpl implements ProjectService {
         this.skillRepository = skillRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectApplicationRepository = projectApplicationRepository;
-        this.projectDocumentRepository = projectDocumentRepository;
         this.eventPublisher = eventPublisher;
         this.userServiceChannel = userServiceChannel;
         this.companyServiceChannel = companyServiceChannel;
@@ -116,10 +113,10 @@ public class ProjectServiceImpl implements ProjectService {
         Set<Skill> skills = Set.of();
 
         if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            skills = new HashSet<>(skillRepository.findAllById(request.getSkillIds()));
+            skills = new HashSet<>(skillRepository.findAllByIdInAndIsDeleted(request.getSkillIds(), false));
 
             if (skills.size() != request.getSkillIds().size()) {
-                throw new BusinessException("Có một số kỹ năng không tồn tại");
+                throw new BusinessException("Có một số kỹ năng không tồn tại hoặc đã bị xóa");
             }
         }
 
