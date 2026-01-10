@@ -10,4 +10,5 @@ public class UpdateSkillRequest {
     @NotBlank(message = "Tên kỹ năng không được để trống")
     private String name;
     private String description;
+    private Boolean isDeleted;
 }
