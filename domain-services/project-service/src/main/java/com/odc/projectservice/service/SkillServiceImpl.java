@@ -62,11 +62,13 @@ public class SkillServiceImpl implements SkillService {
 
         skill.setName(request.getName());
         skill.setDescription(request.getDescription());
+        skill.setIsDeleted(request.getIsDeleted());
         Skill updatedSkill = skillRepository.save(skill);
         SkillResponse skillResponse = SkillResponse.builder()
                 .id(updatedSkill.getId())
                 .name(updatedSkill.getName())
                 .description(updatedSkill.getDescription())
+                .isDeleted(!updatedSkill.getIsDeleted())
                 .build();
         return ApiResponse.success("Cập nhật kỹ năng thành công", skillResponse);
     }
@@ -149,6 +151,7 @@ public class SkillServiceImpl implements SkillService {
                 .id(skill.getId())
                 .name(skill.getName())
                 .description(skill.getDescription())
+                .isDeleted(skill.getIsDeleted())
                 .build();
     }
 }

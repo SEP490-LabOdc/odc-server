@@ -13,4 +13,5 @@ public class SkillResponse {
     private UUID id;
     private String name;
     private String description;
+    private Boolean isDeleted;
 }
