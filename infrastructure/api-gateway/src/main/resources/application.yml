@@ -220,6 +220,14 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Operation Service
+        - id: update-request-service
+          uri: lb://operation-service
+          predicates:
+            - Path=/api/v1/update-requests/**
+          filters:
+            - StripPrefix=0
+
         # Email Service
         - id: email-service
           uri: lb://email-service
