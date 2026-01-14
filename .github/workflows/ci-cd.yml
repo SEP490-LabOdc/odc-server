@@ -33,6 +33,8 @@ jobs:
               - 'domain-services/notification-service/**'
             checklist-service:
               - 'domain-services/checklist-service/**'
+            operation-service:
+              - 'domain-services/operation-service/**'
             email-service:
               - 'infrastructure/email-service/**'
             api-gateway:
@@ -62,6 +64,7 @@ jobs:
           if [ "${{ matrix.service }}" = "company-service" ]; then echo "path=domain-services/company-service" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "project-service" ]; then echo "path=domain-services/project-service" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "payment-service" ]; then echo "path=domain-services/payment-service" >> $GITHUB_OUTPUT; fi
+          if [ "${{ matrix.service }}" = "operation-service" ]; then echo "path=domain-services/operation-service" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "notification-service" ]; then echo "path=domain-services/notification-service" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "checklist-service" ]; then echo "path=domain-services/checklist-service" >> $GITHUB_OUTPUT; fi
           if [ "${{ matrix.service }}" = "email-service" ]; then echo "path=infrastructure/email-service" >> $GITHUB_OUTPUT; fi
