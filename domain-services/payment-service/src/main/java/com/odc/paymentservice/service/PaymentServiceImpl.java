@@ -165,10 +165,10 @@ public class PaymentServiceImpl implements PaymentService {
         walletRepository.save(userWallet);
 
         // Lưu Transaction DEBIT cho Company (Để Company thấy tiền bị trừ)
-        createTransaction(userWallet, amount, "MILESTONE_PAYMENT", "DEBIT",
+        createTransaction(userWallet, amount, PaymentConstant.MILESTONE_PAYMENT, PaymentConstant.DEBIT,
                 "Thanh toán cho Milestone: " + milestone.getTitle(),
-                UUID.fromString(milestone.getId()), "MILESTONE",
-                UUID.fromString(milestone.getProjectId()), UUID.fromString(milestone.getId()), null, null);
+                UUID.fromString(milestone.getId()), PaymentConstant.MILESTONE,
+                UUID.fromString(milestone.getProjectId()), UUID.fromString(milestone.getId()), null, userId);
 
         // Cộng tiền ví System (Giữ tiền)
 //        Wallet systemWallet = getOrCreateSystemWallet();
@@ -191,11 +191,11 @@ public class PaymentServiceImpl implements PaymentService {
         createTransaction(
                 milestoneWallet,
                 amount,
-                "MILESTONE_PAYMENT_RECEIVED",
-                "CREDIT",
+                PaymentConstant.MILESTONE_PAYMENT,
+                PaymentConstant.CREDIT,
                 "Nhận tiền thanh toán milestone",
                 milestoneId,
-                "MILESTONE",
+                PaymentConstant.MILESTONE,
                 UUID.fromString(milestone.getProjectId()),
                 milestoneId,
                 null,
