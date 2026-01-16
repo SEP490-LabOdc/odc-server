@@ -61,6 +61,11 @@ public class CompanyController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @GetMapping("/public")
+    public ResponseEntity<ApiResponse<List<PublicCompanyResponse>>> getAllPublicCompanies() {
+        return ResponseEntity.ok(companyService.getAllPublicCompanies());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<GetCompanyByIdResponse>> getCompanyById(@PathVariable UUID id) {
         ApiResponse<GetCompanyByIdResponse> response = companyService.getCompanyById(id);

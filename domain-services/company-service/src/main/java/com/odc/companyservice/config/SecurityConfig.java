@@ -31,6 +31,7 @@ public class SecurityConfig {
     };
     private static final String[] GET_PERMIT_PATHS = {
             "/api/v1/companies",
+            "/api/v1/companies/public",
             "/api/v1/companies/public/**"
     };
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
