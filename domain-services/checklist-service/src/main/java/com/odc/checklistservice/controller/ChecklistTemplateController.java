@@ -29,13 +29,16 @@ public class ChecklistTemplateController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<ApiResponse<?>> universalSearchChecklistTemplate(@RequestBody SearchRequest request) {
+    public ResponseEntity<ApiResponse<?>> universalSearchChecklistTemplate(
+            @RequestBody SearchRequest request,
+            @RequestParam(required = false, defaultValue = "false")
+            Boolean includeDeletedItems) {
         boolean isPaginated = request.getPage() != null && request.getSize() != null;
         if (isPaginated) {
-            return ResponseEntity.ok(checklistTemplateService.searchChecklistTemplatesWithPagination(request));
+            return ResponseEntity.ok(checklistTemplateService.searchChecklistTemplatesWithPagination(request, includeDeletedItems));
         }
 
-        return ResponseEntity.ok(checklistTemplateService.searchAllChecklistTemplates(request));
+        return ResponseEntity.ok(checklistTemplateService.searchAllChecklistTemplates(request, includeDeletedItems));
     }
 
     @GetMapping("/{id}")
