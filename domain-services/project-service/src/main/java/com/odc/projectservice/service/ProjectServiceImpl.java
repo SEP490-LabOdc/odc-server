@@ -1216,7 +1216,7 @@ public class ProjectServiceImpl implements ProjectService {
         GetCompanyByIdResponse companyResponse = companyStub.getCompanyById(companyRequest);
 
         List<Project> projectList = projectRepository
-                .findByCompanyIdOrderByUpdatedAtDesc(companyId);
+                .findByCompanyIdAndIsOpenForApplicationsOrderByUpdatedAtDesc(companyId, true);
 
         List<GetProjectResponse> projects = projectList.stream()
                 .map(this::convertToCompanyProjectResponse)
