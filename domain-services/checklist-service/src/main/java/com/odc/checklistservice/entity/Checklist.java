@@ -5,6 +5,7 @@ import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,5 +36,5 @@ public class Checklist extends BaseEntity {
     private String notes;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<ChecklistItem> items;
+    private List<ChecklistItem> items = new ArrayList<>();;
 }

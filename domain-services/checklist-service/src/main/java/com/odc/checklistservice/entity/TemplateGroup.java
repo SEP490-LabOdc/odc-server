@@ -4,6 +4,7 @@ import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -27,5 +28,5 @@ public class TemplateGroup extends BaseEntity {
 
     // Mối quan hệ One-to-Many: Một group có nhiều item
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<TemplateItem> items;
+    private List<TemplateItem> items = new ArrayList<>();;
 }
