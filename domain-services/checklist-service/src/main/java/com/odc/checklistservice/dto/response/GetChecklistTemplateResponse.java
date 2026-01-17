@@ -33,5 +33,6 @@ public class GetChecklistTemplateResponse {
         private String content;
         private int displayOrder;
         private boolean isRequired;
+        private Boolean isDeleted;
     }
 }

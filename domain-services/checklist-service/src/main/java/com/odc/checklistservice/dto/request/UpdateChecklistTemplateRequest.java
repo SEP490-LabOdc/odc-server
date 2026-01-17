@@ -29,5 +29,6 @@ public class UpdateChecklistTemplateRequest {
         private String content;
         private int displayOrder;
         private boolean isRequired;
+        private Boolean isDeleted;
     }
 }

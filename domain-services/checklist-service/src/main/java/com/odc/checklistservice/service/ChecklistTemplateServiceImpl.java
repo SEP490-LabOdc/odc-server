@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -82,37 +83,17 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
     @Override
     @Transactional
     public ApiResponse<UUID> updateChecklistTemplate(UUID id, UpdateChecklistTemplateRequest request) {
-        ChecklistTemplate existingTemplate = templateRepository.findById(id)
+
+        ChecklistTemplate template = templateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy template với ID: " + id));
 
-        existingTemplate.setName(request.getName());
-        existingTemplate.setDescription(request.getDescription());
+        template.setName(request.getName());
+        template.setDescription(request.getDescription());
 
-        existingTemplate.getGroups().clear();
+        updateGroups(template, request.getGroups());
 
-        if (request.getGroups() != null) {
-            for (UpdateChecklistTemplateRequest.GroupRequest groupRequest : request.getGroups()) {
-                TemplateGroup newGroup = new TemplateGroup();
-                newGroup.setTitle(groupRequest.getTitle());
-                newGroup.setDisplayOrder(groupRequest.getDisplayOrder());
-                newGroup.setTemplate(existingTemplate);
-
-                if (groupRequest.getItems() != null) {
-                    for (UpdateChecklistTemplateRequest.ItemRequest itemRequest : groupRequest.getItems()) {
-                        TemplateItem newItem = new TemplateItem();
-                        newItem.setContent(itemRequest.getContent());
-                        newItem.setDisplayOrder(itemRequest.getDisplayOrder());
-                        newItem.setIsRequired(itemRequest.isRequired());
-                        newItem.setGroup(newGroup);
-                        newGroup.getItems().add(newItem);
-                    }
-                }
-                existingTemplate.getGroups().add(newGroup);
-            }
-        }
-
-        ChecklistTemplate updatedTemplate = templateRepository.save(existingTemplate);
-        return ApiResponse.success("Cập nhật checklist template thành công.", updatedTemplate.getId());
+        templateRepository.save(template);
+        return ApiResponse.success("Cập nhật checklist template thành công", template.getId());
     }
 
     @Override
@@ -191,6 +172,7 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
                         itemResponse.setContent(item.getContent());
                         itemResponse.setDisplayOrder(item.getDisplayOrder());
                         itemResponse.setRequired(item.getIsRequired());
+                        itemResponse.setIsDeleted(item.getIsDeleted());
                         return itemResponse;
                     }).collect(Collectors.toList()));
                 }
@@ -199,4 +181,106 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
         }
         return response;
     }
+
+    private void updateGroups(
+            ChecklistTemplate template,
+            List<UpdateChecklistTemplateRequest.GroupRequest> groupRequests) {
+
+        Map<UUID, TemplateGroup> existingGroups =
+                template.getGroups().stream()
+                        .filter(g -> !g.getIsDeleted())
+                        .collect(Collectors.toMap(TemplateGroup::getId, g -> g));
+
+        List<TemplateGroup> updatedGroups = new ArrayList<>();
+
+        for (var groupReq : groupRequests) {
+
+            TemplateGroup group;
+
+            if (groupReq.getId() != null) {
+                // UPDATE
+                group = existingGroups.get(groupReq.getId());
+                if (group == null) {
+                    throw new IllegalStateException("Group không tồn tại: " + groupReq.getId());
+                }
+
+                group.setTitle(groupReq.getTitle());
+                group.setDisplayOrder(groupReq.getDisplayOrder());
+
+            } else {
+                // CREATE
+                group = new TemplateGroup();
+                group.setTemplate(template);
+                group.setTitle(groupReq.getTitle());
+                group.setDisplayOrder(groupReq.getDisplayOrder());
+            }
+
+            updateItems(group, groupReq.getItems());
+            updatedGroups.add(group);
+        }
+
+        // Soft delete group bị remove
+        template.getGroups().forEach(group -> {
+            if (!updatedGroups.contains(group)) {
+                group.setIsDeleted(true);
+            }
+        });
+
+        template.getGroups().addAll(
+                updatedGroups.stream()
+                        .filter(g -> !template.getGroups().contains(g))
+                        .toList()
+        );
+    }
+
+    private void updateItems(
+            TemplateGroup group,
+            List<UpdateChecklistTemplateRequest.ItemRequest> itemRequests) {
+
+        Map<UUID, TemplateItem> existingItems =
+                group.getItems().stream()
+                        .collect(Collectors.toMap(TemplateItem::getId, i -> i));
+
+        for (var itemReq : itemRequests) {
+
+            // FE đánh dấu delete
+            if (Boolean.TRUE.equals(itemReq.getIsDeleted())) {
+
+                if (itemReq.getId() != null) {
+                    TemplateItem item = existingItems.get(itemReq.getId());
+                    if (item != null) {
+                        item.setIsDeleted(true);
+                    }
+                }
+
+                // item mới nhưng delete → bỏ qua
+                continue;
+            }
+
+            // CREATE
+            if (itemReq.getId() == null) {
+                TemplateItem item = new TemplateItem();
+                item.setGroup(group);
+                item.setContent(itemReq.getContent());
+                item.setDisplayOrder(itemReq.getDisplayOrder());
+                item.setIsRequired(itemReq.isRequired());
+                item.setIsDeleted(false);
+
+                group.getItems().add(item);
+                continue;
+            }
+
+            // UPDATE
+            TemplateItem item = existingItems.get(itemReq.getId());
+            if (item == null) {
+                throw new IllegalStateException("Item không tồn tại: " + itemReq.getId());
+            }
+
+            item.setContent(itemReq.getContent());
+            item.setDisplayOrder(itemReq.getDisplayOrder());
+            item.setIsRequired(itemReq.isRequired());
+            item.setIsDeleted(false);
+        }
+    }
+
 }
