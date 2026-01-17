@@ -25,6 +25,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
 
     List<Project> findByCompanyIdOrderByUpdatedAtDesc(UUID companyId);
 
+    List<Project> findByCompanyIdAndIsOpenForApplicationsOrderByUpdatedAtDesc(UUID companyId, Boolean isOpenForApplications);
+
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN p.skills s " +
             "WHERE s.id IN :skillIds " +
