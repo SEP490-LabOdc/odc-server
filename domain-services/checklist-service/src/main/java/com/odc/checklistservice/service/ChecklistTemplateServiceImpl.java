@@ -41,7 +41,7 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
     }
 
     @Override
-    public ApiResponse<List<GetChecklistTemplateResponse>> searchAllChecklistTemplates(SearchRequest request) {
+    public ApiResponse<List<GetChecklistTemplateResponse>> searchAllChecklistTemplates(SearchRequest request, Boolean includeDeletedItems) {
         Specification<ChecklistTemplate> specification = new GenericSpecification<>(request.getFilters());
 
         List<Sort.Order> orders = new ArrayList<>();
@@ -55,12 +55,12 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
         return ApiResponse.success(templateRepository
                 .findAll(specification, sort)
                 .stream()
-                .map(this::mapEntityToGetResponseDto)
+                .map(x -> mapEntityToGetResponseDto(x, includeDeletedItems))
                 .toList());
     }
 
     @Override
-    public ApiResponse<PaginatedResult<GetChecklistTemplateResponse>> searchChecklistTemplatesWithPagination(SearchRequest request) {
+    public ApiResponse<PaginatedResult<GetChecklistTemplateResponse>> searchChecklistTemplatesWithPagination(SearchRequest request, Boolean includeDeletedItems) {
         Specification<ChecklistTemplate> specification = new GenericSpecification<>(request.getFilters());
 
         List<Sort.Order> orders = new ArrayList<>();
@@ -75,7 +75,7 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
 
         Page<GetChecklistTemplateResponse> page = templateRepository
                 .findAll(specification, pageable)
-                .map(this::mapEntityToGetResponseDto);
+                .map(x -> mapEntityToGetResponseDto(x, includeDeletedItems));
 
         return ApiResponse.success(PaginatedResult.from(page));
     }
@@ -179,6 +179,58 @@ public class ChecklistTemplateServiceImpl implements ChecklistTemplateService {
                 return groupResponse;
             }).collect(Collectors.toList()));
         }
+        return response;
+    }
+
+    private GetChecklistTemplateResponse mapEntityToGetResponseDto(
+            ChecklistTemplate entity,
+            boolean includeDeletedItems
+    ) {
+        GetChecklistTemplateResponse response = new GetChecklistTemplateResponse();
+        response.setId(entity.getId());
+        response.setName(entity.getName());
+        response.setDescription(entity.getDescription());
+        response.setEntityType(entity.getEntityType());
+        response.setCreatedAt(entity.getCreatedAt());
+
+        if (entity.getGroups() != null) {
+            response.setGroups(
+                    entity.getGroups().stream()
+                            .map(group -> {
+                                GetChecklistTemplateResponse.GroupResponse groupResponse =
+                                        new GetChecklistTemplateResponse.GroupResponse();
+
+                                groupResponse.setId(group.getId());
+                                groupResponse.setTitle(group.getTitle());
+                                groupResponse.setDisplayOrder(group.getDisplayOrder());
+
+                                if (group.getItems() != null) {
+                                    groupResponse.setItems(
+                                            group.getItems().stream()
+                                                    .filter(item ->
+                                                            includeDeletedItems ||
+                                                                    Boolean.FALSE.equals(item.getIsDeleted())
+                                                    )
+                                                    .map(item -> {
+                                                        GetChecklistTemplateResponse.ItemResponse itemResponse =
+                                                                new GetChecklistTemplateResponse.ItemResponse();
+                                                        itemResponse.setId(item.getId());
+                                                        itemResponse.setContent(item.getContent());
+                                                        itemResponse.setDisplayOrder(item.getDisplayOrder());
+                                                        itemResponse.setRequired(item.getIsRequired());
+                                                        itemResponse.setIsDeleted(item.getIsDeleted());
+                                                        return itemResponse;
+                                                    })
+                                                    .toList()
+                                    );
+                                }
+
+                                return groupResponse;
+                            })
+                            .toList()
+            );
+        }
+
         return response;
     }
 

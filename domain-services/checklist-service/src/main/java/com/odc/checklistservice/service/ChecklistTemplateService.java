@@ -19,7 +19,7 @@ public interface ChecklistTemplateService {
 
     ApiResponse<GetChecklistTemplateResponse> getChecklistTemplateById(UUID id);
 
-    ApiResponse<List<GetChecklistTemplateResponse>> searchAllChecklistTemplates(SearchRequest request);
+    ApiResponse<List<GetChecklistTemplateResponse>> searchAllChecklistTemplates(SearchRequest request, Boolean includeDeletedItems);
 
-    ApiResponse<PaginatedResult<GetChecklistTemplateResponse>> searchChecklistTemplatesWithPagination(SearchRequest request);
+    ApiResponse<PaginatedResult<GetChecklistTemplateResponse>> searchChecklistTemplatesWithPagination(SearchRequest request, Boolean includeDeletedItems);
 }
