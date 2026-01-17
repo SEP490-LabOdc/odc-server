@@ -33,6 +33,22 @@ public class UpdateRequest extends BaseEntity {
     @Column(name = "change_data", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> changeData;
 
+    /**
+     * Snapshot entity BEFORE update
+     * Set when target service responds snapshot event
+     */
+    @Type(JsonBinaryType.class)
+    @Column(name = "before_data", columnDefinition = "jsonb")
+    private Map<String, Object> beforeData;
+
+    /**
+     * Snapshot entity AFTER update
+     * Set after approve & update success
+     */
+    @Type(JsonBinaryType.class)
+    @Column(name = "after_data", columnDefinition = "jsonb")
+    private Map<String, Object> afterData;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     private UpdateRequestStatus status;

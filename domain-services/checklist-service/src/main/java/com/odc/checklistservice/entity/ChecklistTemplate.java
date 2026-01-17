@@ -4,6 +4,7 @@ import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -26,5 +27,5 @@ public class ChecklistTemplate extends BaseEntity {
     // Cascade.ALL: Khi xóa template, các item con cũng bị xóa.
     // orphanRemoval = true: Khi xóa một item khỏi list, nó cũng bị xóa khỏi DB.
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<TemplateGroup> groups;
+    private List<TemplateGroup> groups = new ArrayList<>();;
 }

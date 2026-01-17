@@ -50,6 +50,7 @@ public class SecurityConfig {
             "/api/v1/skills/**",
             "/api/v1/projects/*/related",
             "/api/v1/projects/companies/**",
+            "/api/v1/companies/public",
             "/api/v1/companies/public/**"
     };
     private static final String[] POST_PERMIT_PATHS = {
