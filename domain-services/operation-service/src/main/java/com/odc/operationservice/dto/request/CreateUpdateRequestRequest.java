@@ -11,7 +11,6 @@ import java.util.UUID;
 @Data
 public class CreateUpdateRequestRequest {
 
-    @NotBlank
     private UpdateRequestType requestType;
 
     @NotNull
