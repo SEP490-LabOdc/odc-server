@@ -11,7 +11,11 @@ import java.util.UUID;
 @Repository
 public interface UpdateRequestRepository extends JpaRepository<UpdateRequest, UUID>, JpaSpecificationExecutor<UpdateRequest> {
 
-    @Query(value = "SELECT LPAD(nextval('update_request_code_seq')::text, 8, '0')", nativeQuery = true)
+    @Query(
+            value = "SELECT LPAD(CAST(nextval('update_request_code_seq') AS text), 8, '0')",
+            nativeQuery = true
+    )
     String generateNextCode();
+
 }
 
