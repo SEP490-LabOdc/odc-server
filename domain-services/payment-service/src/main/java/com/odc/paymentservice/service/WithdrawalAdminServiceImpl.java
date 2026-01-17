@@ -117,7 +117,7 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
                 .direction(PaymentConstant.CREDIT)
                 .description("Hoàn tiền do từ chối rút")
                 .refId(wr.getId())
-                .refType(PaymentConstant.WITHDRAWAL)
+                .refType(PaymentConstant.WITHDRAWAL_REQUEST)
                 .status(Status.SUCCESS.toString())
                 .balanceAfter(wallet.getBalance())
                 .build();

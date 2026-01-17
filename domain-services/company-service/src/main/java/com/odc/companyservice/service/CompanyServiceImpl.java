@@ -226,6 +226,25 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
+    public ApiResponse<List<PublicCompanyResponse>> getAllPublicCompanies() {
+        // 1. Fetch all companies (You might want to filter by Status.ACTIVE directly in Repository for better performance)
+        List<Company> companies = companyRepository.findAll();
+
+        // 2. Filter for ACTIVE status and Map to Public DTO
+        List<PublicCompanyResponse> publicCompanies = companies.stream()
+                .filter(c -> Status.ACTIVE.toString().equalsIgnoreCase(c.getStatus())) // Only show Active companies
+                .map(this::mapToPublicResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<PublicCompanyResponse>>builder()
+                .success(true)
+                .message("Successfully retrieved all public companies")
+                .data(publicCompanies)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @Override
     public ApiResponse<GetCompanyByIdResponse> getCompanyById(UUID id) {
         // 1. Tìm công ty theo ID, nếu không thấy thì ném lỗi ResourceNotFoundException
         Company company = companyRepository.findById(id)
@@ -739,6 +758,21 @@ public class CompanyServiceImpl implements CompanyService {
                                         .build())
                                 .toList()
                 )
+                .build();
+    }
+
+    private PublicCompanyResponse mapToPublicResponse(Company company) {
+        return PublicCompanyResponse.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .email(company.getEmail())
+                .phone(company.getPhone())
+                .address(company.getAddress())
+                .description(company.getDescription())
+                .logo(company.getLogo())
+                .banner(company.getBanner())
+                .website(company.getWebsite())
+                .domain(company.getDomain())
                 .build();
     }
 }

@@ -20,6 +20,8 @@ public interface CompanyService {
 
     ApiResponse<List<CompanyResponse>> getAllCompanies();
 
+    ApiResponse<List<PublicCompanyResponse>> getAllPublicCompanies();
+
     ApiResponse<GetCompanyByIdResponse> getCompanyById(UUID id);
 
     ApiResponse<PublicCompanyResponse> getPublicCompanyById(UUID id);

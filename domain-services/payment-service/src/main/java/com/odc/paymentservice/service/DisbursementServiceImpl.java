@@ -121,7 +121,7 @@ public class DisbursementServiceImpl implements DisbursementService {
     @Override
     public ApiResponse<Map<String, String>> calculateDisbursement(CreateDisbursementRequest request) {
         SystemConfig systemConfig = systemConfigRepository
-                .findByName("fee-distribution")
+                .findByName(PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy cấu hình fee-distribution"));
 
         Map<String, Object> properties = systemConfig.getProperties();
@@ -178,24 +178,24 @@ public class DisbursementServiceImpl implements DisbursementService {
         Wallet systemFeeWallet = getOrCreateSystemWallet();
         systemFeeWallet.setBalance(systemFeeWallet.getBalance().add(disbursement.getSystemFee()));
 
-        createTransaction(systemFeeWallet, disbursement.getSystemFee(), "CREDIT", "DISBURSEMENT_IN",
-                "Nhận phí hệ thống từ giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
+        createTransaction(systemFeeWallet, disbursement.getSystemFee(), PaymentConstant.SYSTEM_FEE, PaymentConstant.CREDIT,
+                "Nhận phí hệ thống từ giải ngân Milestone", disbursement.getId(), PaymentConstant.DISBURSEMENT,
                 disbursement.getProjectId(), disbursement.getMilestoneId());
 
         // Add mentor amount to team mentor wallet
         Wallet teamMentorWallet = getOrCreateTeamWallet(disbursement.getMilestoneId(), "TEAM_MENTOR");
         teamMentorWallet.setBalance(teamMentorWallet.getBalance().add(disbursement.getMentorAmount()));
 
-        createTransaction(teamMentorWallet, disbursement.getMentorAmount(), "CREDIT", "DISBURSEMENT_IN",
-                "Nhận tiền giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
+        createTransaction(teamMentorWallet, disbursement.getMentorAmount(), PaymentConstant.DISBURSEMENT, PaymentConstant.CREDIT,
+                "Nhận tiền giải ngân Milestone", disbursement.getId(), PaymentConstant.DISBURSEMENT,
                 disbursement.getProjectId(), disbursement.getMilestoneId());
 
         // Add talent amount to team talent wallet
         Wallet teamTalentWallet = getOrCreateTeamWallet(disbursement.getMilestoneId(), "TEAM_TALENT");
         teamTalentWallet.setBalance(teamTalentWallet.getBalance().add(disbursement.getTalentAmount()));
 
-        createTransaction(teamTalentWallet, disbursement.getTalentAmount(), "CREDIT", "DISBURSEMENT_IN",
-                "Nhận tiền giải ngân Milestone", disbursement.getId(), "DISBURSEMENT",
+        createTransaction(teamTalentWallet, disbursement.getTalentAmount(), PaymentConstant.DISBURSEMENT, PaymentConstant.CREDIT,
+                "Nhận tiền giải ngân Milestone", disbursement.getId(), PaymentConstant.DISBURSEMENT,
                 disbursement.getProjectId(), disbursement.getMilestoneId());
 
         disbursement.setStatus(Status.COMPLETED.toString());
@@ -311,12 +311,12 @@ public class DisbursementServiceImpl implements DisbursementService {
         createTransaction(
                 sourceWallet,
                 totalOut,
-                "DISBURSEMENT_DISTRIBUTION",
+                PaymentConstant.ALLOCATION,
                 PaymentConstant.DEBIT,
                 "Phân bổ tiền cho thành viên",
                 userId,
-                "MILESTONE",
-                null,
+                PaymentConstant.MILESTONE,
+                disbursement.getProjectId(),
                 milestoneId
         );
 
@@ -339,12 +339,12 @@ public class DisbursementServiceImpl implements DisbursementService {
             createTransaction(
                     memberWallet,
                     amount,
-                    "DISBURSEMENT_RECEIVED",
+                    PaymentConstant.ALLOCATION,
                     PaymentConstant.CREDIT,
                     "Nhận tiền phân bổ từ cột mốc",
-                    milestoneId,
-                    "MILESTONE",
-                    null,
+                    memberId,
+                    PaymentConstant.DISBURSEMENT,
+                    disbursement.getProjectId(),
                     milestoneId
             );
         }
