@@ -8,5 +8,6 @@ public enum ProjectMilestoneStatus {
     PENDING_COMPLETED,
     COMPLETED,
     UPDATE_COMPLETED,
-    PAID
+    PAID,
+    DISTRIBUTED
 }
