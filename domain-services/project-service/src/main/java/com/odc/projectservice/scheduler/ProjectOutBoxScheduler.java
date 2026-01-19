@@ -48,13 +48,9 @@ public class ProjectOutBoxScheduler {
                 ProjectEventLog eventLog = new ProjectEventLog();
                 eventLog.setEventType(outbox.getEventType());
                 eventLog.setEventId(UUID.fromString(outbox.getEventId()));
-                eventLog.setSourceService("operation-service");
                 eventLog.setPayload(outbox.getPayload());
                 eventLog.setReceivedAt(Instant.now());
-                eventLogRepository.save(
-                        ProjectEventLog.builder()
-                                .build()
-                );
+                eventLogRepository.save(eventLog);
 
             } catch (Exception ex) {
                 log.error("Failed to publish event id={}", outbox.getEventId(), ex);
