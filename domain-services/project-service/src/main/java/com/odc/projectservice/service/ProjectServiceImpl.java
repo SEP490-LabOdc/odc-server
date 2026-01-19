@@ -238,7 +238,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .setTitle("Project Updated - Awaiting Review")
                 .setContent("Project titled \"" + updatedProject.getTitle() + "\" has been updated by the company user and is awaiting review.")
                 .putAllData(dataMap)
-                .setDeepLink("/review-project?id=" + updatedProject.getId())
+                .setDeepLink("/lab-admin/projects/" + updatedProject.getId())
                 .setPriority("HIGH")
                 .setTarget(target)
                 .addAllChannels(List.of(Channel.WEB))
