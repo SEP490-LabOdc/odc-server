@@ -210,7 +210,7 @@ public class ProjectServiceImpl implements ProjectService {
         existingProject.setTitle(request.getTitle());
         existingProject.setDescription(request.getDescription());
         existingProject.setBudget(request.getBudget());
-        // TODO: BUDGET <> REMAINING BUDGET
+        existingProject.setRemainingBudget(request.getBudget());
         existingProject.setSkills(skills);
         existingProject.setStatus(ProjectStatus.PENDING.toString());
         existingProject.setStartDate(request.getStartDate());
