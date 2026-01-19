@@ -22,6 +22,7 @@ import com.odc.projectservice.repository.ProjectOutBoxRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<Void> addBatchProjectMembers(AddBatchProjectMembersRequest request) {
         UUID projectId = request.getProjectId();
         List<UUID> userIds = request.getUserIds();
@@ -143,7 +145,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             ProjectOutBox outbox = ProjectOutBox.builder()
                     .build();
 
-            outbox.setEventType("NOTIFICATION_EVENT");
+            outbox.setEventType("notifications");
             outbox.setEventId(event.getId());
             outbox.setPayload(event.toByteArray());
             outbox.setProcessed(false);
