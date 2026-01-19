@@ -5,21 +5,29 @@ import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.notification.v1.Channel;
+import com.odc.notification.v1.NotificationEvent;
+import com.odc.notification.v1.Target;
+import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.AddBatchProjectMembersRequest;
 import com.odc.projectservice.dto.response.GetProjectMemberByProjectIdResponse;
 import com.odc.projectservice.dto.response.MentorResponse;
 import com.odc.projectservice.entity.MilestoneMember;
 import com.odc.projectservice.entity.Project;
 import com.odc.projectservice.entity.ProjectMember;
+import com.odc.projectservice.entity.ProjectOutBox;
 import com.odc.projectservice.repository.MilestoneMemberRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
+import com.odc.projectservice.repository.ProjectOutBoxRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,19 +40,23 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final ProjectRepository projectRepository;
     private final MilestoneMemberRepository milestoneMemberRepository;
     private final ManagedChannel userServiceChannel;
+    private final ProjectOutBoxRepository projectOutBoxRepository;
 
     public ProjectMemberServiceImpl(
             ProjectMemberRepository projectMemberRepository,
             ProjectRepository projectRepository,
             MilestoneMemberRepository milestoneMemberRepository,
+            ProjectOutBoxRepository projectOutBoxRepository,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel) {
         this.projectMemberRepository = projectMemberRepository;
         this.projectRepository = projectRepository;
         this.milestoneMemberRepository = milestoneMemberRepository;
         this.userServiceChannel = userServiceChannel;
+        this.projectOutBoxRepository = projectOutBoxRepository;
     }
 
     @Override
+    @Transactional
     public ApiResponse<Void> addBatchProjectMembers(AddBatchProjectMembersRequest request) {
         UUID projectId = request.getProjectId();
         List<UUID> userIds = request.getUserIds();
@@ -85,6 +97,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 });
 
         List<ProjectMember> projectMemberList = new ArrayList<>();
+        List<ProjectOutBox> projectOutBoxList = new ArrayList<>();
         for (UUID userId : userIds) {
             long projectCount = projectMemberRepository.countByUserId(userId);
             if (projectCount >= 2) {
@@ -104,9 +117,51 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
             projectMemberList.add(projectMember);
             log.info("Đã thêm mentor {} vào dự án {}", userId, projectId);
+
+            NotificationEvent event = NotificationEvent.newBuilder()
+                    .setId(UUID.randomUUID().toString())
+                    .setType("PROJECT_MEMBER_ADDED")
+                    .setTitle("Bạn đã được thêm vào một dự án mới")
+                    .setContent("Bạn đã được thêm vào dự án \"" + project.getTitle() + "\" với vai trò Mentor.")
+                    .putData("projectId", project.getId().toString())
+                    .putData("projectName", project.getTitle())
+                    .setDeepLink("/mentor/projects/" + project.getId())
+                    .setPriority("HIGH")
+                    .setCategory("PROJECT_MEMBER")
+                    .setCreatedAt(Instant.now().toEpochMilli())
+                    .setTarget(
+                            Target.newBuilder()
+                                    .setUser(
+                                            UserTarget.newBuilder()
+                                                    .addUserIds(userId.toString())
+                                                    .build()
+                                    )
+                                    .build()
+                    )
+                    .addChannels(Channel.WEB)
+                    .addChannels(Channel.MOBILE)
+                    .build();
+
+            ProjectOutBox outbox = ProjectOutBox.builder()
+                    .build();
+
+            outbox.setEventType("notifications");
+            outbox.setEventId(event.getId());
+            outbox.setPayload(event.toByteArray());
+            outbox.setProcessed(false);
+
+            projectOutBoxList.add(outbox);
+            log.info(
+                    "[OUTBOX_CREATED] eventType={}, eventId={}, aggregate=PROJECT, projectId={}, targetUser={}",
+                    "NOTIFICATION_EVENT",
+                    event.getId(),
+                    projectId,
+                    userId
+            );
         }
 
         projectMemberRepository.saveAll(projectMemberList);
+        projectOutBoxRepository.saveAll(projectOutBoxList);
 
         long totalMentorCount = projectMemberRepository.countMentorsInProject(projectId, Role.MENTOR.toString());
         if (totalMentorCount >= 1 && totalMentorCount <= 2) {
