@@ -1,22 +1,23 @@
 package com.odc.paymentservice.service;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.paymentservice.dto.response.TransactionResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
 public interface TransactionService {
-    ApiResponse<Page<TransactionResponse>> getTransactionsByProjectId(
+    ApiResponse<PaginatedResult<TransactionResponse>> getTransactionsByProjectId(
             UUID projectId,
-            Pageable pageable
-    );
+            Integer page,
+            Integer size);
 
     ApiResponse<TransactionResponse> getTransactionDetail(UUID transactionId);
 
-    ApiResponse<Page<TransactionResponse>> getAllTransactions(Pageable pageable);
+    ApiResponse<PaginatedResult<TransactionResponse>> getAllTransactions(Integer page,
+                                                                         Integer size);
 
-    ApiResponse<Page<TransactionResponse>> getMyTransactions(Pageable pageable);
+    ApiResponse<PaginatedResult<TransactionResponse>> getMyTransactions(Integer page,
+                                                                        Integer size);
 
 }

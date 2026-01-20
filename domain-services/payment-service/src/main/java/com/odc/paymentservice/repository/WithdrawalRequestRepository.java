@@ -20,6 +20,15 @@ public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalReq
                 where (:status is null or wr.status = :status)
                   and (cast(:from as timestamp) is null or wr.createdAt >= :from)
                   and (cast(:to as timestamp) is null or wr.createdAt <= :to)
+                order by
+                    case wr.status
+                        when 'PENDING' then 1
+                        when 'APPROVED' then 2
+                        when 'COMPLETED' then 3
+                        when 'REJECTED' then 4
+                        else 5
+                    end,
+                    wr.createdAt desc
             """)
     Page<WithdrawalRequest> search(
             @Param("status") String status,
@@ -27,5 +36,6 @@ public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalReq
             @Param("to") LocalDateTime to,
             Pageable pageable
     );
+
 
 }

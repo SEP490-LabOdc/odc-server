@@ -1,6 +1,7 @@
 package com.odc.paymentservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.paymentservice.dto.response.TransactionResponse;
 import com.odc.paymentservice.service.TransactionService;
 import lombok.RequiredArgsConstructor;
@@ -24,72 +25,42 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getTransactionsByProjectId(
+    public ResponseEntity<ApiResponse<PaginatedResult<TransactionResponse>>> getTransactionsByProjectId(
             @PathVariable UUID projectId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir) {
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
-        Sort sort = sortDir.equalsIgnoreCase("ASC")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        ApiResponse<Page<TransactionResponse>> response =
-                transactionService.getTransactionsByProjectId(projectId, pageable);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(
+                transactionService.getTransactionsByProjectId(projectId, page, size)
+        );
     }
 
     @GetMapping("/{transactionId}")
     public ResponseEntity<ApiResponse<TransactionResponse>> getTransactionDetail(
             @PathVariable UUID transactionId) {
 
-        ApiResponse<TransactionResponse> response =
-                transactionService.getTransactionDetail(transactionId);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(
+                transactionService.getTransactionDetail(transactionId)
+        );
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getAllTransactions(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir) {
+    public ResponseEntity<ApiResponse<PaginatedResult<TransactionResponse>>> getAllTransactions(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
-        Sort sort = sortDir.equalsIgnoreCase("ASC")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        ApiResponse<Page<TransactionResponse>> response =
-                transactionService.getAllTransactions(pageable);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(
+                transactionService.getAllTransactions(page, size)
+        );
     }
 
     @GetMapping("/my-transactions")
-    public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getMyTransactions(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir
-    ) {
+    public ResponseEntity<ApiResponse<PaginatedResult<TransactionResponse>>> getMyTransactions(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
-        Sort sort = sortDir.equalsIgnoreCase("ASC")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        ApiResponse<Page<TransactionResponse>> response =
-                transactionService.getMyTransactions(pageable);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(
+                transactionService.getMyTransactions(page, size)
+        );
     }
-
 }

@@ -1,13 +1,13 @@
 package com.odc.paymentservice.controller;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.paymentservice.dto.request.AdminHandleWithdrawalRequest;
 import com.odc.paymentservice.dto.request.WithdrawalFilterRequest;
 import com.odc.paymentservice.dto.response.WithdrawalResponse;
 import com.odc.paymentservice.service.WithdrawalAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class WithdrawalAdminController {
     private final WithdrawalAdminService withdrawalAdminService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<WithdrawalResponse>>> list(WithdrawalFilterRequest filter) {
+    public ResponseEntity<ApiResponse<PaginatedResult<WithdrawalResponse>>> list(WithdrawalFilterRequest filter) {
         return ResponseEntity.ok(withdrawalAdminService.list(filter));
     }
 
