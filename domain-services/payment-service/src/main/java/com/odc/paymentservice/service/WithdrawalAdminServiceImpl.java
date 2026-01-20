@@ -3,6 +3,7 @@ package com.odc.paymentservice.service;
 import com.odc.common.constant.PaymentConstant;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.request.AdminHandleWithdrawalRequest;
 import com.odc.paymentservice.dto.request.WithdrawalFilterRequest;
@@ -33,13 +34,22 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<WithdrawalResponse>> list(WithdrawalFilterRequest filter) {
-        PageRequest pageable = PageRequest.of(filter.getPage(), filter.getSize());
+    public ApiResponse<PaginatedResult<WithdrawalResponse>> list(WithdrawalFilterRequest filter) {
+        int normalizedPage = filter.getPage() == null || filter.getPage() <= 0
+                ? 0
+                : filter.getPage() - 1;
+
+        int normalizedSize = filter.getSize() == null || filter.getSize() <= 0
+                ? 20
+                : filter.getSize();
+
         LocalDateTime from = filter.getFromDate() == null ? null : LocalDateTime.parse(filter.getFromDate() + "T00:00:00");
         LocalDateTime to = filter.getToDate() == null ? null : LocalDateTime.parse(filter.getToDate() + "T23:59:59");
+
+        PageRequest pageable = PageRequest.of(normalizedPage, normalizedSize);
         Page<WithdrawalRequest> page = withdrawalRequestRepository.search(
                 emptyToNull(filter.getStatus()), from, to, pageable);
-        return ApiResponse.success("Danh sách yêu cầu rút", page.map(this::mapToResponse));
+        return ApiResponse.success("Danh sách yêu cầu rút", PaginatedResult.from(page.map(this::mapToResponse)));
     }
 
     @Override

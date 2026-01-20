@@ -1,6 +1,7 @@
 package com.odc.paymentservice.service;
 
 import com.odc.common.dto.ApiResponse;
+import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
 import com.odc.paymentservice.dto.response.TransactionResponse;
 import com.odc.paymentservice.entity.Transaction;
@@ -11,7 +12,9 @@ import com.odc.paymentservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,19 +32,19 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<TransactionResponse>> getTransactionsByProjectId(
+    public ApiResponse<PaginatedResult<TransactionResponse>> getTransactionsByProjectId(
             UUID projectId,
-            Pageable pageable) {
+            Integer page,
+            Integer size) {
 
-        log.info("Getting transactions for projectId: {}", projectId);
+        Pageable pageable = defaultPageable(page, size);
 
-        Page<Transaction> transactions = transactionRepository.findByProjectId(projectId, pageable);
-
-        Page<TransactionResponse> responsePage = transactions.map(this::mapToResponse);
+        Page<Transaction> transactions =
+                transactionRepository.findByProjectId(projectId, pageable);
 
         return ApiResponse.success(
                 "Lấy danh sách transaction của project thành công",
-                responsePage
+                PaginatedResult.from(transactions.map(this::mapToResponse))
         );
     }
 
@@ -62,37 +65,46 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<TransactionResponse>> getAllTransactions(Pageable pageable) {
-        log.info("Getting all transactions");
+    public ApiResponse<PaginatedResult<TransactionResponse>> getAllTransactions(
+            Integer page,
+            Integer size) {
 
-        Page<Transaction> transactions = transactionRepository.findAllNotDeleted(pageable);
+        Pageable pageable = defaultPageable(page, size);
 
-        Page<TransactionResponse> responsePage = transactions.map(this::mapToResponse);
+        Page<Transaction> transactions =
+                transactionRepository.findAllNotDeleted(pageable);
 
         return ApiResponse.success(
                 "Lấy danh sách tất cả transaction thành công",
-                responsePage
+                PaginatedResult.from(transactions.map(this::mapToResponse))
         );
     }
 
     @Override
-    public ApiResponse<Page<TransactionResponse>> getMyTransactions(Pageable pageable) {
+    @Transactional(readOnly = true)
+    public ApiResponse<PaginatedResult<TransactionResponse>> getMyTransactions(
+            Integer page,
+            Integer size) {
 
-        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UUID userId = (UUID) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
 
         Wallet wallet = walletRepository.findByOwnerId(userId)
                 .orElseThrow(() ->
                         new BusinessException("Wallet không tồn tại cho user: " + userId)
                 );
 
+        Pageable pageable = defaultPageable(page, size);
+
         Page<Transaction> transactions =
                 transactionRepository.findByWalletId(wallet.getId(), pageable);
 
-        Page<TransactionResponse> responsePage = transactions.map(this::mapToResponse);
-
-        return ApiResponse.success(responsePage);
+        return ApiResponse.success(
+                PaginatedResult.from(transactions.map(this::mapToResponse))
+        );
     }
-
 
     private TransactionResponse mapToResponse(Transaction transaction) {
         TransactionResponse.TransactionResponseBuilder builder = TransactionResponse.builder()
@@ -123,4 +135,14 @@ public class TransactionServiceImpl implements TransactionService {
 
         return builder.build();
     }
+
+    private Pageable defaultPageable(Integer page, Integer size) {
+        int pageIndex = (page == null || page <= 0) ? 0 : page - 1;
+        int pageSize = (size == null || size <= 0) ? 20 : size;
+
+        Sort sort = Sort.by(Sort.Order.desc("createdAt"));
+
+        return PageRequest.of(pageIndex, pageSize, sort);
+    }
+
 }
