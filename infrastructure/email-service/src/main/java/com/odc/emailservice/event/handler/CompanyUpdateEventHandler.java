@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +53,7 @@ public class CompanyUpdateEventHandler implements EventHandler {
 
             String token = StringUtil.generateRandomString(11);
             stringRedisTemplate.opsForValue().set(Constants.COMPANY_UPDATE_TOKEN_KEY_PREFIX + token, event.getCompanyId());
+            String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
 
             emailService.sendEmailWithHtmlTemplate(
                     event.getEmail(),
@@ -60,7 +63,7 @@ public class CompanyUpdateEventHandler implements EventHandler {
                             "companyName", event.getCompanyName(),
                             "notes", event.getNotes(),
                             "incompleteChecklists", checklistDescriptions,
-                            "updateLink", String.format("%s/company-register/update?token=%s", clientAddress, token)
+                            "updateLink", String.format("%s/company-register/update?token=%s", clientAddress, encodedToken)
                     )
             );
             log.info("Successfully sent company update request email to {}", event.getEmail());
