@@ -53,4 +53,9 @@ public interface MilestoneMemberRepository extends JpaRepository<MilestoneMember
             """)
     List<MilestoneMember> findByProjectMilestoneIdWithProjectMember(@Param("milestoneId") UUID milestoneId);
 
+    long countByProjectMilestone_IdAndIsActiveTrueAndProjectMember_RoleInProject(
+            UUID milestoneId,
+            String roleInProject
+    );
+
 }

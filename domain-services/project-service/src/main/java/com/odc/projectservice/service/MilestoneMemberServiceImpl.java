@@ -4,7 +4,6 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
-import com.odc.common.util.JsonUtil;
 import com.odc.commonlib.event.EventPublisher;
 import com.odc.notification.v1.Channel;
 import com.odc.notification.v1.NotificationEvent;
@@ -18,11 +17,9 @@ import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.entity.MilestoneMember;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
-import com.odc.projectservice.entity.ProjectOutBox;
 import com.odc.projectservice.repository.MilestoneMemberRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectMilestoneRepository;
-import com.odc.projectservice.repository.ProjectOutBoxRepository;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
 import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
@@ -31,7 +28,6 @@ import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -64,6 +60,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
     @Override
     public ApiResponse<Void> addProjectMembers(AddProjectMemberRequest request, Role allowedRole) {
+
         ProjectMilestone milestone = projectMilestoneRepository.findById(request.getMilestoneId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy milestone với ID: " + request.getMilestoneId()));
@@ -75,15 +72,29 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
             throw new BusinessException("Danh sách thành viên dự án không được để trống");
         }
 
+        if (allowedRole == Role.MENTOR) {
+            long currentMentorCount =
+                    milestoneMemberRepository.countByProjectMilestone_IdAndIsActiveTrueAndProjectMember_RoleInProject(
+                            milestone.getId(),
+                            Role.MENTOR.toString()
+                    );
+
+            if (currentMentorCount + projectMemberIds.size() > 2) {
+                throw new BusinessException("Milestone chỉ được phép tối đa 2 mentor");
+            }
+        }
+
         List<ProjectMember> projectMembers = projectMemberRepository.findByIdIn(projectMemberIds);
         Map<UUID, ProjectMember> projectMemberMap = projectMembers.stream()
                 .collect(Collectors.toMap(ProjectMember::getId, pm -> pm));
 
         List<String> errors = new ArrayList<>();
         List<MilestoneMember> newMembers = new ArrayList<>();
+        List<MilestoneMember> addedMembers = new ArrayList<>(); // 👈 để notify
 
         for (UUID pmId : projectMemberIds) {
             ProjectMember pm = projectMemberMap.get(pmId);
+
             if (pm == null) {
                 errors.add("Không tìm thấy thành viên với projectMemberId: " + pmId);
                 continue;
@@ -93,8 +104,10 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 errors.add("Thành viên với projectMemberId " + pmId + " không thuộc dự án này");
                 continue;
             }
+
             if (!pm.getRoleInProject().equalsIgnoreCase(allowedRole.toString())) {
-                errors.add("Thành viên với projectMemberId " + pmId + " không có vai trò " + allowedRole + " để thêm vào milestone");
+                errors.add("Thành viên với projectMemberId " + pmId +
+                        " không có vai trò " + allowedRole + " để thêm vào milestone");
                 continue;
             }
 
@@ -107,10 +120,13 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                     errors.add("Thành viên với userId " + pm.getUserId() + " đã tham gia milestone này trước đó");
                     continue;
                 }
+
                 existing.setActive(true);
                 existing.setJoinedAt(LocalDateTime.now());
                 existing.setLeftAt(null);
                 milestoneMemberRepository.save(existing);
+                addedMembers.add(existing);
+
             } else {
                 MilestoneMember mm = MilestoneMember.builder()
                         .projectMilestone(milestone)
@@ -128,10 +144,16 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
 
         if (!newMembers.isEmpty()) {
             milestoneMemberRepository.saveAll(newMembers);
+            addedMembers.addAll(newMembers); // 👈 notify member mới
+        }
+
+        for (MilestoneMember member : addedMembers) {
+            createMemberAddedNotification(member);
         }
 
         return ApiResponse.success("Thêm thành công các thành viên vào milestone", null);
     }
+
 
     @Override
     public ApiResponse<Void> removeProjectMembersFromMilestone(RemoveMilestoneMembersRequest request) {
@@ -386,6 +408,45 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .build();
 
         eventPublisher.publish("notifications", event);
+    }
+
+    private void createMemberAddedNotification(MilestoneMember member) {
+        NotificationEvent event = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("MEMBER_ADDED_TO_MILESTONE")
+                .setTitle("Bạn đã được thêm vào milestone")
+                .setContent(
+                        "Bạn đã được thêm vào milestone " +
+                                member.getProjectMilestone().getTitle()
+                )
+                .setPriority("NORMAL")
+                .setCategory("PROJECT")
+                .setCreatedAt(Instant.now().toEpochMilli())
+                .setDeepLink("/milestones/" + member.getProjectMilestone().getId())
+                .setTarget(
+                        Target.newBuilder()
+                                .setUser(
+                                        UserTarget.newBuilder()
+                                                .addUserIds(
+                                                        member.getProjectMember()
+                                                                .getUserId()
+                                                                .toString()
+                                                )
+                                                .build()
+                                )
+                                .build()
+                )
+                .addChannels(Channel.WEB)
+                .addChannels(Channel.MOBILE)
+                .putData("milestoneId", member.getProjectMilestone().getId().toString())
+                .putData("projectId", member.getProjectMilestone().getProject().getId().toString())
+                .putData("role", member.getProjectMember().getRoleInProject())
+                .build();
+
+        eventPublisher.publish(
+                "notifications",
+                event
+        );
     }
 
 }

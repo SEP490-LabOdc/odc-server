@@ -30,6 +30,15 @@ public class MilestoneMemberController {
         );
     }
 
+    @PostMapping("/milestone-members/mentor")
+    public ResponseEntity<ApiResponse<Void>> addMentorToMilestone(
+            @RequestBody AddProjectMemberRequest request
+    ) {
+        return ResponseEntity.ok(
+                milestoneMemberService.addProjectMembers(request, Role.MENTOR)
+        );
+    }
+
     @PostMapping("/milestone-members/remove")
     public ResponseEntity<ApiResponse<Void>> removeMembersFromMilestone(
             @RequestBody RemoveMilestoneMembersRequest request
