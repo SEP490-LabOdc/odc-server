@@ -4,6 +4,7 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.common.util.JsonUtil;
 import com.odc.notification.v1.Channel;
 import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
@@ -387,7 +388,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
         ProjectOutBox outbox = new ProjectOutBox();
         outbox.setEventType("notifications");
         outbox.setEventId(event.getId());
-        outbox.setPayload(event.toByteArray());
+        outbox.setPayload(JsonUtil.toBytes(event));
         outbox.setProcessed(false);
 
         projectOutBoxRepository.save(outbox);
