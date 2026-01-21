@@ -354,31 +354,52 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     }
 
     @Override
-    public ApiResponse<Void> updateMilestoneMemberRole(UUID milestoneId, UUID milestoneMemberId, UpdateMilestoneMemberRoleRequest request) {
+    public ApiResponse<Void> updateMilestoneMemberRole(
+            UUID milestoneId,
+            UUID milestoneMemberId,
+            UpdateMilestoneMemberRoleRequest request
+    ) {
         MilestoneMember member = milestoneMemberRepository
-                .findByProjectMilestone_IdAndIdAndIsActive(milestoneId, milestoneMemberId, true)
+                .findByProjectMilestone_IdAndIdAndIsActive(
+                        milestoneId,
+                        milestoneMemberId,
+                        true
+                )
                 .orElseThrow(() -> new BusinessException("Thành viên không thuộc milestone"));
 
-        if (request.isLeader()) {
-            MilestoneMember currentLeader = milestoneMemberRepository
-                    .findByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(
-                            milestoneId,
-                            member.getProjectMember().getRoleInProject()
-                    );
+        boolean leaderAssigned = false;
 
-            // Nếu đã có leader và leader đó KHÔNG phải member hiện tại
-            if (currentLeader != null && !currentLeader.getId().equals(member.getId())) {
-                currentLeader.setLeader(false);
-                milestoneMemberRepository.save(currentLeader);
+        if (request.isLeader()) {
+
+            if (!member.isLeader()) {
+
+                MilestoneMember currentLeader = milestoneMemberRepository
+                        .findByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(
+                                milestoneId,
+                                member.getProjectMember().getRoleInProject()
+                        );
+
+                if (currentLeader != null && !currentLeader.getId().equals(member.getId())) {
+                    currentLeader.setLeader(false);
+                    milestoneMemberRepository.save(currentLeader);
+                }
+
+                member.setLeader(true);
+                leaderAssigned = true;
             }
 
-            member.setLeader(true);
         } else {
-            member.setLeader(false);
+            if (member.isLeader()) {
+                member.setLeader(false);
+            }
         }
 
         milestoneMemberRepository.save(member);
-        createLeaderAssignedNotification(member);
+
+        if (leaderAssigned) {
+            createLeaderAssignedNotification(member);
+        }
+
         return ApiResponse.success(null);
     }
 
