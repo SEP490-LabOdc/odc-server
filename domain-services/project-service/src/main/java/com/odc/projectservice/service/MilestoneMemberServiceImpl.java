@@ -4,6 +4,10 @@ import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
+import com.odc.notification.v1.Channel;
+import com.odc.notification.v1.NotificationEvent;
+import com.odc.notification.v1.Target;
+import com.odc.notification.v1.UserTarget;
 import com.odc.projectservice.dto.request.AddProjectMemberRequest;
 import com.odc.projectservice.dto.request.RemoveMilestoneMembersRequest;
 import com.odc.projectservice.dto.request.UpdateMilestoneMemberRoleRequest;
@@ -12,9 +16,11 @@ import com.odc.projectservice.dto.response.GetMilestoneMemberResponse;
 import com.odc.projectservice.entity.MilestoneMember;
 import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectMilestone;
+import com.odc.projectservice.entity.ProjectOutBox;
 import com.odc.projectservice.repository.MilestoneMemberRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
 import com.odc.projectservice.repository.ProjectMilestoneRepository;
+import com.odc.projectservice.repository.ProjectOutBoxRepository;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
 import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
@@ -23,7 +29,9 @@ import io.grpc.ManagedChannel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,15 +45,18 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ManagedChannel userServiceChannel;
+    private final ProjectOutBoxRepository projectOutBoxRepository;
 
     public MilestoneMemberServiceImpl(
             MilestoneMemberRepository milestoneMemberRepository,
             ProjectMemberRepository projectMemberRepository,
             ProjectMilestoneRepository projectMilestoneRepository,
+            ProjectOutBoxRepository projectOutBoxRepository,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel) {
         this.milestoneMemberRepository = milestoneMemberRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.userServiceChannel = userServiceChannel;
+        this.projectOutBoxRepository = projectOutBoxRepository;
         this.projectMilestoneRepository = projectMilestoneRepository;
     }
 
@@ -319,6 +330,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<Void> updateMilestoneMemberRole(UUID milestoneId, UUID milestoneMemberId, UpdateMilestoneMemberRoleRequest request) {
         MilestoneMember member = milestoneMemberRepository
                 .findByProjectMilestone_IdAndIdAndIsActive(milestoneId, milestoneMemberId, true)
@@ -343,6 +355,42 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
         }
 
         milestoneMemberRepository.save(member);
+        createLeaderAssignedNotification(member);
         return ApiResponse.success(null);
     }
+
+    private void createLeaderAssignedNotification(MilestoneMember member) {
+        NotificationEvent event = NotificationEvent.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setType("MILESTONE_LEADER_ASSIGNED")
+                .setTitle("Bạn đã được chỉ định làm Leader")
+                .setContent("Bạn đã được chỉ định làm Leader của milestone")
+                .setPriority("HIGH")
+                .setCategory("PROJECT")
+                .setCreatedAt(Instant.now().toEpochMilli())
+                .setDeepLink("/milestones/" + member.getProjectMilestone().getId())
+                .setTarget(
+                        Target.newBuilder()
+                                .setUser(
+                                        UserTarget.newBuilder()
+                                                .addUserIds(member.getProjectMember().getUserId().toString())
+                                                .build()
+                                )
+                                .build()
+                )
+                .addChannels(Channel.WEB)
+                .addChannels(Channel.MOBILE)
+                .putData("milestoneId", member.getProjectMilestone().getId().toString())
+                .putData("projectId", member.getProjectMilestone().getProject().getId().toString())
+                .build();
+
+        ProjectOutBox outbox = new ProjectOutBox();
+        outbox.setEventType("notifications");
+        outbox.setEventId(event.getId());
+        outbox.setPayload(event.toByteArray());
+        outbox.setProcessed(false);
+
+        projectOutBoxRepository.save(outbox);
+    }
+
 }
