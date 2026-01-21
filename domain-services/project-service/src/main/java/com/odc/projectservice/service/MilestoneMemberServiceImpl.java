@@ -5,6 +5,7 @@ import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
 import com.odc.common.exception.ResourceNotFoundException;
 import com.odc.common.util.JsonUtil;
+import com.odc.commonlib.event.EventPublisher;
 import com.odc.notification.v1.Channel;
 import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
@@ -46,18 +47,18 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ManagedChannel userServiceChannel;
-    private final ProjectOutBoxRepository projectOutBoxRepository;
+    private final EventPublisher eventPublisher;
 
     public MilestoneMemberServiceImpl(
             MilestoneMemberRepository milestoneMemberRepository,
             ProjectMemberRepository projectMemberRepository,
             ProjectMilestoneRepository projectMilestoneRepository,
-            ProjectOutBoxRepository projectOutBoxRepository,
+            EventPublisher eventPublisher,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel) {
         this.milestoneMemberRepository = milestoneMemberRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.userServiceChannel = userServiceChannel;
-        this.projectOutBoxRepository = projectOutBoxRepository;
+        this.eventPublisher = eventPublisher;
         this.projectMilestoneRepository = projectMilestoneRepository;
     }
 
@@ -331,7 +332,6 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<Void> updateMilestoneMemberRole(UUID milestoneId, UUID milestoneMemberId, UpdateMilestoneMemberRoleRequest request) {
         MilestoneMember member = milestoneMemberRepository
                 .findByProjectMilestone_IdAndIdAndIsActive(milestoneId, milestoneMemberId, true)
@@ -385,13 +385,7 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .putData("projectId", member.getProjectMilestone().getProject().getId().toString())
                 .build();
 
-        ProjectOutBox outbox = new ProjectOutBox();
-        outbox.setEventType("notifications");
-        outbox.setEventId(event.getId());
-        outbox.setPayload(JsonUtil.toBytes(event));
-        outbox.setProcessed(false);
-
-        projectOutBoxRepository.save(outbox);
+        eventPublisher.publish("notifications", event);
     }
 
 }
