@@ -37,6 +37,8 @@ public interface MilestoneMemberRepository extends JpaRepository<MilestoneMember
 
     boolean existsByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(UUID milestoneId, String roleInProject);
 
+    MilestoneMember findByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(UUID milestoneId, String roleInProject);
+
     @Query("SELECT COUNT(mm) FROM MilestoneMember mm " +
             "WHERE mm.projectMember.id = :projectMemberId " +
             "AND mm.isActive = true " +

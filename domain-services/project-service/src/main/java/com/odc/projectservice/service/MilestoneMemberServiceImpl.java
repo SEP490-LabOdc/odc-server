@@ -325,11 +325,16 @@ public class MilestoneMemberServiceImpl implements MilestoneMemberService {
                 .orElseThrow(() -> new BusinessException("Thành viên không thuộc milestone"));
 
         if (request.isLeader()) {
-            boolean leaderExists = milestoneMemberRepository
-                    .existsByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(milestoneId, member.getProjectMember().getRoleInProject());
+            MilestoneMember currentLeader = milestoneMemberRepository
+                    .findByProjectMilestone_IdAndIsLeaderTrueAndProjectMember_RoleInProject(
+                            milestoneId,
+                            member.getProjectMember().getRoleInProject()
+                    );
 
-            if (leaderExists && !member.isLeader()) {
-                throw new BusinessException("Milestone đã có leader khác");
+            // Nếu đã có leader và leader đó KHÔNG phải member hiện tại
+            if (currentLeader != null && !currentLeader.getId().equals(member.getId())) {
+                currentLeader.setLeader(false);
+                milestoneMemberRepository.save(currentLeader);
             }
 
             member.setLeader(true);
