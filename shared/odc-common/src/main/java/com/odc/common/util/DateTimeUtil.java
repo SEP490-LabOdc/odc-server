@@ -1,5 +1,9 @@
 package com.odc.common.util;
 
+import com.odc.common.exception.BusinessException;
+import org.springframework.scheduling.support.CronExpression;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -33,5 +37,19 @@ public class DateTimeUtil {
 
     public static ZonedDateTime getCurrentZonedDateTime() {
         return ZonedDateTime.now(DEFAULT_ZONE_ID);
+    }
+
+    public static LocalDate calculateNextScheduledDate(String cronExpression) {
+        CronExpression cron = CronExpression.parse(cronExpression);
+
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZonedDateTime now = ZonedDateTime.now(zone);
+        ZonedDateTime next = cron.next(now);
+
+        if (next == null) {
+            throw new BusinessException("Invalid cron expression: " + cronExpression);
+        }
+
+        return next.toLocalDate();
     }
 }

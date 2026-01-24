@@ -45,4 +45,7 @@ public class WithdrawalRequest extends BaseEntity {
 
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
+
+    @Column(name = "external_ref")
+    private String externalRef;
 }

@@ -5,12 +5,15 @@ import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.exception.BusinessException;
+import com.odc.common.util.DateTimeUtil;
 import com.odc.paymentservice.dto.request.AdminHandleWithdrawalRequest;
 import com.odc.paymentservice.dto.request.WithdrawalFilterRequest;
 import com.odc.paymentservice.dto.response.WithdrawalResponse;
+import com.odc.paymentservice.entity.SystemConfig;
 import com.odc.paymentservice.entity.Transaction;
 import com.odc.paymentservice.entity.Wallet;
 import com.odc.paymentservice.entity.WithdrawalRequest;
+import com.odc.paymentservice.repository.SystemConfigRepository;
 import com.odc.paymentservice.repository.TransactionRepository;
 import com.odc.paymentservice.repository.WalletRepository;
 import com.odc.paymentservice.repository.WithdrawalRequestRepository;
@@ -21,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -31,6 +35,7 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
     private final WithdrawalRequestRepository withdrawalRequestRepository;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final SystemConfigRepository systemConfigRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,6 +71,17 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
         if (!Status.PENDING.toString().equals(wr.getStatus())) {
             throw new BusinessException("Trạng thái không hợp lệ để duyệt");
         }
+
+        SystemConfig config = systemConfigRepository.findByName(
+                        PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy cấu hình: " + PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME));
+        ;
+
+        String cronExpression = null;
+        if (config.getProperties() != null) {
+            cronExpression = (String) config.getProperties().get(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY);
+        }
+
         Wallet wallet = wr.getWallet();
         BigDecimal amount = wr.getAmount();
 
@@ -75,9 +91,9 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
 
         wr.setStatus(Status.APPROVED.toString());
         wr.setAdminNote(req.getAdminNote());
-        wr.setProcessedAt(req.getProcessedAt() != null
-                ? LocalDateTime.parse(req.getProcessedAt())
-                : LocalDateTime.now());
+        LocalDate scheduledDate = DateTimeUtil.calculateNextScheduledDate(cronExpression);
+        wr.setScheduledAt(scheduledDate);
+
         withdrawalRequestRepository.save(wr);
 
         // Log chi trả
@@ -114,9 +130,6 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
 
         wr.setStatus(Status.REJECTED.toString());
         wr.setAdminNote(req.getAdminNote());
-        wr.setProcessedAt(req.getProcessedAt() != null
-                ? LocalDateTime.parse(req.getProcessedAt())
-                : LocalDateTime.now());
         withdrawalRequestRepository.save(wr);
 
         // Log hoàn tiền
