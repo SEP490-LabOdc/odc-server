@@ -27,7 +27,7 @@ public class WithdrawalRequest extends BaseEntity {
     @JoinColumn(name = "wallet_id", nullable = false)
     private Wallet wallet;
 
-    @Column(name = "amount", precision = 19, scale = 2)
+    @Column(name = "amount", precision = 38, scale = 0)
     private BigDecimal amount;
 
     @Type(JsonBinaryType.class)

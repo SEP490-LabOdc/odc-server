@@ -5,7 +5,6 @@ import com.odc.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -24,7 +23,7 @@ public class ProjectClosureRequest extends BaseEntity {
 
     // Mentor gửi request
     @Column(name = "requested_by", nullable = false)
-    private UUID requestedBy;
+    private UUID requestedBy; // Mentor id
 
     @Column(name = "reason", nullable = false, columnDefinition = "TEXT")
     private String reason;
@@ -48,7 +47,7 @@ public class ProjectClosureRequest extends BaseEntity {
 
     // Company review
     @Column(name = "company_id")
-    private UUID companyId;
+    private UUID companyId; // user id
 
     @Column(name = "company_comment", columnDefinition = "TEXT")
     private String companyComment;

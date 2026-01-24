@@ -28,22 +28,22 @@ public class Disbursement extends BaseEntity { // Lưu thông tin Admin đã chi
     private UUID projectId;
 
     // Tổng tiền nhận được từ Milestone (100%)
-    @Column(name = "total_amount", precision = 19, scale = 2)
+    @Column(name = "total_amount", precision = 38, scale = 0)
     private BigDecimal totalAmount;
 
     // --- Phần chia 10% cho System ---
-    @Column(name = "system_fee", precision = 19, scale = 2)
+    @Column(name = "system_fee", precision = 38, scale = 0)
     private BigDecimal systemFee;
 
     // --- Phần chia 20% cho Mentor Team ---
-    @Column(name = "mentor_amount", precision = 19, scale = 2)
+    @Column(name = "mentor_amount", precision = 38, scale = 0)
     private BigDecimal mentorAmount;
 
     @Column(name = "mentor_leader_id")
     private UUID mentorLeaderId; // Người nhận đại diện (Leader Mentor)
 
     // --- Phần chia 70% cho Talent Team ---
-    @Column(name = "talent_amount", precision = 19, scale = 2)
+    @Column(name = "talent_amount", precision = 38, scale = 0)
     private BigDecimal talentAmount;
 
     @Column(name = "talent_leader_id")

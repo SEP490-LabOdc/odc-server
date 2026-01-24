@@ -30,10 +30,10 @@ public class Wallet extends BaseEntity {
     @Column(name = "owner_type", nullable = false)
     private String ownerType; // USER, COMPANY, SYSTEM
 
-    @Column(name = "balance", precision = 19, scale = 2)
+    @Column(name = "balance", precision = 38, scale = 0)
     private BigDecimal balance = BigDecimal.ZERO; // Số dư khả dụng
 
-    @Column(name = "held_balance", precision = 19, scale = 2)
+    @Column(name = "held_balance", precision = 38, scale = 0)
     private BigDecimal heldBalance = BigDecimal.ZERO; // Tiền đang bị giữ (chờ rút)
 
     @Column(name = "currency")

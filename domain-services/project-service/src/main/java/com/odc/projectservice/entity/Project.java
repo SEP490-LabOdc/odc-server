@@ -37,10 +37,10 @@ public class Project extends BaseEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "budget")
+    @Column(name = "budget", precision = 38, scale = 0)
     private BigDecimal budget;
 
-    @Column(name = "remaining_budget")
+    @Column(name = "remaining_budget", precision = 38, scale = 0)
     private BigDecimal remainingBudget;
 
     @Column(name = "is_open_for_applications", nullable = false)

@@ -1,5 +1,6 @@
 package com.odc.projectservice.service;
 
+import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
@@ -53,4 +54,14 @@ public interface ProjectService {
     ApiResponse<DashboardOverviewResponse> getOverview();
 
     ApiResponse<Void> sendClosureRequest(UUID projectId, CreateClosureRequest request);
+
+    ApiResponse<Void> reviewClosureRequestByLabAdmin(UUID projectId, UUID requestId, ReviewClosureRequest request);
+
+    ApiResponse<Void> reviewClosureRequestByCompany(UUID projectId, UUID requestId, ReviewClosureRequest request);
+
+    ApiResponse<Void> cancelClosureRequest(UUID projectId, UUID requestId);
+
+    ApiResponse<List<Object>> getClosureRequestList(UUID projectId, Role role);
+
+    ApiResponse<?> getClosureRequestDetail(UUID projectId, UUID id);
 }

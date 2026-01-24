@@ -33,7 +33,7 @@ public class ProjectMilestone extends BaseEntity {
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
-    @Column(name = "budget")
+    @Column(name = "budget", precision = 38, scale = 0)
     private BigDecimal budget;
 
     @ManyToOne(fetch = FetchType.LAZY)
