@@ -14,6 +14,7 @@ import java.util.UUID;
 public class WithdrawalResponse {
     private UUID id;
     private UUID userId;
+    private String fullName, avatarUrl, email;
     private UUID walletId;
     private BigDecimal amount;
     private Map<String, String> bankInfo;

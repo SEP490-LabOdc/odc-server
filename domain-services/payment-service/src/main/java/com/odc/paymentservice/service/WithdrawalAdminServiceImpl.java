@@ -17,7 +17,13 @@ import com.odc.paymentservice.repository.SystemConfigRepository;
 import com.odc.paymentservice.repository.TransactionRepository;
 import com.odc.paymentservice.repository.WalletRepository;
 import com.odc.paymentservice.repository.WithdrawalRequestRepository;
+import com.odc.userservice.v1.GetUsersByIdsRequest;
+import com.odc.userservice.v1.GetUsersByIdsResponse;
+import com.odc.userservice.v1.UserInfo;
+import com.odc.userservice.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -26,16 +32,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
 
     private final WithdrawalRequestRepository withdrawalRequestRepository;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final SystemConfigRepository systemConfigRepository;
+    private final ManagedChannel userServiceChannel1;
 
     @Override
     @Transactional(readOnly = true)
@@ -54,14 +67,34 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
         PageRequest pageable = PageRequest.of(normalizedPage, normalizedSize);
         Page<WithdrawalRequest> page = withdrawalRequestRepository.search(
                 emptyToNull(filter.getStatus()), from, to, pageable);
-        return ApiResponse.success("Danh sách yêu cầu rút", PaginatedResult.from(page.map(this::mapToResponse)));
+
+        List<UUID> userIds = page.getContent().stream()
+                .map(WithdrawalRequest::getUserId)
+                .distinct()
+                .toList();
+
+        Map<String, UserInfo> userMap = userIds.isEmpty()
+                ? Map.of()
+                : getMapUserInfo(userIds);
+
+        Page<WithdrawalResponse> responsePage = page.map(wr ->
+                mapToResponse(wr, userMap.get(wr.getUserId().toString()))
+        );
+
+        return ApiResponse.success(
+                "Danh sách yêu cầu rút",
+                PaginatedResult.from(responsePage)
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<WithdrawalResponse> detail(UUID id) {
         WithdrawalRequest wr = getOrThrow(id);
-        return ApiResponse.success("Chi tiết yêu cầu rút", mapToResponse(wr));
+        Map<String, UserInfo> userMap = getMapUserInfo(List.of(wr.getUserId()));
+        UserInfo userInfo = userMap.get(wr.getUserId().toString());
+
+        return ApiResponse.success("Chi tiết yêu cầu rút", mapToResponse(wr, userInfo));
     }
 
     @Override
@@ -110,7 +143,10 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
                 .build();
         transactionRepository.save(tx);
 
-        return ApiResponse.success("Duyệt rút tiền thành công", mapToResponse(wr));
+        Map<String, UserInfo> userMap = getMapUserInfo(List.of(wr.getUserId()));
+        UserInfo userInfo = userMap.get(wr.getUserId().toString());
+
+        return ApiResponse.success("Duyệt rút tiền thành công", mapToResponse(wr, userInfo));
     }
 
     @Override
@@ -146,7 +182,10 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
                 .build();
         transactionRepository.save(tx);
 
-        return ApiResponse.success("Từ chối rút tiền thành công", mapToResponse(wr));
+        Map<String, UserInfo> userMap = getMapUserInfo(List.of(wr.getUserId()));
+        UserInfo userInfo = userMap.get(wr.getUserId().toString());
+
+        return ApiResponse.success("Từ chối rút tiền thành công", mapToResponse(wr, userInfo));
     }
 
     private WithdrawalRequest getOrThrow(UUID id) {
@@ -154,10 +193,13 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
                 .orElseThrow(() -> new BusinessException("Không tìm thấy yêu cầu rút tiền"));
     }
 
-    private WithdrawalResponse mapToResponse(WithdrawalRequest wr) {
+    private WithdrawalResponse mapToResponse(WithdrawalRequest wr, UserInfo userInfo) {
         return WithdrawalResponse.builder()
                 .id(wr.getId())
                 .userId(wr.getUserId())
+                .email(userInfo.getEmail())
+                .avatarUrl(userInfo.getAvatarUrl())
+                .fullName(userInfo.getFullName())
                 .walletId(wr.getWallet().getId())
                 .amount(wr.getAmount())
                 .bankInfo(wr.getBankInfo())
@@ -168,6 +210,32 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
                 .createdAt(wr.getCreatedAt())
                 .updatedAt(wr.getUpdatedAt())
                 .build();
+    }
+
+    private Map<String, UserInfo> getMapUserInfo(List<UUID> userIds) {
+        Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
+        List<String> allUserIds = userIds.stream()
+                .map(UUID::toString)
+                .distinct()
+                .toList();
+
+        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel1);
+        GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                GetUsersByIdsRequest.newBuilder()
+                        .addAllUserId(allUserIds)
+                        .build()
+        );
+
+        log.debug("[USER_SERVICE][GET_USERS] size={}", allUserIds.size());
+
+        userIdToUserInfoMap = usersResponse.getUsersList().stream()
+                .collect(Collectors.toMap(
+                        UserInfo::getUserId,
+                        Function.identity(),
+                        (v1, v2) -> v1
+                ));
+
+        return userIdToUserInfoMap;
     }
 
     private String emptyToNull(String v) {
