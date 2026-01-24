@@ -1,5 +1,6 @@
 package com.odc.projectservice.controller;
 
+import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
@@ -212,5 +213,50 @@ public class ProjectController {
     public ResponseEntity<ApiResponse<Void>> sendClosureRequest(@PathVariable UUID projectId,
                                                                 @RequestBody CreateClosureRequest request) {
         return ResponseEntity.ok(projectService.sendClosureRequest(projectId, request));
+    }
+
+    @PutMapping("/{projectId}/closure-requests/{requestId}/lab-admin-review")
+    public ResponseEntity<ApiResponse<Void>> reviewClosureRequestByLabAdmin(
+            @PathVariable UUID projectId,
+            @PathVariable UUID requestId,
+            @RequestBody ReviewClosureRequest request) {
+
+        return ResponseEntity.ok(
+                projectService.reviewClosureRequestByLabAdmin(projectId, requestId, request)
+        );
+    }
+
+    @PutMapping("/{projectId}/closure-requests/{requestId}/company-review")
+    public ResponseEntity<ApiResponse<Void>> reviewClosureRequestByCompany(
+            @PathVariable UUID projectId,
+            @PathVariable UUID requestId,
+            @RequestBody ReviewClosureRequest request) {
+
+        return ResponseEntity.ok(
+                projectService.reviewClosureRequestByCompany(projectId, requestId, request)
+        );
+    }
+
+    @GetMapping("/{projectId}/closure-requests")
+    public ApiResponse<List<Object>> getClosureRequests(@PathVariable UUID projectId, @RequestParam Role role) {
+        return projectService.getClosureRequestList(projectId, role);
+    }
+
+    @GetMapping("/{projectId}/closure-requests/{id}")
+    public ApiResponse<?> getClosureDetail(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id
+    ) {
+        return projectService.getClosureRequestDetail(projectId, id);
+    }
+
+    @PutMapping("/projects/{projectId}/closure-requests/{requestId}/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelClosureRequestByMentor(
+            @PathVariable UUID projectId,
+            @PathVariable UUID requestId) {
+
+        return ResponseEntity.ok(
+                projectService.cancelClosureRequest(projectId, requestId)
+        );
     }
 }

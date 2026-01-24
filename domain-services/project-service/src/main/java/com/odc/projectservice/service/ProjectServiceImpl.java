@@ -18,6 +18,7 @@ import com.odc.projectservice.dto.request.*;
 import com.odc.projectservice.dto.response.*;
 import com.odc.projectservice.entity.*;
 import com.odc.projectservice.repository.*;
+import com.odc.projectservice.service.mapper.ProjectClosureViewMapper;
 import com.odc.projectservice.v1.ProjectUpdateRequiredEvent;
 import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
@@ -1278,6 +1279,135 @@ public class ProjectServiceImpl implements ProjectService {
         project.setStatus(ProjectStatus.PENDING_CLOSURE.toString());
         projectRepository.save(project);
         return ApiResponse.success("Gửi yêu cầu đóng dự án thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> reviewClosureRequestByLabAdmin(UUID projectId, UUID requestId, ReviewClosureRequest request) {
+        ProjectClosureRequest closureRequest = projectClosureRequestRepository
+                .findByIdAndProject_Id(requestId, projectId)
+                .orElseThrow(() -> new BusinessException("Yêu cầu đóng dự án không tồn tại"));
+
+        if (closureRequest.getStatus() != ProjectClosureStatus.PENDING_LAB_ADMIN) {
+            throw new BusinessException("Yêu cầu đóng dự án đã được xử lý");
+        }
+
+        Project project = closureRequest.getProject();
+
+        UUID reviewedBy = (UUID) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        if (request.isApproved()) {
+            closureRequest.setStatus(ProjectClosureStatus.PENDING_COMPANY);
+            closureRequest.setLabAdminId(reviewedBy);
+            closureRequest.setLabAdminReviewedAt(LocalDateTime.now());
+            closureRequest.setLabAdminComment(request.getComment());
+        } else {
+            closureRequest.setStatus(ProjectClosureStatus.REJECTED_BY_LAB_ADMIN);
+            closureRequest.setLabAdminId(reviewedBy);
+            closureRequest.setLabAdminReviewedAt(LocalDateTime.now());
+            closureRequest.setLabAdminComment(request.getComment());
+
+            project.setStatus(ProjectStatus.ON_GOING.toString());
+            projectRepository.save(project);
+        }
+
+        projectClosureRequestRepository.save(closureRequest);
+        return ApiResponse.success("Xử lý yêu cầu đóng dự án thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> reviewClosureRequestByCompany(UUID projectId, UUID requestId, ReviewClosureRequest request) {
+        ProjectClosureRequest closureRequest =
+                projectClosureRequestRepository.findByIdAndProject_Id(requestId, projectId)
+                        .orElseThrow(() -> new BusinessException("Yêu cầu đóng dự án không tồn tại"));
+
+        if (closureRequest.getStatus() != ProjectClosureStatus.PENDING_COMPANY) {
+            throw new BusinessException("Yêu cầu đóng dự án không ở trạng thái chờ công ty duyệt");
+        }
+
+        UUID companyId = (UUID) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        closureRequest.setCompanyId(companyId);
+        closureRequest.setCompanyComment(request.getComment());
+        closureRequest.setCompanyReviewedAt(LocalDateTime.now());
+
+        if (request.isApproved()) {
+            Project project = closureRequest.getProject();
+            closureRequest.setStatus(ProjectClosureStatus.APPROVED);
+            project.setStatus(ProjectStatus.CLOSED.name());
+            projectRepository.save(project);
+        } else {
+            closureRequest.setStatus(ProjectClosureStatus.REJECTED_BY_COMPANY);
+        }
+
+        projectClosureRequestRepository.save(closureRequest);
+        return ApiResponse.success("Company review thành công", null);
+    }
+
+    @Override
+    public ApiResponse<Void> cancelClosureRequest(UUID projectId, UUID requestId) {
+        ProjectClosureRequest request =
+                projectClosureRequestRepository.findByIdAndProject_Id(requestId, projectId)
+                        .orElseThrow(() -> new BusinessException("Request không tồn tại"));
+
+        if (request.getStatus() != ProjectClosureStatus.PENDING_LAB_ADMIN) {
+            throw new BusinessException("Không thể huỷ request ở trạng thái hiện tại");
+        }
+
+        UUID userId = (UUID) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        if (!userId.equals(request.getRequestedBy())) {
+            throw new BusinessException("Bạn không có quyền huỷ request này");
+        }
+
+        request.setStatus(ProjectClosureStatus.CANCELLED);
+
+        Project project = request.getProject();
+        project.setStatus(ProjectStatus.ON_GOING.toString());
+
+        projectRepository.save(project);
+        projectClosureRequestRepository.save(request);
+
+        return ApiResponse.success("Huỷ yêu cầu đóng dự án thành công", null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<Object>> getClosureRequestList(UUID projectId, Role role) {
+
+        List<ProjectClosureRequest> list =
+                projectClosureRequestRepository.findByProject_IdOrderByCreatedAtDesc(projectId);
+
+        List<Object> response = list.stream()
+                .map(e -> ProjectClosureViewMapper.toListView(e, role))
+                .toList();
+
+        return ApiResponse.success("Lấy dữ liệu thành công", response);
+    }
+
+    @Override
+    public ApiResponse<?> getClosureRequestDetail(UUID projectId, UUID id) {
+        ProjectClosureRequest entity =
+                projectClosureRequestRepository.findByIdAndProject_Id(id, projectId)
+                        .orElseThrow(() -> new BusinessException("Yêu cầu đóng dự án không tồn tại"));
+
+        UUID userId = (UUID) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        boolean isMentor = userId.equals(entity.getRequestedBy());
+        if (isMentor) {
+            return ApiResponse.success(
+                    "Lấy dữ liệu thành công",
+                    ProjectClosureViewMapper.toListView(entity, Role.MENTOR)
+            );
+        }
+
+        return ApiResponse.success(
+                "Lấy dữ liệu thành công",
+                ProjectClosureViewMapper.toDetail(entity)
+        );
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {
