@@ -5,6 +5,7 @@ import com.odc.common.constant.ProjectStatus;
 import com.odc.common.constant.Role;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.commonlib.event.EventPublisher;
 import com.odc.notification.v1.Channel;
 import com.odc.notification.v1.NotificationEvent;
 import com.odc.notification.v1.Target;
@@ -18,7 +19,6 @@ import com.odc.projectservice.entity.ProjectMember;
 import com.odc.projectservice.entity.ProjectOutBox;
 import com.odc.projectservice.repository.MilestoneMemberRepository;
 import com.odc.projectservice.repository.ProjectMemberRepository;
-import com.odc.projectservice.repository.ProjectOutBoxRepository;
 import com.odc.projectservice.repository.ProjectRepository;
 import com.odc.userservice.v1.*;
 import io.grpc.ManagedChannel;
@@ -40,19 +40,19 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final ProjectRepository projectRepository;
     private final MilestoneMemberRepository milestoneMemberRepository;
     private final ManagedChannel userServiceChannel;
-    private final ProjectOutBoxRepository projectOutBoxRepository;
+    private final EventPublisher eventPublisher;
 
     public ProjectMemberServiceImpl(
             ProjectMemberRepository projectMemberRepository,
             ProjectRepository projectRepository,
             MilestoneMemberRepository milestoneMemberRepository,
-            ProjectOutBoxRepository projectOutBoxRepository,
+            EventPublisher eventPublisher,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel) {
         this.projectMemberRepository = projectMemberRepository;
         this.projectRepository = projectRepository;
         this.milestoneMemberRepository = milestoneMemberRepository;
         this.userServiceChannel = userServiceChannel;
-        this.projectOutBoxRepository = projectOutBoxRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -142,17 +142,9 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                     .addChannels(Channel.MOBILE)
                     .build();
 
-            ProjectOutBox outbox = ProjectOutBox.builder()
-                    .build();
-
-            outbox.setEventType("notifications");
-            outbox.setEventId(event.getId());
-            outbox.setPayload(event.toByteArray());
-            outbox.setProcessed(false);
-
-            projectOutBoxList.add(outbox);
+            eventPublisher.publish("notifications", event);
             log.info(
-                    "[OUTBOX_CREATED] eventType={}, eventId={}, aggregate=PROJECT, projectId={}, targetUser={}",
+                    "[PROJECT-MEMBER] eventType={}, eventId={}, aggregate=PROJECT, projectId={}, targetUser={}",
                     "NOTIFICATION_EVENT",
                     event.getId(),
                     projectId,
@@ -161,7 +153,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }
 
         projectMemberRepository.saveAll(projectMemberList);
-        projectOutBoxRepository.saveAll(projectOutBoxList);
 
         long totalMentorCount = projectMemberRepository.countMentorsInProject(projectId, Role.MENTOR.toString());
         if (totalMentorCount >= 1 && totalMentorCount <= 2) {

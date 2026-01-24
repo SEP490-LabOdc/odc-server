@@ -6,14 +6,21 @@ import com.odc.common.constant.Role;
 import com.odc.common.constant.Status;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.exception.BusinessException;
+import com.odc.commonlib.event.EventPublisher;
 import com.odc.paymentservice.dto.request.CreateDisbursementRequest;
 import com.odc.paymentservice.dto.request.MilestoneDisbursement;
 import com.odc.paymentservice.dto.request.MilestoneDisbursementRequest;
 import com.odc.paymentservice.dto.response.DisbursementCalculationResponse;
 import com.odc.paymentservice.dto.response.DisbursementResponse;
 import com.odc.paymentservice.dto.response.LeaderDisbursementInfo;
-import com.odc.paymentservice.entity.*;
-import com.odc.paymentservice.repository.*;
+import com.odc.paymentservice.entity.Disbursement;
+import com.odc.paymentservice.entity.SystemConfig;
+import com.odc.paymentservice.entity.Transaction;
+import com.odc.paymentservice.entity.Wallet;
+import com.odc.paymentservice.repository.DisbursementRepository;
+import com.odc.paymentservice.repository.SystemConfigRepository;
+import com.odc.paymentservice.repository.TransactionRepository;
+import com.odc.paymentservice.repository.WalletRepository;
 import com.odc.paymentservice.v1.DisbursementCompletedEvent;
 import com.odc.projectservice.v1.GetLeaderInfoRequest;
 import com.odc.projectservice.v1.GetLeaderInfoResponse;
@@ -40,7 +47,7 @@ public class DisbursementServiceImpl implements DisbursementService {
     private final DisbursementRepository disbursementRepository;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final PaymentOutBoxRepository paymentOutBoxRepository;
+    private final EventPublisher eventPublisher;
 
     @Override
     public DisbursementCalculationResponse calculatePreview(UUID milestoneId, BigDecimal totalAmount) {
@@ -149,7 +156,6 @@ public class DisbursementServiceImpl implements DisbursementService {
     }
 
     @Override
-    @Transactional
     public DisbursementCalculationResponse executeDisbursement(UUID disbursementId) {
         Disbursement disbursement = disbursementRepository.findById(disbursementId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy kết quả để thực thi phân bổ tiền với id: " + disbursementId));
@@ -244,16 +250,7 @@ public class DisbursementServiceImpl implements DisbursementService {
                 .build();
 
         DisbursementCompletedEvent event = buildDisbursementCompletedEvent(disbursement);
-
-        PaymentOutBox outbox = PaymentOutBox.builder()
-                .build();
-
-        outbox.setEventType("payment.disbursement.completed");
-        outbox.setEventId(disbursement.getId().toString());
-        outbox.setPayload(event.toByteArray());
-        outbox.setProcessed(false);
-
-        paymentOutBoxRepository.save(outbox);
+        eventPublisher.publish("payment.disbursement.completed", event);
 
         return DisbursementCalculationResponse.builder()
                 .milestoneId(disbursement.getMilestoneId().toString())

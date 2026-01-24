@@ -29,4 +29,13 @@ public interface ProjectMilestoneRepository extends JpaRepository<ProjectMilesto
     long countByProjectId(UUID projectId);
 
     List<ProjectMilestone> findByProjectIdAndStatus(UUID projectId, String status);
+
+    @Query("""
+                SELECT COUNT(m)
+                FROM ProjectMilestone m
+                WHERE m.project.id = :projectId
+                AND m.status = :status
+            """)
+    long countMilestonesByStatus(@Param("projectId") UUID projectId, @Param("status")  String status);
+
 }

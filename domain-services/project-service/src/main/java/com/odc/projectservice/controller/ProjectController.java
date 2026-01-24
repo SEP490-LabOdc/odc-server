@@ -207,4 +207,10 @@ public class ProjectController {
                 projectService.getOverview()
         );
     }
+
+    @PostMapping("/{projectId}/closure-requests")
+    public ResponseEntity<ApiResponse<Void>> sendClosureRequest(@PathVariable UUID projectId,
+                                                                @RequestBody CreateClosureRequest request) {
+        return ResponseEntity.ok(projectService.sendClosureRequest(projectId, request));
+    }
 }

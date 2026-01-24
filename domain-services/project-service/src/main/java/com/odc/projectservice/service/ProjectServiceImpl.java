@@ -1,10 +1,7 @@
 package com.odc.projectservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.odc.common.constant.ProjectMilestoneStatus;
-import com.odc.common.constant.ProjectStatus;
-import com.odc.common.constant.Role;
-import com.odc.common.constant.Status;
+import com.odc.common.constant.*;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.common.dto.SearchRequest;
@@ -56,6 +53,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ManagedChannel userServiceChannel;
     private final ManagedChannel companyServiceChannel;
     private final ObjectMapper objectMapper;
+    private final ProjectClosureRequestRepository projectClosureRequestRepository;
 
     // Constructor với @Qualifier - THÊM CONSTRUCTOR NÀY
     public ProjectServiceImpl(
@@ -66,6 +64,7 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectMilestoneRepository projectMilestoneRepository,
             EventPublisher eventPublisher,
             ObjectMapper objectMapper,
+            ProjectClosureRequestRepository projectClosureRequestRepository,
             @Qualifier("userServiceChannel1") ManagedChannel userServiceChannel,
             @Qualifier("companyServiceChannel") ManagedChannel companyServiceChannel) {
         this.projectRepository = projectRepository;
@@ -77,6 +76,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.companyServiceChannel = companyServiceChannel;
         this.projectMilestoneRepository = projectMilestoneRepository;
         this.objectMapper = objectMapper;
+        this.projectClosureRequestRepository = projectClosureRequestRepository;
     }
 
     @Override
@@ -1248,6 +1248,36 @@ public class ProjectServiceImpl implements ProjectService {
                 .availableMentors(projectMemberRepository.countAvailableMentors())
                 .joinedStudents(projectMemberRepository.countJoinedStudents())
                 .build());
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> sendClosureRequest(UUID projectId, CreateClosureRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
+
+        long allMilestones = projectMilestoneRepository.countByProjectId(projectId);
+        long allMilestonesByStatus = projectMilestoneRepository.countMilestonesByStatus(projectId, ProjectMilestoneStatus.DISTRIBUTED.toString());
+        if (allMilestonesByStatus != allMilestones) {
+            throw new BusinessException("Còn milestone chưa hoàn thành nên không thể gửi yêu cầu đóng dự án");
+        }
+
+        UUID requestedBy = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        ProjectClosureRequest entity = ProjectClosureRequest
+                .builder()
+                .project(project)
+                .requestedBy(requestedBy)
+                .reason(request.getReason())
+                .summary(request.getSummary())
+                .status(ProjectClosureStatus.PENDING_LAB_ADMIN)
+                .build();
+
+        projectClosureRequestRepository.save(entity);
+
+        project.setStatus(ProjectStatus.PENDING_CLOSURE.toString());
+        projectRepository.save(project);
+        return ApiResponse.success("Gửi yêu cầu đóng dự án thành công", null);
     }
 
     private ProjectResponse convertToProjectResponse(Project project) {

@@ -8,5 +8,6 @@ public enum ProjectStatus {
     ON_GOING,
     CLOSED,
     COMPLETED,
-    PAUSED
+    PAUSED,
+    PENDING_CLOSURE,
 }
