@@ -51,4 +51,6 @@ public interface ProjectService {
     List<ProjectMonthlyStatisticResponse> getNewProjectsLast6Months();
 
     ApiResponse<DashboardOverviewResponse> getOverview();
+
+    ApiResponse<Void> sendClosureRequest(UUID projectId, CreateClosureRequest request);
 }
