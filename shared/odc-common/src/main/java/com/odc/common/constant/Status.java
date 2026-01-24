@@ -16,4 +16,6 @@ public enum Status {
     PAID,
     LOCKED,
     REJECTED,
+    PROCESSING,
+    SUBMITTED,
 }

@@ -33,7 +33,6 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
     private ScheduledFuture<?> scheduledTask;
     private final TaskScheduler taskScheduler;
 
-    // 1. Khởi tạo ThreadPoolTaskScheduler riêng
     public DynamicFeeDistributionScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
@@ -44,60 +43,53 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
 
     @PostConstruct
     public void startScheduler() {
+        log.info("[Scheduler] Initializing Fee Distribution Scheduler");
         rescheduleTask();
     }
 
-    /**
-     * Dừng tác vụ hiện tại, đọc cấu hình mới từ DB, và lên lịch lại tác vụ.
-     * Phương thức này được gọi khi Admin cập nhật config.
-     */
-    public void rescheduleTask() {
-        // 1. Dừng tác vụ hiện tại nếu đang chạy
-        if (this.scheduledTask != null && !this.scheduledTask.isCancelled()) {
-            this.scheduledTask.cancel(true);
-            log.info("Old Fee Distribution task cancelled.");
+    public synchronized void rescheduleTask() {
+        if (scheduledTask != null && !scheduledTask.isCancelled()) {
+            scheduledTask.cancel(true);
+            log.info("[Scheduler] Old task cancelled");
         }
 
-        // 2. Đọc cấu hình Cron Expression từ DB bằng NAME="fee-distribution"
         SystemConfig config = systemConfigRepository.findByName(
-                        PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy cấu hình: " + PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME));
-        ;
+                PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME
+        ).orElseThrow(() ->
+                new BusinessException("Missing system config: fee-distribution"));
 
-        String cronExpression = null;
+        String cron = null;
         if (config.getProperties() != null) {
-            cronExpression = (String) config.getProperties().get(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY);
+            cron = (String) config.getProperties()
+                    .get(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY);
         }
 
-        if (cronExpression == null || cronExpression.isBlank()) {
-            // Cung cấp Cron Expression mặc định nếu không tìm thấy trong DB
-            cronExpression = "0 0 3 1 * ?"; // Mặc định: 3:00 AM ngày 1 hàng tháng
-            log.warn("Cron expression not found in properties. Using default: {}", cronExpression);
+        // Default: 16:00 ngày 19 hằng tháng
+        if (cron == null || cron.isBlank()) {
+            cron = "0 0 16 19 * ?";
+            log.warn("[Scheduler] Cron not found, using default: {}", cron);
         }
 
-        log.info("Configuring Fee Distribution with new cron expression: {}", cronExpression);
+        log.info("[Scheduler] Scheduling Fee Distribution with cron={}", cron);
 
-        // 3. Lên lịch tác vụ mới
-        try {
-            this.scheduledTask = taskScheduler.schedule(
-                    this.feeDistributionService::processFeeDistribution,
-                    new CronTrigger(cronExpression)
-            );
-            log.info("New Fee Distribution task successfully scheduled.");
-        } catch (Exception e) {
-            log.error("Failed to schedule Fee Distribution task with cron expression: {}", cronExpression, e);
-            // Có thể đặt lịch mặc định an toàn nếu cấu hình mới bị lỗi
-        }
+        scheduledTask = taskScheduler.schedule(
+                () -> {
+                    try {
+                        feeDistributionService.processFeeDistribution();
+                    } catch (Exception e) {
+                        log.error("[Scheduler] Job execution failed", e);
+                    }
+                },
+                new CronTrigger(cron)
+        );
     }
 
     @Override
     public void destroy() {
-        if (this.scheduledTask != null) {
-            this.scheduledTask.cancel(true);
+        if (scheduledTask != null) {
+            scheduledTask.cancel(true);
         }
-        if (this.taskScheduler instanceof ThreadPoolTaskScheduler) {
-            ((ThreadPoolTaskScheduler) this.taskScheduler).shutdown();
-        }
-        log.info("Fee Distribution Scheduler shut down.");
+        ((ThreadPoolTaskScheduler) taskScheduler).shutdown();
+        log.info("[Scheduler] Shutdown completed");
     }
 }
