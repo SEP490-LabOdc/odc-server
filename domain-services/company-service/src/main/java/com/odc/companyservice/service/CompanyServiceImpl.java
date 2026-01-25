@@ -552,7 +552,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .setTitle("Công ty cập nhật thông tin cần duyệt")
                 .setContent("Công ty \"" + company.getName() + "\" đã cập nhật thông tin đăng ký và đang chờ xét duyệt.")
                 .putAllData(dataMap)
-                .setDeepLink("/lab-admin/companies/approve?id=" + company.getId())
+                .setDeepLink("/lab-admin/companies/" + company.getId())
                 .setPriority("HIGH")
                 .setTarget(target)
                 .addAllChannels(List.of(Channel.WEB))

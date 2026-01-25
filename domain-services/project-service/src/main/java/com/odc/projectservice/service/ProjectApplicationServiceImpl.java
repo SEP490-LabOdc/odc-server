@@ -143,7 +143,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                         "applicationId", projectApplication.getId().toString(),
                         "status", projectApplication.getStatus()
                 ))
-                .setDeepLink("/my-applications/" + projectApplication.getId())
+                .setDeepLink("/talent/my-applications")
                 .setPriority("HIGH")
                 .setTarget(Target.newBuilder()
                         .setUser(UserTarget.newBuilder()
