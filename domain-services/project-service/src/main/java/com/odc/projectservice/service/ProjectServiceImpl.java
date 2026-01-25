@@ -1380,8 +1380,12 @@ public class ProjectServiceImpl implements ProjectService {
         List<ProjectClosureRequest> list =
                 projectClosureRequestRepository.findByProject_IdOrderByCreatedAtDesc(projectId);
 
+        List<UUID> userIds = list.stream().map(ProjectClosureRequest::getRequestedBy).toList();
+        Map<String, UserInfo> userInfoMap = getMapUserInfo(userIds);
         List<Object> response = list.stream()
-                .map(e -> ProjectClosureViewMapper.toListView(e, role))
+                .map(e -> {
+                    return ProjectClosureViewMapper.toListView(e, role, userInfoMap.get(e.getRequestedBy()));
+                })
                 .toList();
 
         return ApiResponse.success("Lấy dữ liệu thành công", response);
@@ -1471,5 +1475,31 @@ public class ProjectServiceImpl implements ProjectService {
                 .budget(project.getBudget() != null ? project.getBudget().toString() : null)
                 .skills(skillResponses)
                 .build();
+    }
+
+    private Map<String, UserInfo> getMapUserInfo(List<UUID> userIds) {
+        Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
+        List<String> allUserIds = userIds.stream()
+                .map(UUID::toString)
+                .distinct()
+                .toList();
+
+        UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(userServiceChannel);
+        GetUsersByIdsResponse usersResponse = userStub.getUsersByIds(
+                GetUsersByIdsRequest.newBuilder()
+                        .addAllUserId(allUserIds)
+                        .build()
+        );
+
+        log.debug("[USER_SERVICE][GET_USERS] size={}", allUserIds.size());
+
+        userIdToUserInfoMap = usersResponse.getUsersList().stream()
+                .collect(Collectors.toMap(
+                        UserInfo::getUserId,
+                        Function.identity(),
+                        (v1, v2) -> v1
+                ));
+
+        return userIdToUserInfoMap;
     }
 }

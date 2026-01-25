@@ -12,6 +12,7 @@ import java.util.UUID;
 public class CompanyClosureView {
     private UUID id;
     private UUID projectId;
+    private String projectTitle;
     private String summary;
     private ProjectClosureStatus status;
     private String labAdminComment;

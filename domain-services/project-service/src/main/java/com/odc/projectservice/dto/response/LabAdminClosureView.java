@@ -12,7 +12,9 @@ import java.util.UUID;
 public class LabAdminClosureView {
     private UUID id;
     private UUID projectId;
-    private UUID mentorId;
+    private String projectTitle;
+    private UUID createdBy;
+    private String createdByName, createdByAvatar;
     private String reason;
     private String summary;
     private ProjectClosureStatus status;
