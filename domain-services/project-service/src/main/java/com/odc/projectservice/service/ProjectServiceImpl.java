@@ -1257,11 +1257,11 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("Dự án với ID '" + projectId + "' không tồn tại"));
 
-        long allMilestones = projectMilestoneRepository.countByProjectId(projectId);
-        long allMilestonesByStatus = projectMilestoneRepository.countMilestonesByStatus(projectId, ProjectMilestoneStatus.DISTRIBUTED.toString());
-        if (allMilestonesByStatus != allMilestones) {
-            throw new BusinessException("Còn milestone chưa hoàn thành nên không thể gửi yêu cầu đóng dự án");
-        }
+//        long allMilestones = projectMilestoneRepository.countByProjectId(projectId);
+//        long allMilestonesByStatus = projectMilestoneRepository.countMilestonesByStatus(projectId, ProjectMilestoneStatus.DISTRIBUTED.toString());
+//        if (allMilestonesByStatus != allMilestones) {
+//            throw new BusinessException("Còn milestone chưa hoàn thành nên không thể gửi yêu cầu đóng dự án");
+//        }
 
         UUID requestedBy = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
