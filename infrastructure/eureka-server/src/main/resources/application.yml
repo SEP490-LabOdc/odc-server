@@ -19,7 +19,9 @@ eureka:
 
 logging:
   level:
-    root: INFO
-    com.odc: DEBUG
-    com.netflix.eureka: DEBUG
-    com.netflix.discovery: DEBUG
+    root: WARN
+    com.odc: INFO
+    org.springframework: WARN
+    org.springframework.cloud: WARN
+    com.netflix.discovery: OFF
+    reactor.netty: WARN

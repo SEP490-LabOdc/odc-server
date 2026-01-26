@@ -93,9 +93,12 @@ management:
 # Logging
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.security: DEBUG
-    reactor.netty: INFO
+    root: WARN
+    com.odc: INFO
+    org.springframework: WARN
+    org.springframework.cloud: WARN
+    com.netflix.discovery: OFF
+    reactor.netty: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
