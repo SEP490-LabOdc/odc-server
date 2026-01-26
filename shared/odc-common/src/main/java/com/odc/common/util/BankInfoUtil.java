@@ -42,6 +42,45 @@ public class BankInfoUtil {
         BANK_BIN_MAP.put("SEABANK", "970440");
 
         BANK_BIN_MAP.put("EXIMBANK", "970431");
+
+        BANK_BIN_MAP.put("AGRIBANK", "970405");    // VBA
+
+        BANK_BIN_MAP.put("VBA", "970405");
+
+        BANK_BIN_MAP.put("SCB", "970429");
+
+        BANK_BIN_MAP.put("NCB", "970419");
+
+        BANK_BIN_MAP.put("LPB", "970449");         // LPBank
+
+        BANK_BIN_MAP.put("LPBANK", "970449");
+
+        BANK_BIN_MAP.put("MSB", "970426");
+
+        BANK_BIN_MAP.put("BAB", "970409");         // Bắc Á
+
+        BANK_BIN_MAP.put("BACABANK", "970409");
+
+        BANK_BIN_MAP.put("PGBANK", "970430");      // PGB
+
+        BANK_BIN_MAP.put("VIETBANK", "970433");
+
+        BANK_BIN_MAP.put("BVB", "970438");         // Bảo Việt
+
+        BANK_BIN_MAP.put("BAOVIETBANK", "970438");
+
+        BANK_BIN_MAP.put("SGICB", "970400");       // SaigonBank
+
+        BANK_BIN_MAP.put("SAIGONBANK", "970400");
+
+        BANK_BIN_MAP.put("PVCB", "970412");        // PVcomBank
+
+        BANK_BIN_MAP.put("PVCOMBANK", "970412");
+
+        BANK_BIN_MAP.put("VCCB", "970454");        // Bản Việt
+
+        BANK_BIN_MAP.put("VIETCAPITALBANK", "970454");
+
     }
 
     public static String getBin(String bankName) {
