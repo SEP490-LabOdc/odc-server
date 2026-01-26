@@ -39,10 +39,4 @@ COPY --from=builder /app/file-service/target/file-service-1.0.0.jar file-service
 
 EXPOSE 8080
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=file-service",
-  "-jar",
-  "/app/file-service.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=file-service", "-jar", "/app/file-service.jar"]

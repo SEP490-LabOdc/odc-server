@@ -37,9 +37,4 @@ COPY --from=builder /app/user-service/target/user-service-1.0.0.jar user-service
 
 EXPOSE 8081
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=user-service",
-  "-jar",
-"/app/user-service.jar"]
+ENTRYPOINT ["java","-javaagent:/agent.jar","-Dapplicationinsights.role.name=user-service","-jar", "/app/user-service.jar"]

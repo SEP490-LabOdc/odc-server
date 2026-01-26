@@ -32,10 +32,4 @@ COPY --from=builder /app/eureka-server/target/eureka-server-1.0.0.jar eureka-ser
 
 EXPOSE 8761
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=eureka-server",
-  "-jar",
-  "/app/eureka-server.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=eureka-server", "-jar", "/app/eureka-server.jar"]

@@ -37,10 +37,4 @@ COPY --from=builder /app/operation-service/target/operation-service-1.0.0.jar op
 
 EXPOSE 8087
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=notification-service",
-  "-jar",
-  "/app/operation-service.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=notification-service", "-jar", "/app/operation-service.jar"]

@@ -37,9 +37,4 @@ COPY --from=builder /app/checklist-service/target/checklist-service-1.0.0.jar ch
 
 EXPOSE 8083
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-jar",
-  "/app/checklist-service.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=checklist-service", "-jar", "/app/checklist-service.jar"]

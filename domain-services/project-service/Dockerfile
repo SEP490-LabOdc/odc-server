@@ -37,9 +37,4 @@ COPY --from=builder /app/project-service/target/project-service-1.0.0.jar projec
 
 EXPOSE 8084
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=project-service",
-  "-jar",
-  "/app/project-service.jar"]
+ENTRYPOINT ["java","-javaagent:/agent.jar","-Dapplicationinsights.role.name=project-service","-jar","/app/project-service.jar"]
