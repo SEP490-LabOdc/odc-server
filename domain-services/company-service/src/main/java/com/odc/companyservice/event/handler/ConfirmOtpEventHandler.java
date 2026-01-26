@@ -64,7 +64,7 @@ public class ConfirmOtpEventHandler implements EventHandler {
                     .setTitle("Có công ty đăng ký mới cần duyệt")
                     .setContent("Công ty \"" + company.getName() + "\" vừa đăng ký và đang chờ xét duyệt.")
                     .putAllData(dataMap)
-                    .setDeepLink("/lab-admin/companies/approve?id=" + company.getId())
+                    .setDeepLink("/lab-admin/companies/" + company.getId())
                     .setPriority("HIGH")
                     .setTarget(target)
                     .addAllChannels(List.of(
