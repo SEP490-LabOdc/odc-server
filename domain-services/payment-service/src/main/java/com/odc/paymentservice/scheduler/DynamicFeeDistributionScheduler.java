@@ -66,7 +66,7 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
 
         // Default: 16:00 ngày 19 hằng tháng
         if (cron == null || cron.isBlank()) {
-            cron = "0 0 16 19 * ?";
+            cron = "0 35 21 26 1 ?";
             log.warn("[Scheduler] Cron not found, using default: {}", cron);
         }
 
