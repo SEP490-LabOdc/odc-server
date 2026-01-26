@@ -82,7 +82,7 @@ public class CvAnalysisHandler implements EventHandler {
                         .setType(isCv ? "CV_ANALYSIS_SUCCESS" : "CV_ANALYSIS_INVALID")
                         .setTitle(notificationTitle)
                         .setContent(notificationContent)
-                        .setDeepLink("/project/applications/" + app.getId())
+                        .setDeepLink("/mentor/projects/" + project.getId() + "/candidates")
                         .setTarget(Target.newBuilder()
                                 .setUser(UserTarget.newBuilder().addAllUserIds(mentorIds).build())
                                 .build())
