@@ -24,6 +24,7 @@ import com.odc.userservice.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,8 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
     private final TransactionRepository transactionRepository;
     private final SystemConfigRepository systemConfigRepository;
     private final ManagedChannel userServiceChannel1;
+    @Value("${custom.config-cron-expression:0 35 21 26 1 ?}")
+    private String cronExpression;
 
     @Override
     @Transactional(readOnly = true)
@@ -103,16 +106,6 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
         WithdrawalRequest wr = getOrThrow(id);
         if (!Status.PENDING.toString().equals(wr.getStatus())) {
             throw new BusinessException("Trạng thái không hợp lệ để duyệt");
-        }
-
-        SystemConfig config = systemConfigRepository.findByName(
-                        PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy cấu hình: " + PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME));
-        ;
-
-        String cronExpression = null;
-        if (config.getProperties() != null) {
-            cronExpression = (String) config.getProperties().get(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY);
         }
 
         Wallet wallet = wr.getWallet();
