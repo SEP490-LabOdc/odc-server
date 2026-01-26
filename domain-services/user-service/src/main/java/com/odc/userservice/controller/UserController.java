@@ -54,7 +54,6 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfile(id, request));
     }
 
-    @PreAuthorize("(hasAuthority('USER') or hasAuthority('SYSTEM_ADMIN'))and #id == authentication.principal")
     @PutMapping("/{id}/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
             @PathVariable UUID id,
