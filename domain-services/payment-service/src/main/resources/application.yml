@@ -131,3 +131,7 @@ payos:
   checksum-key: ${PAYOS_CHECKSUM_KEY:PAYOS_CHECKSUM_KEY_DEFAULT}
   return-url: ${PAYMENT_RETURN_URL:https://example.com/payment/success}
   cancel-url: ${PAYMENT_CANCEL_URL:https://example.com/payment/cancel}
+
+# Custom Configuration
+custom:
+  config-cron-expression: ${SYSTEM_CONFIG_CRON_EXPRESSION_KEY:0 35 21 26 1 ?}

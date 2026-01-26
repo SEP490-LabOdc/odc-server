@@ -8,6 +8,7 @@ import com.odc.paymentservice.service.FeeDistributionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
@@ -33,6 +34,9 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
     private ScheduledFuture<?> scheduledTask;
     private final TaskScheduler taskScheduler;
 
+    @Value("${custom.config-cron-expression:0 35 21 26 1 ?}")
+    private String cronExpression;
+
     public DynamicFeeDistributionScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
@@ -53,24 +57,7 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
             log.info("[Scheduler] Old task cancelled");
         }
 
-        SystemConfig config = systemConfigRepository.findByName(
-                PaymentConstant.SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME
-        ).orElseThrow(() ->
-                new BusinessException("Missing system config: fee-distribution"));
-
-        String cron = null;
-        if (config.getProperties() != null) {
-            cron = (String) config.getProperties()
-                    .get(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY);
-        }
-
-        // Default: 16:00 ngày 19 hằng tháng
-        if (cron == null || cron.isBlank()) {
-            cron = "0 35 21 26 1 ?";
-            log.warn("[Scheduler] Cron not found, using default: {}", cron);
-        }
-
-        log.info("[Scheduler] Scheduling Fee Distribution with cron={}", cron);
+        log.info("[Scheduler] Scheduling Fee Distribution with cron={}", cronExpression);
 
         scheduledTask = taskScheduler.schedule(
                 () -> {
@@ -80,7 +67,7 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
                         log.error("[Scheduler] Job execution failed", e);
                     }
                 },
-                new CronTrigger(cron)
+                new CronTrigger(cronExpression)
         );
     }
 

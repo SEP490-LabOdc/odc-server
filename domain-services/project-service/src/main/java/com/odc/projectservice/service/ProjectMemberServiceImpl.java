@@ -97,7 +97,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 });
 
         List<ProjectMember> projectMemberList = new ArrayList<>();
-        List<ProjectOutBox> projectOutBoxList = new ArrayList<>();
         for (UUID userId : userIds) {
             long projectCount = projectMemberRepository.countByUserId(userId);
             if (projectCount >= 2) {
