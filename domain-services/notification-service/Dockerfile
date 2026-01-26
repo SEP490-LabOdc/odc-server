@@ -26,8 +26,21 @@ FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
 
+RUN apt-get update \
+ && apt-get install -y wget \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.7.5/applicationinsights-agent-3.7.5.jar \
+    -O /agent.jar
+
 COPY --from=builder /app/notification-service/target/notification-service-1.0.0.jar notification-service.jar
 
 EXPOSE 8085
 
-ENTRYPOINT ["java", "-jar", "/app/notification-service.jar"]
+ENTRYPOINT [
+  "java",
+  "-javaagent:/agent.jar",
+  "-Dapplicationinsights.role.name=notification-service",
+  "-jar",
+  "/app/notification-service.jar"
+]

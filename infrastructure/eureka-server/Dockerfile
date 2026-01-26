@@ -16,12 +16,26 @@ COPY infrastructure/eureka-server/ ./eureka-server/
 WORKDIR /app/eureka-server
 RUN mvn package -DskipTests
 
+
 FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
+
+RUN apt-get update \
+ && apt-get install -y wget \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.7.5/applicationinsights-agent-3.7.5.jar \
+    -O /agent.jar
 
 COPY --from=builder /app/eureka-server/target/eureka-server-1.0.0.jar eureka-server.jar
 
 EXPOSE 8761
 
-ENTRYPOINT ["java", "-jar", "/app/eureka-server.jar"]
+ENTRYPOINT [
+  "java",
+  "-javaagent:/agent.jar",
+  "-Dapplicationinsights.role.name=eureka-server",
+  "-jar",
+  "/app/eureka-server.jar"
+]
