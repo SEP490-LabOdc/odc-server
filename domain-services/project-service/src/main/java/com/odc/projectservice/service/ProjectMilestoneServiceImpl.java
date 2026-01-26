@@ -340,7 +340,7 @@ public class ProjectMilestoneServiceImpl implements ProjectMilestoneService {
         // 2. Fetch milestones with status PAID
         List<ProjectMilestone> milestones = projectMilestoneRepository.findByProjectIdAndStatus(
                 projectId,
-                ProjectMilestoneStatus.PAID.toString()
+                ProjectMilestoneStatus.DISTRIBUTED.toString()
         );
 
         // 3. Map to PaidProjectMilestoneResponse
