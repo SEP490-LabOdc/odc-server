@@ -37,9 +37,4 @@ COPY --from=builder /app/payment-service/target/payment-service-1.0.0.jar paymen
 
 EXPOSE 8082
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=payment-service",
-  "-jar",
-"/app/payment-service.jar"]
+ENTRYPOINT ["java","-javaagent:/agent.jar","-Dapplicationinsights.role.name=payment-service","-jar","/app/payment-service.jar"]

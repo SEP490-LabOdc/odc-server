@@ -37,9 +37,4 @@ COPY --from=builder /app/email-service/target/email-service-1.0.0.jar email-serv
 
 EXPOSE 8088
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-jar",
-  "/app/email-service.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=email-service", "-jar", "/app/email-service.jar"]

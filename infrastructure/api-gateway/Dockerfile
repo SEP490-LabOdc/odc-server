@@ -32,8 +32,4 @@ COPY --from=builder /app/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar api-g
 
 EXPOSE 8080
 
-ENTRYPOINT [
- "java",
- "-javaagent:/agent.jar",
- "-jar", "/app/api-gateway.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=api-gateway","-jar", "/app/api-gateway.jar"]
