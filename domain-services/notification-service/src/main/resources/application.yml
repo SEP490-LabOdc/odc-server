@@ -93,12 +93,12 @@ logging:
   file:
     name: logs/notification-service.log
   level:
-    org:
-      springframework:
-        web:
-          socket: DEBUG
-        messaging:
-          simp: DEBUG
+    root: WARN
+    com.odc: INFO
+    org.springframework: WARN
+    org.springframework.cloud: WARN
+    com.netflix.discovery: OFF
+    reactor.netty: WARN
 
 # gRPC Configuration
 grpc:

@@ -26,8 +26,22 @@ FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
 
+# cài wget để tải agent (CI/CD friendly)
+RUN apt-get update \
+ && apt-get install -y wget \
+ && rm -rf /var/lib/apt/lists/*
+
+# tải Azure Application Insights Java Agent
+RUN wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.7.5/applicationinsights-agent-3.7.5.jar \
+    -O /agent.jar
+
 COPY --from=builder /app/company-service/target/company-service-1.0.0.jar company-service.jar
 
 EXPOSE 8082
 
-ENTRYPOINT ["java", "-jar", "/app/company-service.jar"]
+ENTRYPOINT [
+  "java",
+  "-javaagent:/agent.jar",
+  "-jar",
+  "/app/company-service.jar"
+]

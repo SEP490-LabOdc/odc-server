@@ -26,8 +26,20 @@ FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
 
+RUN apt-get update \
+ && apt-get install -y wget \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.7.5/applicationinsights-agent-3.7.5.jar \
+    -O /agent.jar
+
 COPY --from=builder /app/checklist-service/target/checklist-service-1.0.0.jar checklist-service.jar
 
 EXPOSE 8083
 
-ENTRYPOINT ["java", "-jar", "/app/checklist-service.jar"]
+ENTRYPOINT [
+  "java",
+  "-javaagent:/agent.jar",
+  "-jar",
+  "/app/checklist-service.jar"
+]
