@@ -30,7 +30,7 @@ public class FeeDistributionServiceImpl implements FeeDistributionService {
     private static final int BATCH_SIZE = 20;
 
     private final WithdrawalRequestRepository withdrawalRepository;
-    private final PayOS payOS;
+    private final PayOS payOSPayout;
 
     @Override
     public void processFeeDistribution() {
@@ -78,6 +78,7 @@ public class FeeDistributionServiceImpl implements FeeDistributionService {
         try {
             payout = sendBatchToPayOS(withdrawals);
         } catch (Exception ex) {
+            log.error("[FeeDistribution][EXCEPTION] {}", ex.getMessage());
             rollbackProcessing(withdrawals);
             throw ex;
         }
@@ -111,7 +112,7 @@ public class FeeDistributionServiceImpl implements FeeDistributionService {
 
     protected Payout sendBatchToPayOS(List<WithdrawalRequest> withdrawals) {
 
-        BatchService batchService = new BatchServiceImpl(payOS);
+        BatchService batchService = new BatchServiceImpl(payOSPayout);
         PayoutBatchRequest request = buildPayoutBatchRequest(withdrawals);
 
         log.info("[FeeDistribution][PAYOS] Sending batch reference={}",

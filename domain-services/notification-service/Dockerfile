@@ -37,10 +37,4 @@ COPY --from=builder /app/notification-service/target/notification-service-1.0.0.
 
 EXPOSE 8085
 
-ENTRYPOINT [
-  "java",
-  "-javaagent:/agent.jar",
-  "-Dapplicationinsights.role.name=notification-service",
-  "-jar",
-  "/app/notification-service.jar"
-]
+ENTRYPOINT ["java", "-javaagent:/agent.jar", "-Dapplicationinsights.role.name=notification-service", "-jar", "/app/notification-service.jar"]
