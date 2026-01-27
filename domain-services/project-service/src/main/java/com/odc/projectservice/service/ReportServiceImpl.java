@@ -641,8 +641,8 @@ public class ReportServiceImpl implements ReportService {
             milestone.setStatus(ProjectMilestoneStatus.COMPLETED.toString());
         } else if (ReportStatus.COMPANY_REJECTED.toString().equalsIgnoreCase(reportStatus) ||
                 ReportStatus.ADMIN_REJECTED.toString().equalsIgnoreCase(reportStatus)) {
-            // Nếu Client từ chối -> Yêu cầu Mentor sửa lại -> Trạng thái UPDATE_REQUIRED
-            milestone.setStatus(ProjectMilestoneStatus.UPDATE_REQUIRED.toString());
+            // Nếu Client/Lab Admin từ chối -> Yêu cầu Mentor tạo lại -> Trạng thái ON_GOING
+            milestone.setStatus(ProjectMilestoneStatus.ON_GOING.toString());
         }
         projectMilestoneRepository.save(milestone);
     }
