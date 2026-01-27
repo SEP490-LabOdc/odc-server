@@ -103,7 +103,7 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
         rescheduleTask();
 
         // chạy ngay 1 lần
-        runOnceImmediately();
+//        runOnceImmediately();
     }
 
     /**
