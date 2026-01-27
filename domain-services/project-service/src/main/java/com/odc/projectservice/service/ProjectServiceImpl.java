@@ -1384,7 +1384,7 @@ public class ProjectServiceImpl implements ProjectService {
         Map<String, UserInfo> userInfoMap = getMapUserInfo(userIds);
         List<Object> response = list.stream()
                 .map(e -> {
-                    return ProjectClosureViewMapper.toListView(e, role, userInfoMap.get(e.getRequestedBy()));
+                    return ProjectClosureViewMapper.toListView(e, role, userInfoMap.get(e.getRequestedBy().toString()));
                 })
                 .toList();
 
@@ -1479,6 +1479,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private Map<String, UserInfo> getMapUserInfo(List<UUID> userIds) {
         Map<String, UserInfo> userIdToUserInfoMap = new HashMap<>();
+
         List<String> allUserIds = userIds.stream()
                 .map(UUID::toString)
                 .distinct()
