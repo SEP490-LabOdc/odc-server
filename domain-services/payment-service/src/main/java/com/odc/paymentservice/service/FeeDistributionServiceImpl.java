@@ -174,7 +174,7 @@ public class FeeDistributionServiceImpl implements FeeDistributionService {
                             .referenceId(w.getId().toString())
                             .amount(w.getAmount().longValueExact())
                             .description("Withdrawal payout")
-                            .toBin(bin)
+                            .toBin(bankInfo.get("bin"))
                             .toAccountNumber(bankInfo.get("accountNumber"))
                             .build()
             );

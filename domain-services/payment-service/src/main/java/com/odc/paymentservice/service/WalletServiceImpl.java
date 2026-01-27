@@ -87,7 +87,8 @@ public class WalletServiceImpl implements WalletService {
         BankInfo newBankInfo = new BankInfo(
                 request.getBankName(),
                 request.getAccountNumber(),
-                request.getAccountHolderName().toUpperCase()
+                request.getAccountHolderName().toUpperCase(),
+                request.getBin()
         );
         currentBankInfos.add(newBankInfo);
 
@@ -163,6 +164,7 @@ public class WalletServiceImpl implements WalletService {
         bankInfo.put("bankName", request.getBankName());
         bankInfo.put("accountNumber", request.getAccountNumber());
         bankInfo.put("accountName", request.getAccountName());
+        bankInfo.put("bin", request.getBin());
 
         // Tính scheduledAt: ngày 15 hàng tháng
         LocalDate scheduledAt = calculateScheduledAt();
