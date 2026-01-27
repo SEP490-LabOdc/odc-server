@@ -23,4 +23,7 @@ public class CreateWithdrawalRequest {
 
     @NotBlank(message = "Tên chủ tài khoản không được để trống")
     private String accountName;
+
+    @NotBlank(message = "Mã bin ngân hàng không được để trống")
+    private String bin;
 }

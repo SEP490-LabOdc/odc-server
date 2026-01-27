@@ -13,4 +13,5 @@ public class BankInfo {
     private String bankName;
     private String accountNumber;
     private String accountHolderName;
+    private String bin;
 }

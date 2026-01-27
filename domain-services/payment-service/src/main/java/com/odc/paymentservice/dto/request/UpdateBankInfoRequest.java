@@ -19,4 +19,7 @@ public class UpdateBankInfoRequest {
 
     @NotBlank(message = "Tên chủ tài khoản không được để trống")
     private String accountHolderName;
+
+    @NotBlank(message = "Mã bin ngân hàng không được để trống")
+    private String bin;
 }
