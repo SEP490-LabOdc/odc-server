@@ -295,6 +295,12 @@ public class ReportServiceImpl implements ReportService {
 
         boolean isApproved = ReportStatus.APPROVED.toString().equals(report.getStatus());
 
+        if (!isApproved) {
+            Project project = report.getProject();
+            project.setStatus(ProjectStatus.ON_GOING.toString());
+            projectRepository.save(project);
+        }
+
         NotificationEvent notificationEvent = NotificationEvent.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setType("REPORT_REVIEW")

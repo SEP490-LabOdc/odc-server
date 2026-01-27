@@ -21,4 +21,13 @@ public class PayOSConfig {
     public PayOS payOS() {
         return new PayOS(clientId, apiKey, checksumKey);
     }
+
+    @Bean
+    public PayOS payOSPayout(
+            @Value("${payos-payout.client-id}") String clientId,
+            @Value("${payos-payout.api-key}") String apiKey,
+            @Value("${payos-payout.checksum-key}") String checksumKey
+    ) {
+        return new PayOS(clientId, apiKey, checksumKey);
+    }
 }

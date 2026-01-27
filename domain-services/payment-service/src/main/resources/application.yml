@@ -132,6 +132,11 @@ payos:
   return-url: ${PAYMENT_RETURN_URL:https://example.com/payment/success}
   cancel-url: ${PAYMENT_CANCEL_URL:https://example.com/payment/cancel}
 
+payos-payout:
+  client-id: ${PAYOS_CLIENT_ID_PAYOUT:PAYOS_CLIENT_ID_PAYOUT_DEFAULT}
+  api-key: ${PAYOS_API_KEY_PAYOUT:PAYOS_API_KEY_PAYOUT_DEFAULT}
+  checksum-key: ${PAYOS_CHECKSUM_KEY_PAYOUT:PAYOS_CHECKSUM_KEY_PAYOUT_DEFAULT}
+
 # Custom Configuration
 custom:
-  config-cron-expression: ${SYSTEM_CONFIG_CRON_EXPRESSION_KEY:0 35 21 26 1 ?}
+  config-cron-expression: ${SYSTEM_CONFIG_CRON_EXPRESSION_KEY:0 11 10 27 1 ?}
