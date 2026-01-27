@@ -1,9 +1,5 @@
 package com.odc.paymentservice.scheduler;
 
-import com.odc.common.constant.PaymentConstant;
-import com.odc.common.exception.BusinessException;
-import com.odc.paymentservice.entity.SystemConfig;
-import com.odc.paymentservice.repository.SystemConfigRepository;
 import com.odc.paymentservice.service.FeeDistributionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
@@ -15,6 +11,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.TimeZone;
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -24,9 +21,6 @@ import java.util.concurrent.ScheduledFuture;
 @Component
 @Slf4j
 public class DynamicFeeDistributionScheduler implements DisposableBean {
-
-    @Autowired
-    private SystemConfigRepository systemConfigRepository;
 
     @Autowired
     private FeeDistributionService feeDistributionService;
@@ -67,7 +61,7 @@ public class DynamicFeeDistributionScheduler implements DisposableBean {
                         log.error("[Scheduler] Job execution failed", e);
                     }
                 },
-                new CronTrigger(cronExpression)
+                new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Ho_Chi_Minh"))
         );
     }
 
