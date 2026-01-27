@@ -296,9 +296,9 @@ public class ReportServiceImpl implements ReportService {
         boolean isApproved = ReportStatus.APPROVED.toString().equals(report.getStatus());
 
         if (!isApproved) {
-            Project project = report.getProject();
-            project.setStatus(ProjectStatus.ON_GOING.toString());
-            projectRepository.save(project);
+            ProjectMilestone projectMilestone = report.getMilestone();
+            projectMilestone.setStatus(ProjectStatus.ON_GOING.toString());
+            projectMilestoneRepository.save(projectMilestone);
         }
 
         NotificationEvent notificationEvent = NotificationEvent.newBuilder()
@@ -315,7 +315,7 @@ public class ReportServiceImpl implements ReportService {
                         "status", report.getStatus(),
                         "feedback", Optional.ofNullable(report.getFeedback()).orElse("")
                 ))
-                .setDeepLink("/reports/" + report.getId())
+                .setDeepLink("/milestones/" + report.getMilestone().getId().toString())
                 .setPriority("HIGH")
                 .setTarget(Target.newBuilder()
                         .setUser(UserTarget.newBuilder()
