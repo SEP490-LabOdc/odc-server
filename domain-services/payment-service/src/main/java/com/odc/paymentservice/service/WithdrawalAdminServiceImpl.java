@@ -121,7 +121,11 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
 
         wr.setStatus(Status.APPROVED.toString());
         wr.setAdminNote(req.getAdminNote());
-        LocalDate scheduledDate = DateTimeUtil.calculateNextScheduledDate(getCurrentCronExpression());
+
+        String cron = getCurrentCronExpression();
+        log.warn("[CRON_CHECK] cronExpression used = {}", cron);
+
+        LocalDate scheduledDate = DateTimeUtil.calculateNextScheduledDate(cron);
         wr.setScheduledAt(scheduledDate);
 
         withdrawalRequestRepository.save(wr);
