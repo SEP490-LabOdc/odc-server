@@ -17,6 +17,7 @@ import com.odc.paymentservice.repository.SystemConfigRepository;
 import com.odc.paymentservice.repository.TransactionRepository;
 import com.odc.paymentservice.repository.WalletRepository;
 import com.odc.paymentservice.repository.WithdrawalRequestRepository;
+import com.odc.paymentservice.scheduler.DynamicFeeDistributionScheduler;
 import com.odc.userservice.v1.GetUsersByIdsRequest;
 import com.odc.userservice.v1.GetUsersByIdsResponse;
 import com.odc.userservice.v1.UserInfo;
@@ -27,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,8 +52,10 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
     private final TransactionRepository transactionRepository;
     private final SystemConfigRepository systemConfigRepository;
     private final ManagedChannel userServiceChannel1;
+    private final DynamicFeeDistributionScheduler scheduler;
+
     @Value("${custom.config-cron-expression:0 35 21 26 1 ?}")
-    private String cronExpression;
+    private String defaultCronExpression;
 
     @Override
     @Transactional(readOnly = true)
@@ -117,7 +121,7 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
 
         wr.setStatus(Status.APPROVED.toString());
         wr.setAdminNote(req.getAdminNote());
-        LocalDate scheduledDate = DateTimeUtil.calculateNextScheduledDate(cronExpression);
+        LocalDate scheduledDate = DateTimeUtil.calculateNextScheduledDate(getCurrentCronExpression());
         wr.setScheduledAt(scheduledDate);
 
         withdrawalRequestRepository.save(wr);
@@ -181,6 +185,27 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
         return ApiResponse.success("Từ chối rút tiền thành công", mapToResponse(wr, userInfo));
     }
 
+    @Override
+    public ApiResponse<Void> updateFeeDistributionCron(String cronExpression) {
+        if (!CronExpression.isValidExpression(cronExpression)) {
+            throw new BusinessException("Invalid cron expression: " + cronExpression);
+        }
+
+        SystemConfig config = systemConfigRepository
+                .findByName(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy system config key: " + PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY));
+
+        config.getProperties().put("cronExpression", cronExpression);
+        systemConfigRepository.save(config);
+
+        // update cron + chạy NGAY
+        scheduler.updateCronAndRunNow(cronExpression);
+
+        log.info("[Admin] Fee distribution cron updated and triggered immediately: {}", cronExpression);
+
+        return ApiResponse.success("Cập nhật thành công cron expression", null);
+    }
+
     private WithdrawalRequest getOrThrow(UUID id) {
         return withdrawalRequestRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy yêu cầu rút tiền"));
@@ -234,4 +259,13 @@ public class WithdrawalAdminServiceImpl implements WithdrawalAdminService {
     private String emptyToNull(String v) {
         return (v == null || v.isBlank()) ? null : v;
     }
+
+    private String getCurrentCronExpression() {
+        return systemConfigRepository
+                .findByName(PaymentConstant.SYSTEM_CONFIG_CRON_EXPRESSION_KEY)
+                .map(cfg -> cfg.getProperties().get("cronExpression").toString())
+                .filter(cron -> !cron.isBlank())
+                .orElse(defaultCronExpression);
+    }
+
 }
