@@ -36,5 +36,5 @@ public class PaymentConstant {
     // SYSTEM CONFIGURATION KEYS
     // ========================================================================
     public static final String SYSTEM_CONFIG_FEE_DISTRIBUTION_NAME = "fee-distribution";
-    public static final String SYSTEM_CONFIG_CRON_EXPRESSION_KEY = "cronExpression";
+    public static final String SYSTEM_CONFIG_CRON_EXPRESSION_KEY = "cron-expression";
 }

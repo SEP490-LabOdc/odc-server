@@ -16,4 +16,6 @@ public interface WithdrawalAdminService {
     ApiResponse<WithdrawalResponse> approve(UUID id, AdminHandleWithdrawalRequest req);
 
     ApiResponse<WithdrawalResponse> reject(UUID id, AdminHandleWithdrawalRequest req);
+
+    ApiResponse<Void> updateFeeDistributionCron(String cronExpression);
 }

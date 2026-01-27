@@ -3,6 +3,7 @@ package com.odc.paymentservice.controller;
 import com.odc.common.dto.ApiResponse;
 import com.odc.common.dto.PaginatedResult;
 import com.odc.paymentservice.dto.request.AdminHandleWithdrawalRequest;
+import com.odc.paymentservice.dto.request.UpdateCronRequest;
 import com.odc.paymentservice.dto.request.WithdrawalFilterRequest;
 import com.odc.paymentservice.dto.response.WithdrawalResponse;
 import com.odc.paymentservice.service.WithdrawalAdminService;
@@ -42,5 +43,11 @@ public class WithdrawalAdminController {
             @PathVariable UUID id,
             @Valid @RequestBody AdminHandleWithdrawalRequest req) {
         return ResponseEntity.ok(withdrawalAdminService.reject(id, req));
+    }
+
+    @PostMapping("/cron")
+    public ResponseEntity<?> updateCron(@RequestBody UpdateCronRequest request) {
+        String cron = request.getCronExpression();
+        return ResponseEntity.ok(withdrawalAdminService.updateFeeDistributionCron(cron));
     }
 }
